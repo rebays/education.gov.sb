@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import { Baskervville, Source_Sans_3 } from "next/font/google";
+import { Baskervville, Source_Sans_3, Figtree } from "next/font/google";
 import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
+
 
 /* Classic theme faces */
 const baskervville = Baskervville({
@@ -32,7 +36,7 @@ export default function RootLayout({
     <html
       lang="en"
       data-theme="classic"
-      className={`${sourceSans.variable} ${baskervville.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", sourceSans.variable, baskervville.variable, "font-sans", figtree.variable)}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
