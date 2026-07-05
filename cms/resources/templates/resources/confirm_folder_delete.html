@@ -1,0 +1,24 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+
+{% block titletag %}Delete folder | Resource Library{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title="Delete folder" subtitle=folder.name icon="folder-open-inverse" %}
+
+    <div class="nice-padding" style="margin-top: 20px;">
+        {% if is_empty %}
+            <p>Are you sure you want to delete the folder <strong>{{ folder.name }}</strong>?</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="button no">Yes, delete it</button>
+                <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Cancel</a>
+            </form>
+        {% else %}
+            <div class="help-block help-warning">
+                <p>The folder <strong>{{ folder.name }}</strong> is not empty. Move or delete its documents and subfolders first.</p>
+            </div>
+            <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Back to folder</a>
+        {% endif %}
+    </div>
+{% endblock %}

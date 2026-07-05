@@ -1,0 +1,321 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+
+{% block titletag %}{{ folder.name }} | Resource Library{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .rl-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 12px;
+        }
+        .rl-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 8px;
+            padding: 18px 10px 14px;
+            border: 1px solid var(--w-color-border-furniture);
+            border-radius: 5px;
+            text-decoration: none;
+            color: inherit;
+        }
+        .rl-card:hover {
+            border-color: var(--w-color-secondary);
+            text-decoration: none;
+        }
+        .rl-card__thumb {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 56px;
+        }
+        .rl-card__thumb svg.icon {
+            width: 48px;
+            height: 48px;
+        }
+        .rl-card__ext {
+            position: absolute;
+            bottom: -2px;
+            right: -14px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 1px 5px;
+            border-radius: 3px;
+            background: var(--w-color-secondary);
+            color: var(--w-color-text-button);
+        }
+        .rl-card__title {
+            font-weight: 600;
+            font-size: 13px;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .rl-card__meta {
+            font-size: 12px;
+            color: var(--w-color-text-meta);
+        }
+        .rl-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .rl-icon-btn svg.icon {
+            width: 16px;
+            height: 16px;
+        }
+        .rl-text-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .rl-text-btn svg.icon {
+            width: 16px;
+            height: 16px;
+        }
+        .rl-heading {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 35px;
+        }
+        .rl-heading h1 {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .rl-heading h1 svg.icon {
+            width: 26px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+        .rl-heading h1 a {
+            color: var(--w-color-text-label);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .rl-heading h1 a:hover {
+            color: var(--w-color-secondary);
+            text-decoration: underline;
+        }
+        .rl-heading h1 .rl-sep {
+            color: var(--w-color-text-meta);
+            font-weight: 400;
+        }
+        .rl-folder-actions {
+            display: flex;
+            gap: 2px;
+            margin-left: auto;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="nice-padding" style="margin-top: 30px;">
+
+        {# Heading doubles as the breadcrumb: ancestors are muted links, the current folder is the bold final segment #}
+        <div class="rl-heading">
+            <h1>
+                {% icon name="folder-open-inverse" %}
+                {% for crumb in breadcrumbs %}
+                    {% if forloop.last %}
+                        <span aria-current="page">{{ crumb.name }}</span>
+                    {% else %}
+                        <a href="{% url 'resource_library:folder' crumb.pk %}">{{ crumb.name }}</a>
+                        <span class="rl-sep" aria-hidden="true">/</span>
+                    {% endif %}
+                {% endfor %}
+            </h1>
+            <div class="rl-folder-actions">
+                {% if not is_root and can_change_folder %}
+                    <a href="{% url 'resource_library:rename_folder' folder.pk %}"
+                       class="button button-secondary rl-icon-btn"
+                       title="Rename folder" aria-label="Rename folder">
+                        {% icon name="edit" %}
+                    </a>
+                {% endif %}
+                {% if not is_root and can_delete_folder %}
+                    <a href="{% url 'resource_library:delete_folder' folder.pk %}"
+                       class="button button-secondary no rl-icon-btn"
+                       title="Delete folder" aria-label="Delete folder">
+                        {% icon name="bin" %}
+                    </a>
+                {% endif %}
+                {% if is_root %}
+                    {# Invisible placeholder keeps the heading row the same height when the buttons are absent #}
+                    <span class="button rl-icon-btn" style="visibility: hidden;" aria-hidden="true">{% icon name="edit" %}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Toolbar: actions on the folder's contents #}
+        <div style="margin-bottom: 50px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            {% if can_upload %}
+                <a href="{% url 'resource_library:upload' folder.pk %}" class="button bicolor button--icon">{% icon name="plus" wrapped=1 %}New file</a>
+            {% endif %}
+            {% if can_add_folder %}
+                <a href="{% url 'resource_library:add_folder' folder.pk %}"
+                   class="button button-secondary rl-text-btn"
+                   title="New folder">
+                    {% icon name="folder-open-1" %}New folder
+                </a>
+            {% endif %}
+
+            <div style="margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div role="group" aria-label="View mode" style="display: flex; gap: 2px;">
+                    <a href="?layout=grid{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                       class="button rl-icon-btn {% if layout != 'grid' %}button-secondary{% endif %}"
+                       title="Thumbnail view" {% if layout == 'grid' %}aria-current="true"{% endif %}>
+                        {% icon name="grid" %}
+                    </a>
+                    <a href="?layout=list{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                       class="button rl-icon-btn {% if layout != 'list' %}button-secondary{% endif %}"
+                       title="List view" {% if layout == 'list' %}aria-current="true"{% endif %}>
+                        {% icon name="list-ul" %}
+                    </a>
+                </div>
+
+                <form method="get" action="" role="search" style="display: flex; gap: 5px;">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search this folder and below…" style="width: 340px;">
+                    {% if search_query %}
+                        <a href="{% url 'resource_library:folder' folder.pk %}"
+                           class="button button-secondary rl-icon-btn"
+                           title="Clear search" aria-label="Clear search">
+                            {% icon name="cross" %}
+                        </a>
+                    {% else %}
+                        <button type="submit" class="button button-secondary rl-icon-btn" title="Search" aria-label="Search">
+                            {% icon name="search" %}
+                        </button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        {% if search_query %}
+            <p>Results for <strong>“{{ search_query }}”</strong> in {{ folder.name }} and subfolders:</p>
+        {% endif %}
+
+        {% if subfolders or page_obj.object_list %}
+
+            {% if layout == 'grid' %}
+                <div class="rl-grid">
+                    {% for sub in subfolders %}
+                        <a class="rl-card" href="{% url 'resource_library:folder' sub.pk %}">
+                            <span class="rl-card__thumb">{% icon name="folder-open-inverse" %}</span>
+                            <span class="rl-card__title">{{ sub.name }}</span>
+                            <span class="rl-card__meta">
+                                {% if sub.document_count or sub.folder_count %}
+                                    {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}
+                                {% else %}
+                                    Empty
+                                {% endif %}
+                            </span>
+                        </a>
+                    {% endfor %}
+                    {% for doc in page_obj %}
+                        <a class="rl-card" href="{% url 'wagtaildocs:edit' doc.pk %}" title="Edit this document">
+                            <span class="rl-card__thumb">
+                                {% icon name="doc-full" %}
+                                {% if doc.file_extension %}<span class="rl-card__ext">{{ doc.file_extension|upper }}</span>{% endif %}
+                            </span>
+                            <span class="rl-card__title">{{ doc.title }}</span>
+                            <span class="rl-card__meta">
+                                {{ doc.get_resource_type_display }}{% if search_query %} · {{ doc.collection.name }}{% endif %}
+                            </span>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <table class="listing">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            {% if search_query %}<th>Folder</th>{% endif %}
+                            <th>Language</th>
+                            <th>Revision</th>
+                            <th>Size</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sub in subfolders %}
+                            <tr>
+                                <td class="title">
+                                    <div class="title-wrapper">
+                                        {% icon name="folder-open-inverse" classname="initial" %}
+                                        <a href="{% url 'resource_library:folder' sub.pk %}">{{ sub.name }}</a>
+                                    </div>
+                                </td>
+                                <td>Folder · {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}</td>
+                                {% if search_query %}<td></td>{% endif %}
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        {% endfor %}
+                        {% for doc in page_obj %}
+                            <tr>
+                                <td class="title">
+                                    <div class="title-wrapper">
+                                        {% icon name="doc-full" classname="initial" %}
+                                        <a href="{% url 'wagtaildocs:edit' doc.pk %}" title="Edit this document">{{ doc.title }}</a>
+                                    </div>
+                                </td>
+                                <td>{{ doc.get_resource_type_display }}</td>
+                                {% if search_query %}<td>{{ doc.collection.name }}</td>{% endif %}
+                                <td>{{ doc.language|default:"—" }}</td>
+                                <td>{% if doc.revision_date %}{{ doc.revision_date|date:"j M Y" }}{% else %}—{% endif %}</td>
+                                <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
+                                <td>
+                                    <a href="{{ doc.url }}" title="Download">Download</a>
+                                    {% if can_delete_documents %}
+                                        · <a href="{% url 'wagtaildocs:delete' doc.pk %}" class="no" title="Delete this document">Delete</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+
+            {% if page_obj.paginator.num_pages > 1 %}
+                <div style="margin-top: 15px; display: flex; gap: 15px; align-items: center;">
+                    {% if page_obj.has_previous %}
+                        <a href="?p={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="button button-secondary button-small">Previous</a>
+                    {% endif %}
+                    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    {% if page_obj.has_next %}
+                        <a href="?p={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}" class="button button-secondary button-small">Next</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            {% if search_query %}
+                <p>No documents match your search.</p>
+            {% else %}
+                <p>This folder is empty.
+                    {% if can_upload %}<a href="{% url 'resource_library:upload' folder.pk %}">Upload documents</a>{% endif %}
+                    {% if can_upload and can_add_folder %} or {% endif %}
+                    {% if can_add_folder %}<a href="{% url 'resource_library:add_folder' folder.pk %}">create a folder</a>{% endif %}.
+                </p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}

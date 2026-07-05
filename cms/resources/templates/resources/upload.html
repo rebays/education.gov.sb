@@ -1,0 +1,30 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+
+{% block titletag %}Upload documents | Resource Library{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title="Upload documents" subtitle=folder.name icon="folder-open-inverse" %}
+
+    <div class="nice-padding" style="margin-top: 20px;">
+        <nav aria-label="Folder breadcrumb" style="margin-bottom: 15px;">
+            {% for crumb in breadcrumbs %}
+                <a href="{% url 'resource_library:folder' crumb.pk %}">{{ crumb.name }}</a>
+                {% if not forloop.last %}<span aria-hidden="true"> / </span>{% endif %}
+            {% endfor %}
+        </nav>
+
+        <p>You can select multiple files. Each document's title is taken from its filename, and the fields below are applied to every file — individual documents can be edited afterwards.</p>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                {% formattedfield field=field %}
+            {% endfor %}
+            <div style="margin-top: 20px;">
+                <button type="submit" class="button">Upload</button>
+                <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
