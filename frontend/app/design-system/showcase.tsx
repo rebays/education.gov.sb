@@ -1,6 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
 import TraditionalWatermark from "../components/traditional-watermark";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Icon, icons } from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { ResourceCard } from "@/components/ui/resource-card";
+import { SearchBar } from "@/components/ui/search-bar";
 
 /* ------------------------------------------------------------------ */
 /*  Config — the ONLY thing that differs between the two systems.      */
@@ -140,103 +148,6 @@ function SwatchCard({ s }: { s: Swatch }) {
   );
 }
 
-function Btn({
-  variant = "primary",
-  size = "md",
-  children,
-  disabled,
-}: {
-  variant?: "primary" | "secondary" | "ghost" | "accent";
-  size?: "sm" | "md" | "lg";
-  children: React.ReactNode;
-  disabled?: boolean;
-}) {
-  const base =
-    "inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
-  const sizes = {
-    sm: "h-9 px-4 text-sm",
-    md: "h-11 px-6 text-[15px]",
-    lg: "h-14 px-8 text-base",
-  }[size];
-  const variants = {
-    primary: "bg-primary text-primary-foreground hover:bg-primary-hover",
-    secondary: "border border-border bg-background text-foreground hover:border-primary hover:text-primary",
-    ghost: "text-primary hover:bg-surface-2",
-    accent: "bg-accent text-accent-foreground hover:brightness-95",
-  }[variant];
-  return (
-    <button type="button" disabled={disabled} className={`${base} ${sizes} ${variants}`}>
-      {children}
-    </button>
-  );
-}
-
-function Badge({
-  tone = "primary",
-  children,
-}: {
-  tone?: "primary" | "accent" | "success" | "warning" | "error" | "neutral";
-  children: React.ReactNode;
-}) {
-  const tones = {
-    primary: "bg-primary/10 text-primary",
-    accent: "bg-accent/20 text-[color:var(--accent-ink)]",
-    success: "bg-success/12 text-success",
-    warning: "bg-warning/12 text-warning",
-    error: "bg-error/12 text-error",
-    neutral: "bg-surface-2 text-muted",
-  }[tone];
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${tones}`}>
-      {children}
-    </span>
-  );
-}
-
-/* Icons — line only, 1.5px stroke, 24px grid, round caps */
-const Ic = {
-  search: "M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM20 20l-4-4",
-  document: "M7 3h7l4 4v14H7V3ZM14 3v4h4M9.5 13h5M9.5 16.5h5",
-  report: "M5 21V5a2 2 0 0 1 2-2h7l5 5v13H5ZM8 14v3M12 11v6M16 13v4",
-  video: "M4 6h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4V6ZM17 10l4-2v8l-4-2",
-  book: "M5 4h9a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4ZM16 6v14",
-  graduation: "M12 4 2 9l10 5 10-5-10-5ZM6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5",
-  download: "M12 4v11M8 11l4 4 4-4M5 20h14",
-  external: "M14 5h5v5M19 5l-8 8M18 14v5H5V6h5",
-  calendar: "M4 6h16v14H4V6ZM8 3v4M16 3v4M4 10h16",
-  mail: "M4 6h16v12H4V6ZM4 7l8 6 8-6",
-  phone: "M6 3l3 1 1 4-2 2a11 11 0 0 0 5 5l2-2 4 1 1 3a2 2 0 0 1-2 2A16 16 0 0 1 5 5a2 2 0 0 1 1-2Z",
-  filter: "M4 5h16l-6 7v6l-4 2v-8L4 5Z",
-  chevron: "M9 6l6 6-6 6",
-  check: "M5 12l4 4 10-10",
-  close: "M6 6l12 12M18 6 6 18",
-  menu: "M4 7h16M4 12h16M4 17h16",
-  arrow: "M5 12h14M13 6l6 6-6 6",
-  star: "M12 4l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8L12 4Z",
-  globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM3 12h18M12 3c2.5 2.4 3.5 5.6 3.5 9s-1 6.6-3.5 9c-2.5-2.4-3.5-5.6-3.5-9S9.5 5.4 12 3Z",
-  bookmark: "M6 3h12v18l-6-4-6 4V3Z",
-  share: "M7 12a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM22 6a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM22 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM7 12l10-5.5M7 12l10 5.5",
-  print: "M7 8V3h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8v-6Z",
-  info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 11v6M12 7.5v.5",
-};
-
-function Icon({ path, className = "" }: { path: string; className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden
-    >
-      <path d={path} />
-    </svg>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /*  The showcase — identical markup for every theme                   */
 /* ------------------------------------------------------------------ */
@@ -298,7 +209,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">{config.tagline}</p>
           <div className="mt-8 flex flex-wrap gap-2">
             {config.chips.map((c) => (
-              <Badge key={c} tone="neutral">{c}</Badge>
+              <Badge key={c} variant="neutral">{c}</Badge>
             ))}
           </div>
         </div>
@@ -434,192 +345,127 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         id="components"
         eyebrow="Library"
         title="Components"
-        intro="Buttons, inputs, badges, search, and the resource card that anchors the hub. Every control below is built from the same tokens — swap the theme and the whole library re-skins."
+        intro="Buttons, inputs, badges, search, and the resource card that anchors the hub. Every control below is a real component from components/ui, built from the same tokens — swap the theme and the whole library re-skins."
       >
         <SubHead>Buttons — variants</SubHead>
         <div className="flex flex-wrap items-center gap-4">
-          <Btn variant="primary">
-            <Icon path={Ic.download} className="h-4 w-4" />
+          <Button variant="primary">
+            <Icon name="download" className="h-4 w-4" />
             Download PDF
-          </Btn>
-          <Btn variant="secondary">Preview</Btn>
-          <Btn variant="ghost">
-            <Icon path={Ic.share} className="h-4 w-4" />
+          </Button>
+          <Button variant="secondary">Preview</Button>
+          <Button variant="ghost">
+            <Icon name="share" className="h-4 w-4" />
             Share
-          </Btn>
-          <Btn variant="accent">
+          </Button>
+          <Button variant="accent">
             Apply for a scholarship
-            <Icon path={Ic.external} className="h-4 w-4" />
-          </Btn>
+            <Icon name="external" className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="mt-10">
           <SubHead>Buttons — sizes & states</SubHead>
           <div className="flex flex-wrap items-center gap-4">
-            <Btn size="sm">Small</Btn>
-            <Btn size="md">Medium</Btn>
-            <Btn size="lg">Large</Btn>
-            <Btn disabled>Disabled</Btn>
+            <Button size="sm">Small</Button>
+            <Button size="md">Medium</Button>
+            <Button size="lg">Large</Button>
+            <Button disabled>Disabled</Button>
           </div>
         </div>
 
         <div className="mt-12">
           <SubHead>Text inputs</SubHead>
           <div className="grid max-w-3xl gap-6 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-foreground">Full name</span>
-              <input
-                className="h-11 w-full rounded-lg border border-border bg-background px-4 text-[15px] text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="e.g. Joshua Zobule"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-foreground">Email</span>
-              <input
-                className="h-11 w-full rounded-lg border border-border bg-background px-4 text-[15px] text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                placeholder="you@education.gov.sb"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-foreground">Select category</span>
-              <select className="h-11 w-full rounded-lg border border-border bg-background px-4 text-[15px] text-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30">
-                <option>Policies &amp; Documents</option>
-                <option>Reports &amp; Data</option>
-                <option>Videos &amp; Media</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="mb-1.5 block text-sm font-medium text-foreground">Phone</span>
-              <input
-                aria-invalid
-                className="h-11 w-full rounded-lg border border-error bg-background px-4 text-[15px] text-foreground focus:outline-none focus:ring-2 focus:ring-error/30"
-                placeholder="+677 …"
-              />
+            <div>
+              <Label htmlFor="ds-name" className="mb-1.5 text-foreground">Full name</Label>
+              <Input id="ds-name" placeholder="e.g. Joshua Zobule" />
+            </div>
+            <div>
+              <Label htmlFor="ds-email" className="mb-1.5 text-foreground">Email</Label>
+              <Input id="ds-email" type="email" placeholder="you@education.gov.sb" />
+            </div>
+            <div>
+              <Label htmlFor="ds-category" className="mb-1.5 text-foreground">Select category</Label>
+              <NativeSelect id="ds-category" className="w-full">
+                <NativeSelectOption>Policies &amp; Documents</NativeSelectOption>
+                <NativeSelectOption>Reports &amp; Data</NativeSelectOption>
+                <NativeSelectOption>Videos &amp; Media</NativeSelectOption>
+              </NativeSelect>
+            </div>
+            <div>
+              <Label htmlFor="ds-phone" className="mb-1.5 text-foreground">Phone</Label>
+              <Input id="ds-phone" aria-invalid placeholder="+677 …" />
               <span role="alert" className="mt-1.5 block text-[13px] text-error">
                 A valid Solomon Islands number is required.
               </span>
-            </label>
+            </div>
           </div>
         </div>
 
         <div className="mt-12">
           <SubHead>Badges & status</SubHead>
           <div className="flex flex-wrap items-center gap-3">
-            <Badge tone="success">
-              <Icon path={Ic.check} className="h-3.5 w-3.5" />
+            <Badge variant="success">
+              <Icon name="check" className="h-3.5 w-3.5" />
               Published
             </Badge>
-            <Badge tone="primary">Policy</Badge>
-            <Badge tone="accent">New · 2 days</Badge>
-            <Badge tone="warning">Pending review</Badge>
-            <Badge tone="error">Archived</Badge>
-            <Badge tone="neutral">PDF · 2.4 MB</Badge>
+            <Badge variant="primary">Policy</Badge>
+            <Badge variant="accent">New · 2 days</Badge>
+            <Badge variant="warning">Pending review</Badge>
+            <Badge variant="error">Archived</Badge>
+            <Badge variant="neutral">PDF · 2.4 MB</Badge>
           </div>
         </div>
 
         <div className="mt-12">
           <SubHead>Search bar</SubHead>
-          <form role="search" className="flex max-w-2xl flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <Icon path={Ic.search} className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted" />
-              <input
-                type="search"
-                aria-label="Search the resource hub"
-                placeholder="Search documents, reports, videos…"
-                className="h-12 w-full rounded-lg border border-border bg-background pl-12 pr-4 text-[15px] text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <Btn size="lg" variant="primary">Search</Btn>
-          </form>
+          <SearchBar className="max-w-2xl" inputProps={{ "aria-label": "Search the resource hub" }} />
         </div>
 
         <div className="mt-12">
           <SubHead>Resource cards</SubHead>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* document card */}
-            <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-xl">
-              <div className="flex items-center gap-3 border-b border-border bg-surface px-5 py-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Icon path={Ic.document} className="h-5 w-5" />
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge tone="primary">Policy</Badge>
-                  <Badge tone="success">
-                    <Icon path={Ic.check} className="h-3.5 w-3.5" />
-                    Published
-                  </Badge>
-                </div>
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <h4 className="font-serif text-xl leading-snug text-foreground group-hover:text-primary">
-                  National Education Action Plan 2022–2026
-                </h4>
-                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">
-                  The Ministry&apos;s medium-term strategy for access, quality, and management across the sector.
-                </p>
-                <p className="mt-4 font-mono text-[12px] text-muted">Published 12 Mar 2026 · PDF · 3.1 MB</p>
-                <div className="mt-4 flex items-center gap-2">
-                  <Btn size="sm" variant="primary">
-                    <Icon path={Ic.download} className="h-4 w-4" />
-                    Download
-                  </Btn>
-                  <Btn size="sm" variant="ghost">Preview</Btn>
-                </div>
-              </div>
-            </article>
+            <ResourceCard
+              variant="document"
+              icon="document"
+              badges={[
+                { label: "Policy", tone: "primary" },
+                { label: "Published", tone: "success", icon: "check" },
+              ]}
+              title="National Education Action Plan 2022–2026"
+              description="The Ministry's medium-term strategy for access, quality, and management across the sector."
+              meta="Published 12 Mar 2026 · PDF · 3.1 MB"
+              actions={[
+                { label: "Download", icon: "download", variant: "primary" },
+                { label: "Preview", variant: "ghost" },
+              ]}
+            />
 
-            {/* report card */}
-            <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-xl">
-              <div className="flex items-center gap-3 border-b border-border bg-surface px-5 py-4">
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/20 text-[color:var(--accent-ink)]">
-                  <Icon path={Ic.report} className="h-5 w-5" />
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge tone="accent">Report</Badge>
-                  <Badge tone="accent">New · 2 days</Badge>
-                </div>
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <h4 className="font-serif text-xl leading-snug text-foreground group-hover:text-primary">
-                  Performance Assessment Report 2025
-                </h4>
-                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">
-                  Enrolment, completion, and literacy indicators across all nine provinces and Honiara.
-                </p>
-                <p className="mt-4 font-mono text-[12px] text-muted">Published 28 Jun 2026 · PDF · 8.7 MB</p>
-                <div className="mt-4 flex items-center gap-2">
-                  <Btn size="sm" variant="primary">
-                    <Icon path={Ic.download} className="h-4 w-4" />
-                    Download
-                  </Btn>
-                  <Btn size="sm" variant="ghost">Preview</Btn>
-                </div>
-              </div>
-            </article>
+            <ResourceCard
+              variant="report"
+              icon="report"
+              badges={[
+                { label: "Report", tone: "accent" },
+                { label: "New · 2 days", tone: "accent" },
+              ]}
+              title="Performance Assessment Report 2025"
+              description="Enrolment, completion, and literacy indicators across all nine provinces and Honiara."
+              meta="Published 28 Jun 2026 · PDF · 8.7 MB"
+              actions={[
+                { label: "Download", icon: "download", variant: "primary" },
+                { label: "Preview", variant: "ghost" },
+              ]}
+            />
 
-            {/* video card */}
-            <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-xl">
-              <div className="relative flex aspect-[16/9] items-center justify-center" style={{ backgroundColor: config.deep }}>
-                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 backdrop-blur transition-transform group-hover:scale-110">
-                  <Icon path={Ic.video} className="h-6 w-6" />
-                </span>
-                <span className="absolute bottom-3 right-3 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[11px] text-white">
-                  12:04
-                </span>
-              </div>
-              <div className="flex flex-1 flex-col p-5">
-                <div className="mb-2 flex gap-1.5">
-                  <Badge tone="primary">Video</Badge>
-                </div>
-                <h4 className="font-serif text-xl leading-snug text-foreground group-hover:text-primary">
-                  Teacher training: the new primary curriculum
-                </h4>
-                <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">
-                  A recorded session for teachers rolling out the updated Standard 1–3 materials.
-                </p>
-                <p className="mt-4 font-mono text-[12px] text-muted">Recorded 05 May 2026 · 12 min</p>
-              </div>
-            </article>
+            <ResourceCard
+              variant="video"
+              duration="12:04"
+              badges={[{ label: "Video", tone: "primary" }]}
+              title="Teacher training: the new primary curriculum"
+              description="A recorded session for teachers rolling out the updated Standard 1–3 materials."
+              meta="Recorded 05 May 2026 · 12 min"
+            />
           </div>
         </div>
 
@@ -639,17 +485,14 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
                   <span className="hover:text-primary">News</span>
                   <span className="inline-flex items-center gap-1.5">
                     About
-                    <Icon path={Ic.chevron} className="h-3.5 w-3.5 rotate-90" />
+                    <Icon name="chevron" className="h-3.5 w-3.5 rotate-90" />
                   </span>
                 </nav>
               </div>
             </div>
             {/* transparent over hero */}
             <div className="overflow-hidden rounded-2xl">
-              <div
-                className="flex items-center justify-between gap-4 px-6 py-4 text-white"
-                style={{ backgroundColor: config.deep }}
-              >
+              <div className="flex items-center justify-between gap-4 bg-deep px-6 py-4 text-white">
                 <div className="flex items-center gap-3">
                   <Image src="/coa-si.webp" alt="" width={32} height={32} className="h-8 w-auto" />
                   <span className="text-sm font-semibold">iResource</span>
@@ -660,7 +503,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
                   <span className="hover:text-accent">News</span>
                   <span className="inline-flex items-center gap-1.5">
                     About
-                    <Icon path={Ic.chevron} className="h-3.5 w-3.5 rotate-90" />
+                    <Icon name="chevron" className="h-3.5 w-3.5 rotate-90" />
                   </span>
                 </nav>
               </div>
@@ -677,9 +520,9 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         intro="Line only · 1.5px stroke · 24px grid · round caps and joins. Icons stay unfilled and inherit currentColor so they read correctly on any surface, in either theme."
       >
         <div className="grid grid-cols-4 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-6 lg:grid-cols-8">
-          {Object.entries(Ic).map(([name, path]) => (
+          {Object.keys(icons).map((name) => (
             <div key={name} className="flex flex-col items-center gap-2 bg-background py-6 text-foreground">
-              <Icon path={path} className="h-6 w-6" />
+              <Icon name={name as keyof typeof icons} className="h-6 w-6" />
               <span className="font-mono text-[10px] text-muted">{name}</span>
             </div>
           ))}
@@ -714,7 +557,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           ].map((item) => (
             <li key={item} className="flex gap-3 rounded-xl border border-border bg-background p-4">
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success/12 text-success">
-                <Icon path={Ic.check} className="h-4 w-4" />
+                <Icon name="check" className="h-4 w-4" />
               </span>
               <span className="text-[15px] leading-relaxed text-muted">{item}</span>
             </li>
@@ -723,7 +566,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
       </Section>
 
       {/* ---------- Footer ---------- */}
-      <footer className="border-t border-border text-white" style={{ backgroundColor: config.deep }}>
+      <footer className="border-t border-border bg-deep text-white">
         <div className="mx-auto flex w-full max-w-8xl flex-col gap-2 px-6 py-10">
           <p className="font-serif text-lg">iResource · {config.name} Design System</p>
           <p className="text-sm text-white/60">
@@ -731,7 +574,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
             <Link href="/" className="inline-flex items-center gap-1.5 font-medium text-accent hover:text-white">
-              <Icon path={Ic.arrow} className="h-4 w-4 rotate-180" />
+              <Icon name="arrow" className="h-4 w-4 rotate-180" />
               Back to the hub
             </Link>
           </div>
