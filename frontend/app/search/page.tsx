@@ -26,11 +26,19 @@ function ResultChip({ children }: { children: React.ReactNode }) {
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; level?: string }>;
 }) {
-  const { q = "" } = await searchParams;
+  const { q = "", level = "" } = await searchParams;
   const query = q.trim();
-  const results = query ? searchContent(query) : [];
+  const levelCategory = getCategory(level);
+  const allResults = query ? searchContent(query) : [];
+  /* a level scope narrows resource results; publications and news are
+     sector-wide and not level-tagged, so a scoped search omits them */
+  const results = levelCategory
+    ? allResults.filter(
+        (r) => r.kind === "resource" && r.item.category === levelCategory.slug,
+      )
+    : allResults;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -65,6 +73,15 @@ export default async function SearchPage({
         {query && (
           <p className="mt-5 text-sm text-white/70" aria-live="polite">
             {results.length} {results.length === 1 ? "result" : "results"}
+            {levelCategory && (
+              <>
+                {" "}
+                in <span className="text-white">{levelCategory.title}</span> ·{" "}
+                <Link href={`/search?q=${encodeURIComponent(query)}`} className="underline hover:text-accent">
+                  search all levels
+                </Link>
+              </>
+            )}
           </p>
         )}
       </PageHeader>

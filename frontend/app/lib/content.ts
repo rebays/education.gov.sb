@@ -42,7 +42,7 @@ export const categories: ResourceCategory[] = [
     shortTitle: "Primary",
     description:
       "Years 1–6 across English, Mathematics, Health, Christian Life Education, Arts and Culture and Physical Education.",
-    image: "/soloclassroom.png",
+    image: "/svc-teachers.jpg",
     count: "74 resources",
   },
   {

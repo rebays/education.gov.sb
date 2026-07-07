@@ -59,7 +59,7 @@ export default function NewsBanner() {
                 className="z-0 text-white opacity-[0.06]"
               />
               <Image
-                src="/coa-si.webp"
+                src="/coat-of-arms.png"
                 alt=""
                 width={56}
                 height={56}

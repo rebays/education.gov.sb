@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import SystemShowcase, { type ShowcaseConfig } from "./showcase";
 
 export const metadata: Metadata = {
-  title: "Design System — Classic",
+  title: "Design System",
   description:
-    "The Classic design system for the iResource — Solomon Islands blue and gold, set in Baskervville and Source Sans 3.",
+    "The iResource design system — Solomon Islands blue and gold, set in Baskervville and Source Sans 3.",
 };
 
 const classic: ShowcaseConfig = {

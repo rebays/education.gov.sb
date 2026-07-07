@@ -40,11 +40,11 @@ export default function SiteHeader({
       <div className="mx-auto flex w-full max-w-8xl items-center justify-between gap-4 px-6 py-4">
         <Link href="/" className="flex items-center gap-3">
           <Image
-            src="/coa-si.webp"
+            src="/coat-of-arms.png"
             alt="Solomon Islands coat of arms"
-            width={40}
-            height={40}
-            className="h-10 w-auto shrink-0"
+            width={48}
+            height={48}
+            className="h-12 w-auto shrink-0"
           />
           <span className="flex flex-col leading-tight">
             <span
@@ -90,7 +90,7 @@ export default function SiteHeader({
                 type="search"
                 name="q"
                 placeholder="Search documents, reports, videos…"
-                className="h-10 w-full rounded-full border border-border bg-surface pl-10 pr-4 text-sm text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                className="h-10 w-full rounded-lg border border-border bg-surface pl-10 pr-4 text-sm text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
             </div>
           </form>

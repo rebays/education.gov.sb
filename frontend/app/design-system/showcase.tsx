@@ -1,8 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
+import PageHeader from "../components/page-header";
 import PublicationCover from "../components/publication-cover";
 import TraditionalWatermark from "../components/traditional-watermark";
 import { publications } from "../lib/content";
+import AccordionDemo from "./accordion-demo";
 import CategoryTabs from "./category-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ResourceCard } from "@/components/ui/resource-card";
-import { SearchBar } from "@/components/ui/search-bar";
 
 /* ------------------------------------------------------------------ */
 /*  Config — the ONLY thing that differs between the two systems.      */
@@ -83,12 +84,16 @@ const breakpoints = [
 ];
 
 const anchors = [
-  ["colors", "Colors"],
-  ["typography", "Typography"],
-  ["foundations", "Foundations"],
-  ["components", "Components"],
-  ["iconography", "Iconography"],
-  ["accessibility", "Accessibility"],
+  ["colors", "Colors", "Foundations"],
+  ["typography", "Typography", "Foundations"],
+  ["foundations", "Spacing & shape", "Foundations"],
+  ["controls", "Controls & forms", "Components"],
+  ["search", "Search & filters", "Components"],
+  ["navigation", "Navigation & structure", "Components"],
+  ["records", "Cards & records", "Components"],
+  ["editorial", "Editorial & news", "Components"],
+  ["iconography", "Iconography", "Reference"],
+  ["accessibility", "Accessibility", "Reference"],
 ] as const;
 
 /* ------------------------------------------------------------------ */
@@ -172,7 +177,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         <div className="mx-auto flex w-full max-w-8xl items-center justify-between gap-4 px-6 py-4">
           <Link href="/" className="flex items-center gap-3">
             <Image
-              src="/coa-si.webp"
+              src="/coat-of-arms.png"
               alt="Solomon Islands coat of arms"
               width={36}
               height={36}
@@ -181,31 +186,31 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             <span className="flex flex-col leading-tight">
               <span className="text-sm font-semibold text-foreground">iResource</span>
               <span className="text-[11px] uppercase tracking-[0.18em] text-muted">
-                Design System · {config.name}
+                Design System
               </span>
             </span>
           </Link>
         </div>
       </header>
 
-      {/* ---------- Intro ---------- */}
-      <section className="relative isolate overflow-hidden border-b border-border">
-        <TraditionalWatermark id={`wm-ds-${config.themeKey}`} corners={["top-right", "bottom-left"]} />
-        <div className="mx-auto w-full max-w-8xl px-6 py-20 sm:py-24">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-            iResource · {config.name} system
-          </p>
-          <h1 className="mt-4 max-w-3xl font-serif text-5xl leading-[1.05] tracking-tight text-foreground sm:text-6xl">
-            Design System
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">{config.tagline}</p>
-          <div className="mt-8 flex flex-wrap gap-2">
-            {config.chips.map((c) => (
-              <Badge key={c} variant="neutral">{c}</Badge>
-            ))}
-          </div>
+      {/* ---------- Intro — the shared page title band ---------- */}
+      <PageHeader
+        id={`wm-ds-${config.themeKey}`}
+        title="Design System"
+        lead={config.tagline}
+        crumbs={[{ label: "Design System" }]}
+      >
+        <div className="mt-8 flex flex-wrap gap-2">
+          {config.chips.map((c) => (
+            <span
+              key={c}
+              className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md"
+            >
+              {c}
+            </span>
+          ))}
         </div>
-      </section>
+      </PageHeader>
 
       {/* ---------- Category panels: rail + one category at a time ---------- */}
       <CategoryTabs tabs={anchors}>
@@ -332,14 +337,32 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             </table>
           </div>
         </div>
+
+        <div className="mt-12">
+          <SubHead>Traditional watermark</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The Pacific weave motif anchored to panel corners and faded toward
+            the centre — rendered at 5–6% opacity in the surface&apos;s text
+            colour, behind hero bands, section backgrounds, and image-less
+            fallbacks. Ambience, never content.
+          </p>
+          <div className="relative isolate h-56 overflow-hidden rounded-2xl border border-border bg-background">
+            <TraditionalWatermark
+              id="wm-ds-demo"
+              corners={["top-right", "bottom-left"]}
+              className="opacity-[0.12]"
+            />
+          </div>
+        </div>
       </Section>
 
       {/* ---------- Components ---------- */}
+      {/* ---------- Controls & forms ---------- */}
       <Section
-        id="components"
-        eyebrow="Library"
-        title="Components"
-        intro="Buttons, inputs, badges, search, and the resource card that anchors the hub. Every control below is a real component from components/ui, built from the same tokens — swap the theme and the whole library re-skins."
+        id="controls"
+        eyebrow="Components"
+        title="Controls &amp; forms"
+        intro="Buttons, inputs, badges, and confirmation actions — every control is built from the same role tokens, so the whole set re-skins together."
       >
         <SubHead>Buttons — variants</SubHead>
         <div className="flex flex-wrap items-center gap-4">
@@ -358,7 +381,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           </Button>
         </div>
 
-        <div className="mt-10">
+        <div className="mt-12">
           <SubHead>Buttons — sizes & states</SubHead>
           <div className="flex flex-wrap items-center gap-4">
             <Button size="sm">Small</Button>
@@ -382,9 +405,10 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             <div>
               <Label htmlFor="ds-category" className="mb-1.5 text-foreground">Select category</Label>
               <NativeSelect id="ds-category" className="w-full">
-                <NativeSelectOption>Policies &amp; Documents</NativeSelectOption>
-                <NativeSelectOption>Reports &amp; Data</NativeSelectOption>
-                <NativeSelectOption>Videos &amp; Media</NativeSelectOption>
+                <NativeSelectOption>Early Childhood</NativeSelectOption>
+                <NativeSelectOption>Primary</NativeSelectOption>
+                <NativeSelectOption>Junior Secondary</NativeSelectOption>
+                <NativeSelectOption>Senior Secondary</NativeSelectOption>
               </NativeSelect>
             </div>
             <div>
@@ -412,12 +436,215 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           </div>
         </div>
 
-        <div className="mt-12">
-          <SubHead>Search bar</SubHead>
-          <SearchBar className="max-w-2xl" inputProps={{ "aria-label": "Search the resource hub" }} />
+      </Section>
+
+      {/* ---------- Search & filters ---------- */}
+      <Section
+        id="search"
+        eyebrow="Components"
+        title="Search &amp; filters"
+        intro="The hub's two search treatments and the in-place filtering patterns that narrow listings without leaving the page."
+      >
+        <div>
+          <SubHead>Search — hero pill</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The flagship search on the landing hero: a full pill on white with
+            the curriculum-level scope inline behind a hairline divider, and a
+            gold icon-and-label submit. On mobile the submit drops the label
+            and collapses to a circular icon-only button. Dark surfaces only.
+          </p>
+          <div className="relative isolate overflow-hidden rounded-2xl bg-deep p-10">
+            <div className="mx-auto flex h-14 w-full max-w-2xl items-center rounded-full border border-white/20 bg-white/95 pl-6 pr-1.5">
+              <span className="min-w-0 flex-1 truncate text-base text-muted">
+                Search documents, reports, videos…
+              </span>
+              <span className="hidden h-8 items-center gap-1.5 border-l border-border pl-4 pr-2 text-sm font-medium text-muted sm:flex">
+                All levels
+                <Icon name="chevron" className="size-4 rotate-90" />
+              </span>
+              <span className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground sm:w-auto sm:gap-2 sm:px-5">
+                <Icon name="search" className="size-[18px]" />
+                <span className="hidden sm:inline">Search</span>
+              </span>
+            </div>
+          </div>
         </div>
 
         <div className="mt-12">
+          <SubHead>Search — header field</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The workaday variant in the inner-page header: a compact
+            rounded-lg field on the surface tone with the icon inset left. The
+            same treatment scopes listings in filter bars.
+          </p>
+          <div className="rounded-2xl border border-border bg-background p-6">
+            <div className="relative max-w-md">
+              <Icon
+                name="search"
+                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
+              />
+              <div className="h-10 w-full rounded-lg border border-border bg-surface pl-10 pr-4 text-sm leading-10 text-muted">
+                Search documents, reports, videos…
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Filter bar — chips & scoped search</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The in-place filter row used on the publications register and the
+            newsroom: type chips (active chip fills primary) with a scoped
+            search input at the right end that recomposes the listing live.
+          </p>
+          <div className="rounded-2xl border border-border bg-background p-6">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-border pb-4">
+              {["All", "Policies", "Reports", "Guidelines"].map((label, i) => (
+                <span
+                  key={label}
+                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
+                    i === 0
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface text-foreground"
+                  }`}
+                >
+                  {label}
+                </span>
+              ))}
+              <div className="relative ml-auto w-full sm:w-64">
+                <Icon
+                  name="search"
+                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
+                />
+                <div className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm leading-10 text-muted/60">
+                  Search publications
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Glass pills — suggested searches</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            Frosted-glass suggestion chips under the hero search bar: white at
+            10% with backdrop blur and a soft border, brightening on hover.
+            Dark surfaces only.
+          </p>
+          <div className="relative isolate overflow-hidden rounded-2xl bg-deep p-10">
+            <TraditionalWatermark
+              id="wm-ds-glass"
+              corners={["bottom-left"]}
+              className="text-white opacity-[0.05]"
+            />
+            <div className="flex flex-wrap items-center gap-2.5">
+              {["English", "Mathematics", "Science", "Social Studies"].map(
+                (s) => (
+                  <span
+                    key={s}
+                    className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md"
+                  >
+                    {s}
+                  </span>
+                ),
+              )}
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      {/* ---------- Navigation & structure ---------- */}
+      <Section
+        id="navigation"
+        eyebrow="Components"
+        title="Navigation &amp; structure"
+        intro="How pages open and move: the site header, the deep-blue title band, and structural interactions."
+      >
+        <div>
+          <SubHead>Navigation — header</SubHead>
+          <div className="space-y-4">
+            {/* solid — inner pages carry an inline search field */}
+            <div className="overflow-hidden rounded-2xl border border-border">
+              <div className="flex items-center justify-between gap-4 bg-background px-6 py-4">
+                <div className="flex items-center gap-3">
+                  <Image src="/coat-of-arms.png" alt="" width={32} height={32} className="h-8 w-auto" />
+                  <span className="text-sm font-semibold text-foreground">iResource</span>
+                </div>
+                <div className="relative hidden max-w-56 flex-1 lg:block">
+                  <Icon
+                    name="search"
+                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
+                  />
+                  <div className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm leading-9 text-muted">
+                    Search…
+                  </div>
+                </div>
+                <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
+                  <span className="text-primary">Resources</span>
+                  <span className="hover:text-primary">Publications</span>
+                  <span className="hover:text-primary">News</span>
+                  <span className="hover:text-primary">About</span>
+                </nav>
+              </div>
+            </div>
+            {/* transparent over hero */}
+            <div className="overflow-hidden rounded-2xl">
+              <div className="flex items-center justify-between gap-4 bg-deep px-6 py-4 text-white">
+                <div className="flex items-center gap-3">
+                  <Image src="/coat-of-arms.png" alt="" width={32} height={32} className="h-8 w-auto" />
+                  <span className="text-sm font-semibold">iResource</span>
+                </div>
+                <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 md:flex">
+                  <span className="text-white">Resources</span>
+                  <span className="hover:text-accent">Publications</span>
+                  <span className="hover:text-accent">News</span>
+                  <span className="hover:text-accent">About</span>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Page title band</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The deep-blue band that opens every inner page: breadcrumb trail,
+            serif title, optional lead, and slot content (e.g. a search form),
+            over corner watermarks. Rendered live from the shared component.
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-border">
+            <PageHeader
+              id="wm-ds-pageheader"
+              title="The Ministry's official record."
+              lead="National policies, sector performance reports, and guidelines — every entry carries a registry reference."
+              crumbs={[{ label: "Publications" }]}
+            />
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Accordion — services</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The selection accordion from the About page: hairline-ruled rows
+            with serif titles, a rotating chevron, and a smooth grid-rows
+            height animation. One panel is always open — it&apos;s a selector,
+            not a toggle — and on the About page the open row also drives a
+            companion image. Live component — try it.
+          </p>
+          <div className="max-w-2xl rounded-2xl border border-border bg-background px-6 pb-1 pt-2">
+            <AccordionDemo />
+          </div>
+        </div>
+      </Section>
+
+      {/* ---------- Cards & records ---------- */}
+      <Section
+        id="records"
+        eyebrow="Components"
+        title="Cards &amp; records"
+        intro="The library's content surfaces — cards, tiles, register rows, covers, and the data panels that describe official records."
+      >
+        <div>
           <SubHead>Resource cards</SubHead>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <ResourceCard
@@ -464,42 +691,30 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Navigation — header</SubHead>
-          <div className="space-y-4">
-            {/* solid */}
-            <div className="overflow-hidden rounded-2xl border border-border">
-              <div className="flex items-center justify-between gap-4 bg-background px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <Image src="/coa-si.webp" alt="" width={32} height={32} className="h-8 w-auto" />
-                  <span className="text-sm font-semibold text-foreground">iResource</span>
-                </div>
-                <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
-                  <span className="text-primary">Resources</span>
-                  <span className="hover:text-primary">Publications</span>
-                  <span className="hover:text-primary">News</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    About
-                    <Icon name="chevron" className="h-3.5 w-3.5 rotate-90" />
-                  </span>
-                </nav>
-              </div>
-            </div>
-            {/* transparent over hero */}
-            <div className="overflow-hidden rounded-2xl">
-              <div className="flex items-center justify-between gap-4 bg-deep px-6 py-4 text-white">
-                <div className="flex items-center gap-3">
-                  <Image src="/coa-si.webp" alt="" width={32} height={32} className="h-8 w-auto" />
-                  <span className="text-sm font-semibold">iResource</span>
-                </div>
-                <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 md:flex">
-                  <span className="text-white">Resources</span>
-                  <span className="hover:text-accent">Publications</span>
-                  <span className="hover:text-accent">News</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    About
-                    <Icon name="chevron" className="h-3.5 w-3.5 rotate-90" />
-                  </span>
-                </nav>
+          <SubHead>Category tile — curriculum levels</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The landing page&apos;s level tiles: portrait photo under a
+            brand-blue scrim that runs solid through the title zone and clears
+            by the tile&apos;s midpoint; serif title bottom-left, with the
+            Browse action revealed on hover (always visible on touch).
+          </p>
+          <div className="max-w-60">
+            <div className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-border shadow-sm">
+              <Image
+                src="/svc-teachers.jpg"
+                alt=""
+                fill
+                sizes="240px"
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,var(--deep)_10%,rgba(13,31,60,0.92)_17%,rgba(13,31,60,0.78)_24%,rgba(13,31,60,0.6)_31%,rgba(13,31,60,0.4)_38%,rgba(13,31,60,0.2)_44%,rgba(13,31,60,0)_50%)]" />
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <h4 className="font-serif text-2xl leading-snug text-white">
+                  Primary
+                </h4>
+                <span className="mt-1.5 inline-flex items-center gap-2 text-sm font-medium text-white/90 underline decoration-white/40 underline-offset-4">
+                  Browse <span aria-hidden>→</span>
+                </span>
               </div>
             </div>
           </div>
@@ -563,14 +778,86 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>News briefs — front page</SubHead>
+          <SubHead>Fact sheet — record sidebar</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
-            The text-only briefs column from the newsroom front page: mono
-            date, category tag, serif headline, one-line excerpt. The front
-            page composes as a lead story, one band of five (two story cards
-            plus a three-item briefs column on the right), then everything
-            older as a plain &ldquo;More news&rdquo; headline list that loads
-            progressively (one auto-load, then a button).
+            The spec table on resource and publication records: uppercase
+            labels left, mono values right, hairline-ruled rows. Mono is for
+            data — never decoration.
+          </p>
+          <div className="max-w-sm rounded-2xl border border-border bg-surface p-6">
+            <dl className="space-y-3.5">
+              {(
+                [
+                  ["Reference", "MEHRD/2026/05"],
+                  ["Type", "Policy"],
+                  ["Published", "12 May 2026"],
+                  ["Format", "PDF · 3.2 MB"],
+                  ["Source office", "Strategic Support Unit"],
+                ] as [string, string][]
+              ).map(([label, value]) => (
+                <div
+                  key={label}
+                  className="flex items-baseline justify-between gap-4 border-b border-border/70 pb-3 last:border-0 last:pb-0"
+                >
+                  <dt className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">
+                    {label}
+                  </dt>
+                  <dd className="text-right font-mono text-sm text-foreground">
+                    {value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>At a glance — key points</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            Check-marked key points shown above a publication&apos;s body —
+            the skimmable summary before the full text.
+          </p>
+          <div className="max-w-2xl rounded-2xl border border-border bg-surface p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
+              At a glance
+            </p>
+            <ul className="mt-4 space-y-2.5">
+              {[
+                "Three goals: equitable access, quality teaching and learning, and stronger system management.",
+                "Developed through consultations across all nine provinces.",
+                "Annual work plans, with a mid-term review scheduled for 2028.",
+              ].map((point) => (
+                <li
+                  key={point}
+                  className="flex gap-3 text-sm leading-6 text-foreground"
+                >
+                  <Icon
+                    name="check"
+                    className="mt-1 size-4 shrink-0 text-primary"
+                  />
+                  {point}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Section>
+
+      {/* ---------- Editorial & news ---------- */}
+      <Section
+        id="editorial"
+        eyebrow="Components"
+        title="Editorial &amp; news"
+        intro="Newsroom patterns: text-only briefs and the voices set apart inside articles."
+      >
+        <div>
+          <SubHead>News briefs</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The text-only briefs column: mono date, category tag, serif
+            headline, one-line excerpt. Used behind a hairline column rule on
+            the news index (as part of its lead band) and on the landing
+            page&apos;s newsroom section — it carries minor stories with no
+            image dependence.
           </p>
           <div className="max-w-md rounded-2xl border border-border bg-background px-6 py-1">
             <ul className="divide-y divide-border">
@@ -600,6 +887,99 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
                   education authority.
                 </p>
               </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Story card</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The image-led news card: 16:10 photo, colour-coded category badge
+            with mono date, serif headline, short excerpt. Stories without a
+            photo fall back to the designed deep panel — watermark and coat of
+            arms — so text-only announcements never break a card slot.
+          </p>
+          <div className="grid max-w-3xl gap-8 sm:grid-cols-2">
+            <article>
+              <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border">
+                <Image
+                  src="/svc-teachers.jpg"
+                  alt=""
+                  fill
+                  sizes="360px"
+                  className="object-cover"
+                />
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Badge variant="success">Press release</Badge>
+                <span className="font-mono text-xs text-muted">15 Apr 2026</span>
+              </div>
+              <h4 className="mt-3 font-serif text-xl leading-snug text-foreground">
+                Over 300 teachers graduate from in-service programme
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                The latest cohort completed school-based professional
+                development modules.
+              </p>
+            </article>
+            <article>
+              <div className="relative isolate flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border border-border bg-deep">
+                <TraditionalWatermark
+                  id="wm-ds-storycard"
+                  corners={["top-right", "bottom-left"]}
+                  className="z-0 text-white opacity-[0.06]"
+                />
+                <Image
+                  src="/coat-of-arms.png"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="h-14 w-auto opacity-80"
+                />
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <Badge variant="primary">Announcement</Badge>
+                <span className="font-mono text-xs text-muted">28 Apr 2026</span>
+              </div>
+              <h4 className="mt-3 font-serif text-xl leading-snug text-foreground">
+                SISE 2025 results released to schools
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Candidates should contact their school principal for results.
+              </p>
+            </article>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Headline list</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The &ldquo;More news&rdquo; rows below the news index&apos;s lead
+            band: serif headline left, mono date and category right-aligned,
+            hairline rules between rows. Absorbs any volume of older stories
+            with zero image demand; loads progressively (one auto-load, then
+            a button).
+          </p>
+          <div className="max-w-3xl rounded-2xl border border-border bg-background px-6">
+            <ul className="divide-y divide-border">
+              {(
+                [
+                  ["Education radio programme returns for term two", "1 Apr 2026", "Announcement"],
+                  ["Five ICT labs open in Western Province schools", "28 Mar 2026", "Press release"],
+                  ["School registration renewals due 30 April", "20 Mar 2026", "Announcement"],
+                ] as [string, string, string][]
+              ).map(([title, date, category]) => (
+                <li key={title}>
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5">
+                    <h4 className="min-w-0 font-serif text-lg leading-snug text-foreground">
+                      {title}
+                    </h4>
+                    <span className="shrink-0 text-xs text-muted">
+                      <span className="font-mono">{date}</span> · {category}
+                    </span>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -690,7 +1070,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
       {/* ---------- Footer ---------- */}
       <footer className="border-t border-border bg-deep text-white">
         <div className="mx-auto flex w-full max-w-8xl flex-col gap-2 px-6 py-10">
-          <p className="font-serif text-lg">iResource · {config.name} Design System</p>
+          <p className="font-serif text-lg">iResource Design System</p>
           <p className="text-sm text-white/60">
             Ministry of Education &amp; Human Resources Development, Solomon Islands Government.
           </p>
