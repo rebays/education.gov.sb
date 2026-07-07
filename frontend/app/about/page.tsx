@@ -96,7 +96,7 @@ export default function AboutPage() {
                   of education in the Pacific.
                 </p>
               </div>
-              <div className="relative aspect-[16/11] overflow-hidden rounded-2xl border border-border shadow-sm">
+              <div className="relative aspect-16/11 overflow-hidden rounded-2xl border border-border shadow-sm">
                 <Image
                   src="/soloclassroom.png"
                   alt="A classroom in the Solomon Islands"
@@ -104,7 +104,7 @@ export default function AboutPage() {
                   sizes="(min-width: 1024px) 50vw, 100vw"
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/45 via-black/5 to-transparent" />
               </div>
             </div>
 
