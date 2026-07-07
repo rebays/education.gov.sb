@@ -446,8 +446,9 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         <div>
           <SubHead>Search — hero pill</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
-            The flagship search on the landing hero: a full pill on white with
-            the curriculum-level scope inline behind a hairline divider, and a
+            The flagship search, shared by the landing hero, the search
+            results band, and the 404 page: a full pill on white with the
+            curriculum-level scope inline behind a hairline divider, and a
             gold icon-and-label submit. On mobile the submit drops the label
             and collapses to a circular icon-only button. Dark surfaces only.
           </p>
@@ -630,10 +631,10 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <SubHead>Page not found (404)</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The 404 page reuses the title band as a recovery surface: an
-            apologetic serif title, a search form, glass quick-link pills to
-            the four main sections, and a quiet mono error code. Below the
-            band, the page offers the &ldquo;browse instead&rdquo; category
-            cards shared with empty search results.
+            apologetic serif title, the hero search pill, glass quick-link
+            pills to the four main sections, and a quiet mono error code.
+            Below the band, the page offers the &ldquo;browse instead&rdquo;
+            category cards shared with empty search results.
           </p>
           <div className="overflow-hidden rounded-2xl border border-border">
             <PageHeader
@@ -642,12 +643,17 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
               lead="The link may be outdated, or the page may have been moved. Try a search, or start again from one of the sections below."
               crumbs={[{ label: "Page not found" }]}
             >
-              <div className="mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row">
-                <div className="h-12 flex-1 rounded-lg border border-white/20 bg-white/95 px-4 text-base leading-[3rem] text-muted">
+              <div className="mt-8 flex h-14 w-full max-w-2xl items-center rounded-full border border-white/20 bg-white/95 pl-6 pr-1.5">
+                <span className="min-w-0 flex-1 truncate text-base text-muted">
                   Search documents, reports, videos…
-                </div>
-                <span className="flex h-12 items-center rounded-lg bg-accent px-6 text-sm font-semibold text-accent-foreground">
-                  Search
+                </span>
+                <span className="hidden h-8 items-center gap-1.5 border-l border-border pl-4 pr-2 text-sm font-medium text-muted sm:flex">
+                  All levels
+                  <Icon name="chevron" className="size-4 rotate-90" />
+                </span>
+                <span className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground sm:w-auto sm:gap-2 sm:px-5">
+                  <Icon name="search" className="size-[18px]" />
+                  <span className="hidden sm:inline">Search</span>
                 </span>
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-2.5">

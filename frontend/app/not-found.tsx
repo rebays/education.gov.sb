@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HeroSearch from "./components/hero-search";
 import PageHeader from "./components/page-header";
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
@@ -29,25 +30,7 @@ export default function NotFound() {
         lead="The link may be outdated, or the page may have been moved. Try a search, or start again from one of the sections below."
         crumbs={[{ label: "Page not found" }]}
       >
-        <form
-          action="/search"
-          role="search"
-          className="mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row"
-        >
-          <input
-            type="search"
-            name="q"
-            placeholder="Search documents, reports, videos…"
-            aria-label="Search the resource hub"
-            className="h-12 flex-1 rounded-lg border border-white/20 bg-white/95 px-4 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <button
-            type="submit"
-            className="h-12 rounded-lg bg-accent px-6 text-sm font-semibold text-accent-foreground transition-transform hover:scale-[1.02]"
-          >
-            Search
-          </button>
-        </form>
+        <HeroSearch className="mt-8 max-w-2xl" />
 
         <div className="mt-6 flex flex-wrap items-center gap-2.5">
           {quickLinks.map((link) => (
