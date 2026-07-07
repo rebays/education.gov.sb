@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
       {/* ---------- HERO (full screen) ---------- */}
-      <section className="relative isolate flex min-h-[100svh] flex-col text-white">
+      <section className="relative isolate flex min-h-svh flex-col text-white">
         <Image
           src="/soloclassroom.png"
           alt=""
@@ -82,7 +82,7 @@ export default function Home() {
                 href={`/resources/${c.slug}`}
                 className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition-all hover:-translate-y-1.5 hover:border-primary hover:shadow-xl"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-4/3 overflow-hidden">
                   <Image
                     src={c.image}
                     alt=""
