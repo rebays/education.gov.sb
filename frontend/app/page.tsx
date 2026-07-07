@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import Publications from "./components/publications";
-import Services from "./components/services";
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
 import TraditionalWatermark from "./components/traditional-watermark";
@@ -11,7 +10,7 @@ export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
       {/* ---------- HERO (full screen) ---------- */}
-      <section className="relative isolate flex min-h-[100svh] flex-col text-white">
+      <section className="relative isolate flex min-h-svh flex-col text-white">
         <Image
           src="/soloclassroom.png"
           alt=""
@@ -83,7 +82,7 @@ export default function Home() {
                 href={`/resources/${c.slug}`}
                 className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition-all hover:-translate-y-1.5 hover:border-primary hover:shadow-xl"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-4/3 overflow-hidden">
                   <Image
                     src={c.image}
                     alt=""
@@ -160,12 +159,6 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </section>
-
-      {/* ---------- SERVICES (full screen) ---------- */}
-      <section className="relative isolate flex min-h-screen items-center overflow-hidden bg-background">
-        <TraditionalWatermark id="wm-services" />
-        <Services />
       </section>
 
       {/* ---------- FOOTER ---------- */}

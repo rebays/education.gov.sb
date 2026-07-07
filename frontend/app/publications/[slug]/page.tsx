@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHeader from "../../components/page-header";
+import PublicationCover from "../../components/publication-cover";
 import SiteFooter from "../../components/site-footer";
 import SiteHeader from "../../components/site-header";
+import { buttonVariants } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 import {
   getPublication,
+  publicationRef,
   publications,
-  resourceHref,
-  getResource,
 } from "../../lib/content";
 
 export function generateStaticParams() {
@@ -35,12 +38,16 @@ export default async function PublicationPage({
   const pub = getPublication(slug);
   if (!pub) notFound();
 
-  const libraryItem = pub.resource
-    ? getResource(pub.resource.category, pub.resource.slug)
-    : undefined;
-  const related = publications
-    .filter((p) => p.slug !== pub.slug)
-    .slice(0, 3);
+  const ref = publicationRef(pub);
+
+  /* next chronological entry in the register */
+  const ordered = [...publications].sort(
+    (a, b) => Date.parse(b.date) - Date.parse(a.date),
+  );
+  const idx = ordered.findIndex((p) => p.slug === pub.slug);
+  const newer = idx > 0 ? ordered[idx - 1] : undefined;
+
+  const related = publications.filter((p) => p.slug !== pub.slug).slice(0, 3);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -50,61 +57,112 @@ export default async function PublicationPage({
         id={`wm-pub-${pub.slug}`}
         eyebrow={pub.type}
         title={pub.title}
-        crumbs={[
-          { label: "Publications", href: "/publications" },
-          { label: pub.title },
-        ]}
+        crumbs={[{ label: "Publications", href: "/publications" }, { label: ref }]}
       >
-        <p className="mt-5 text-sm text-white/70">
-          {pub.date} · {pub.office}
+        <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
+          <span className="font-mono">{ref}</span>
+          <span aria-hidden>·</span>
+          <span>{pub.date}</span>
+          <span aria-hidden>·</span>
+          <span>{pub.office}</span>
         </p>
       </PageHeader>
 
       <main className="flex-1 bg-background">
         <div className="mx-auto grid w-full max-w-8xl gap-10 px-6 py-14 lg:grid-cols-[1fr_320px]">
-          {/* summary body */}
+          {/* record body */}
           <article>
             <p className="max-w-2xl border-l-2 border-accent pl-5 font-serif text-xl leading-8 text-foreground">
               {pub.summary}
             </p>
-            <div className="mt-8 max-w-2xl space-y-6">
-              {pub.body.map((para, i) => (
-                <p key={i} className="text-base leading-8 text-muted">
-                  {para}
+
+            {/* at a glance */}
+            {pub.keyPoints && pub.keyPoints.length > 0 && (
+              <div className="mt-8 max-w-2xl rounded-2xl border border-border bg-surface p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
+                  At a glance
                 </p>
-              ))}
+                <ul className="mt-4 space-y-2.5">
+                  {pub.keyPoints.map((point) => (
+                    <li
+                      key={point}
+                      className="flex gap-3 text-sm leading-6 text-foreground"
+                    >
+                      <Icon
+                        name="check"
+                        className="mt-1 size-4 shrink-0 text-primary"
+                      />
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-8 max-w-2xl space-y-6">
+              {pub.body.map((block, i) =>
+                block.startsWith("## ") ? (
+                  <h2
+                    key={i}
+                    className="pt-4 font-serif text-2xl tracking-tight text-foreground"
+                  >
+                    {block.slice(3)}
+                  </h2>
+                ) : (
+                  <p key={i} className="text-base leading-8 text-foreground/90">
+                    {block}
+                  </p>
+                ),
+              )}
             </div>
+
+            {/* next chronological entry */}
+            {newer && (
+              <nav
+                aria-label="Register navigation"
+                className="mt-12 max-w-2xl border-t border-border pt-8"
+              >
+                <Link
+                  href={`/publications/${newer.slug}`}
+                  className="group block rounded-2xl border border-border p-5 transition-colors hover:border-primary"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Newer entry →
+                  </p>
+                  <p className="mt-2 font-serif text-base leading-snug text-foreground group-hover:text-primary">
+                    {newer.title}
+                  </p>
+                  <p className="mt-2 font-mono text-xs text-muted">
+                    {publicationRef(newer)}
+                  </p>
+                </Link>
+              </nav>
+            )}
           </article>
 
-          {/* download sidebar */}
+          {/* record sidebar */}
           <aside className="lg:pt-1">
             <div className="rounded-2xl border border-border bg-surface p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted">
-                Get the document
-              </p>
+              <PublicationCover publication={pub} className="w-full" />
+
               <a
                 href="#"
-                aria-disabled
-                className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
+                title="Download will be available once the CMS is connected"
+                className={cn(
+                  buttonVariants({ variant: "primary" }),
+                  "mt-6 w-full text-sm",
+                )}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-4 w-4"
-                  aria-hidden
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 3v12M7 11l5 4 5-4M5 21h14" />
-                </svg>
+                <Icon name="download" className="size-4" />
                 Download {pub.format}
-                <span className="font-normal opacity-75">· {pub.size}</span>
+                <span className="font-mono text-xs font-normal opacity-75">
+                  {pub.size}
+                </span>
               </a>
               <dl className="mt-6 space-y-3.5">
                 {(
                   [
+                    ["Reference", ref],
                     ["Type", pub.type],
                     ["Published", pub.date],
                     ["Format", `${pub.format} · ${pub.size}`],
@@ -124,15 +182,6 @@ export default async function PublicationPage({
                   </div>
                 ))}
               </dl>
-              {libraryItem && (
-                <Link
-                  href={resourceHref(libraryItem)}
-                  className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
-                >
-                  View in the resource library
-                  <span aria-hidden>→</span>
-                </Link>
-              )}
             </div>
           </aside>
         </div>
@@ -160,7 +209,8 @@ export default async function PublicationPage({
                     {p.title}
                   </h3>
                   <p className="mt-4 text-xs text-muted">
-                    {p.date} · {p.format} · {p.size}
+                    <span className="font-mono">{publicationRef(p)}</span> ·{" "}
+                    {p.date} · {p.format}
                   </p>
                 </Link>
               ))}

@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageHeader from "../components/page-header";
+import PublicationCover from "../components/publication-cover";
 import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
-import { publications, type PublicationType } from "../lib/content";
+import { buttonVariants } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
+import { publications, publicationRef } from "../lib/content";
+import PublicationsRegister from "./register";
 
 export const metadata: Metadata = {
   title: "Policies & publications",
@@ -11,14 +16,8 @@ export const metadata: Metadata = {
     "Official policies, sector reports, and guidelines published by the Ministry of Education and Human Resources Development.",
 };
 
-const typeChip: Record<PublicationType, string> = {
-  Policy: "bg-primary/10 text-primary",
-  Report: "bg-emerald-600/10 text-emerald-700",
-  Guideline: "bg-amber-500/15 text-amber-800",
-};
-
 export default function PublicationsIndexPage() {
-  const [featured, ...rest] = publications;
+  const featured = publications[0];
 
   return (
     <div className="flex flex-1 flex-col">
@@ -28,28 +27,19 @@ export default function PublicationsIndexPage() {
         id="wm-publications"
         eyebrow="Policies & publications"
         title="The Ministry's official record."
-        lead="National policies, sector performance reports, and guidelines — each with a summary page and the full document available to download."
+        lead="National policies, sector performance reports, and guidelines — every entry carries a registry reference, a summary page, and the full document to download."
         crumbs={[{ label: "Publications" }]}
       />
 
       <main className="flex-1 bg-background">
-        <div className="mx-auto w-full max-w-8xl px-6 py-16">
-          {/* featured */}
-          <article className="grid gap-8 rounded-3xl border border-border bg-surface p-6 shadow-sm sm:p-8 lg:grid-cols-[1fr_280px] lg:items-center">
+        {/* ---------- Latest release ---------- */}
+        <section className="mx-auto w-full max-w-8xl px-6 pt-16">
+          <article className="grid gap-10 rounded-3xl border border-border bg-surface p-8 sm:p-10 lg:grid-cols-[1fr_280px] lg:items-center">
             <div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
-                <span
-                  className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeChip[featured.type]}`}
-                >
-                  {featured.type}
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-wide text-accent-ink">
-                  Latest
-                </span>
-                <span aria-hidden>·</span>
-                <span>{featured.date}</span>
-              </div>
-              <h2 className="mt-4 font-serif text-3xl leading-snug text-foreground sm:text-4xl">
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+                Latest release
+              </p>
+              <h2 className="mt-4 max-w-3xl font-serif text-3xl leading-snug tracking-tight text-foreground sm:text-4xl lg:text-5xl">
                 <Link
                   href={`/publications/${featured.slug}`}
                   className="hover:text-primary"
@@ -57,77 +47,81 @@ export default function PublicationsIndexPage() {
                   {featured.title}
                 </Link>
               </h2>
-              <p className="mt-3 max-w-2xl text-base leading-7 text-muted">
+              <p className="mt-4 max-w-2xl text-base leading-7 text-muted">
                 {featured.summary}
               </p>
-              <Link
-                href={`/publications/${featured.slug}`}
-                className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
-              >
-                Read the summary
-                <span aria-hidden>→</span>
-              </Link>
-            </div>
-            <div className="hidden lg:block">
-              <div className="mx-auto flex aspect-[3/4] w-full max-w-[220px] flex-col justify-between rounded-xl border border-border bg-background p-6 shadow-md">
-                <span className="h-8 w-8 rounded-full bg-primary/15" />
-                <div>
-                  <p className="font-serif text-sm leading-snug text-foreground">
-                    {featured.title}
-                  </p>
-                  <p className="mt-2 font-mono text-[11px] text-muted">
-                    {featured.format} · {featured.size}
-                  </p>
-                </div>
+              <p className="mt-4 font-mono text-xs text-muted">
+                {publicationRef(featured)} · {featured.date} · {featured.office}
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href={`/publications/${featured.slug}`}
+                  className={cn(buttonVariants({ variant: "primary" }), "text-sm")}
+                >
+                  Read the summary
+                  <span aria-hidden>→</span>
+                </Link>
+                <a
+                  href="#"
+                  title="Download will be available once the CMS is connected"
+                  className={cn(
+                    buttonVariants({ variant: "secondary" }),
+                    "text-sm",
+                  )}
+                >
+                  <Icon name="download" className="size-4" />
+                  Download {featured.format}
+                  <span className="font-mono text-xs font-normal text-muted">
+                    {featured.size}
+                  </span>
+                </a>
               </div>
             </div>
-          </article>
 
-          {/* full list */}
-          <div className="mt-12">
-            <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-4">
-              <h2 className="font-serif text-2xl text-foreground">
-                All publications
+            {/* designed document cover */}
+            <div className="hidden justify-self-center lg:block">
+              <PublicationCover publication={featured} className="w-[260px]" />
+            </div>
+          </article>
+        </section>
+
+        {/* ---------- Register ---------- */}
+        <section className="mx-auto w-full max-w-8xl px-6 py-16">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
+                The register
+              </p>
+              <h2 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-foreground sm:text-4xl">
+                All publications, by year.
               </h2>
-              <p className="text-sm text-muted">
-                {publications.length} publications
+            </div>
+          </div>
+          <PublicationsRegister />
+        </section>
+
+        {/* ---------- Missing-publication CTA ---------- */}
+        <section className="bg-surface">
+          <div className="mx-auto flex w-full max-w-8xl flex-wrap items-center justify-between gap-6 px-6 py-12">
+            <div>
+              <h2 className="font-serif text-2xl text-foreground">
+                Looking for a publication that isn&apos;t listed?
+              </h2>
+              <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+                Older publications are still being digitised. The Ministry can
+                help you locate printed or archived documents that haven&apos;t
+                reached the register yet.
               </p>
             </div>
-            <ul className="mt-2 divide-y divide-border">
-              {rest.map((p) => (
-                <li key={p.slug}>
-                  <Link
-                    href={`/publications/${p.slug}`}
-                    className="group grid gap-2 py-6 transition-colors sm:grid-cols-[110px_1fr_auto] sm:items-baseline sm:gap-6"
-                  >
-                    <span
-                      className={`justify-self-start rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeChip[p.type]}`}
-                    >
-                      {p.type}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block font-serif text-xl leading-snug text-foreground group-hover:text-primary">
-                        {p.title}
-                      </span>
-                      <span className="mt-1.5 block text-sm leading-6 text-muted">
-                        {p.summary}
-                      </span>
-                      <span className="mt-2 block text-xs text-muted">
-                        {p.date} · {p.format} · {p.size} · {p.office}
-                      </span>
-                    </span>
-                    <span
-                      className="hidden text-muted transition-transform group-hover:translate-x-1 group-hover:text-primary sm:block"
-                      aria-hidden
-                    >
-                      →
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <Link
+              href="/about/contact"
+              className={cn(buttonVariants({ variant: "primary" }), "text-sm")}
+            >
+              Contact the Ministry
+              <span aria-hidden>→</span>
+            </Link>
           </div>
-        </div>
+        </section>
       </main>
 
       <SiteFooter />

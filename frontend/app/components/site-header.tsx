@@ -8,20 +8,13 @@ import Link from "next/link";
  * hero behind the header (the landing page).
  * `variant="solid"` — opaque background with a hairline border; sticky, for
  * all inner pages.
- *
- * The About submenu is CSS-only (hover / focus-within) so the header can stay
- * a server component.
  */
 
 const primaryNav = [
   { label: "Resources", href: "/resources" },
   { label: "Publications", href: "/publications" },
   { label: "News", href: "/news" },
-];
-
-const aboutNav = [
-  { label: "Services", href: "/about/services" },
-  { label: "Contact", href: "/about/contact" },
+  { label: "About", href: "/about" },
 ];
 
 export default function SiteHeader({
@@ -74,43 +67,6 @@ export default function SiteHeader({
               {item.label}
             </Link>
           ))}
-
-          {/* About — CSS-only dropdown */}
-          <div className="group relative">
-            <button
-              type="button"
-              aria-haspopup="true"
-              className={`flex items-center gap-1.5 ${linkCls} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
-            >
-              About
-              <svg
-                viewBox="0 0 24 24"
-                className="h-3.5 w-3.5 transition-transform group-hover:rotate-180 group-focus-within:rotate-180"
-                aria-hidden
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </button>
-            <div className="invisible absolute right-0 top-full pt-3 opacity-0 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-              <div className="w-44 rounded-xl border border-border bg-background p-1.5 shadow-lg shadow-black/10">
-                {aboutNav.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="block rounded-lg px-3.5 py-2 text-sm font-medium text-foreground hover:bg-surface hover:text-primary"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-
         </nav>
       </div>
     </header>

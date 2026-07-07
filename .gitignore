@@ -1,2 +1,8 @@
 venv/
 .claude
+__pycache__/
+*.py[cod]
+.env
+db.sqlite3
+cms/iresource/settings/local.py
+cms/media/

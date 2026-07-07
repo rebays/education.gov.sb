@@ -13,8 +13,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 from pathlib import Path
 
+import dj_database_url
+from dotenv import load_dotenv
+
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 BASE_DIR = PROJECT_DIR.parent
+
+load_dotenv(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -27,6 +32,12 @@ INSTALLED_APPS = [
     "home",
     "search",
     "resources",
+    "menu",
+    "news",
+    "publication",
+    "grapple",
+    "graphene_django",
+    "wagtail_headless_preview",
     "wagtail.contrib.forms",
     "wagtail.contrib.redirects",
     "wagtail.embeds",
@@ -46,6 +57,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "django.contrib.postgres",
     "django.contrib.staticfiles",
 ]
 
@@ -86,11 +98,13 @@ WSGI_APPLICATION = "iresource.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Set DATABASE_URL (e.g. in cms/.env) to use Postgres; falls back to SQLite.
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -162,6 +176,16 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
 # Wagtail settings
 
 WAGTAIL_SITE_NAME = "iresource"
+
+# Grapple / GraphQL
+GRAPHENE = {
+    "SCHEMA": "grapple.schema.schema",
+}
+GRAPPLE = {
+    "APPS": ["home", "menu", "resources", "news", "publication"],
+    "RICH_TEXT_FORMAT": "html",
+    "EXPOSE_GRAPHIQL": True,
+}
 
 # Search
 # https://docs.wagtail.org/en/stable/topics/search/backends.html

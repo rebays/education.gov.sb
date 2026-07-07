@@ -1,6 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
+import PublicationCover from "../components/publication-cover";
 import TraditionalWatermark from "../components/traditional-watermark";
+import { publications } from "../lib/content";
+import CategoryTabs from "./category-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon, icons } from "@/components/ui/icon";
@@ -106,17 +109,15 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 border-t border-border py-16 sm:py-20">
-      <div className="mx-auto w-full max-w-8xl px-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-          {eyebrow}
-        </p>
-        <h2 className="mt-3 font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
-          {title}
-        </h2>
-        {intro && <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">{intro}</p>}
-        <div className="mt-10">{children}</div>
-      </div>
+    <section id={id} className="scroll-mt-24 border-t border-border py-14 first:border-t-0 sm:py-16">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+        {eyebrow}
+      </p>
+      <h2 className="mt-3 font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
+        {title}
+      </h2>
+      {intro && <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">{intro}</p>}
+      <div className="mt-10">{children}</div>
     </section>
   );
 }
@@ -184,15 +185,6 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
               </span>
             </span>
           </Link>
-          <div className="flex items-center gap-5">
-            <nav className="hidden items-center gap-6 text-sm font-medium text-muted lg:flex">
-              {anchors.map(([id, label]) => (
-                <a key={id} href={`#${id}`} className="hover:text-primary">
-                  {label}
-                </a>
-              ))}
-            </nav>
-          </div>
         </div>
       </header>
 
@@ -215,6 +207,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
       </section>
 
+      {/* ---------- Category panels: rail + one category at a time ---------- */}
+      <CategoryTabs tabs={anchors}>
       {/* ---------- Colors ---------- */}
       <Section
         id="colors"
@@ -510,6 +504,130 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             </div>
           </div>
         </div>
+
+        <div className="mt-12">
+          <SubHead>Register row — publications index</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The gazette-style entry used on the publications register: a mono
+            registry code (data, never decoration), a type badge, a serif
+            title, and a direct download action — grouped under large serif
+            year markers.
+          </p>
+          <div className="rounded-2xl border border-border bg-background px-6">
+            <div className="grid gap-4 border-b border-border py-6 last:border-0 sm:grid-cols-[160px_1fr] lg:grid-cols-[160px_1fr_auto] lg:gap-8">
+              <div>
+                <p className="font-mono text-xs text-muted">MEHRD/2026/03</p>
+                <Badge variant="primary" className="mt-2">Policy</Badge>
+              </div>
+              <div className="min-w-0">
+                <h4 className="font-serif text-xl leading-snug text-foreground">
+                  National Education Action Plan 2026–2030
+                </h4>
+                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">
+                  The Ministry&apos;s five-year strategy for improving access,
+                  quality, and equity across the education sector.
+                </p>
+                <p className="mt-2 text-xs text-muted">
+                  12 May 2026 · Strategic Support Unit
+                </p>
+              </div>
+              <div className="flex items-start gap-2 lg:flex-col lg:items-end">
+                <Button variant="secondary" size="sm" className="h-9 px-3 text-xs">
+                  <Icon name="download" className="size-3.5" />
+                  PDF
+                  <span className="font-mono font-normal text-muted">3.2 MB</span>
+                </Button>
+                <span className="inline-flex h-9 items-center gap-1 px-1 text-xs font-semibold text-primary">
+                  Summary <span aria-hidden>→</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Document cover — publications</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The designed stand-in for a publication&apos;s cover: deep panel,
+            gold rule, coat of arms, serif title, mono registry footer. Anchors
+            the publications index and each publication record; becomes the
+            fallback once the CMS supplies real cover art.
+          </p>
+          <div className="flex flex-wrap items-start gap-8">
+            <PublicationCover
+              publication={publications[0]}
+              className="w-[240px]"
+            />
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>News briefs — front page</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The text-only briefs column from the newsroom front page: mono
+            date, category tag, serif headline, one-line excerpt. Carries
+            minor announcements with no image dependence — new posts land
+            here; editors promote the big ones to the lead slots.
+          </p>
+          <div className="max-w-md rounded-2xl border border-border bg-background px-6 py-1">
+            <ul className="divide-y divide-border">
+              <li className="py-5">
+                <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="font-mono text-xs text-muted">2 May 2026</span>
+                  <span className="text-xs font-semibold text-primary">Announcement</span>
+                </p>
+                <h4 className="mt-1.5 font-serif text-lg leading-snug text-foreground">
+                  2026 national examination timetable released
+                </h4>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
+                  Timetables for SISE, SISC, and SINF examinations are now
+                  available for schools and candidates.
+                </p>
+              </li>
+              <li className="py-5">
+                <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="font-mono text-xs text-muted">22 Jan 2026</span>
+                  <span className="text-xs font-semibold text-primary">Announcement</span>
+                </p>
+                <h4 className="mt-1.5 font-serif text-lg leading-snug text-foreground">
+                  2026 school infrastructure grant round now open
+                </h4>
+                <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
+                  Registered schools can apply through their provincial
+                  education authority.
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Pull quote — news article</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            Official voices set apart in article bodies: an oversized gold
+            quote mark, serif italic at 2xl, and a plain attribution line.
+            Note: on dark article heroes the category chip renders in gold
+            accent (the hero variant); on light surfaces categories use their
+            colour-coded badge variants.
+          </p>
+          <div className="max-w-2xl rounded-2xl border border-border bg-background p-8">
+            <figure>
+              <span
+                className="block font-serif text-5xl leading-none text-accent"
+                aria-hidden
+              >
+                “
+              </span>
+              <blockquote className="mt-1 font-serif text-2xl italic leading-snug text-foreground">
+                This plan belongs to every school, every community, and every
+                child in the Solomon Islands.
+              </blockquote>
+              <figcaption className="mt-3 text-sm font-semibold text-muted">
+                — Permanent Secretary, MEHRD
+              </figcaption>
+            </figure>
+          </div>
+        </div>
       </Section>
 
       {/* ---------- Iconography ---------- */}
@@ -564,6 +682,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           ))}
         </ul>
       </Section>
+      </CategoryTabs>
 
       {/* ---------- Footer ---------- */}
       <footer className="border-t border-border bg-deep text-white">

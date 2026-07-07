@@ -45,8 +45,8 @@ export default function SiteFooter() {
               </a>
             </li>
             <li>
-              <Link href="/about/services" className="hover:text-accent">
-                Services
+              <Link href="/about" className="hover:text-accent">
+                About
               </Link>
             </li>
             <li>
