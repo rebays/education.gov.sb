@@ -24,7 +24,7 @@ export default function PublicationCover({
     >
       <span className="h-1 w-12 rounded-full bg-accent" />
       <Image
-        src="/coa-si.webp"
+        src="/coat-of-arms.png"
         alt=""
         width={44}
         height={44}

@@ -33,7 +33,7 @@ export default function SiteFooter() {
           <div className="lg:max-w-md">
           <div className="flex items-center gap-4">
             <Image
-              src="/coa-si.webp"
+              src="/coat-of-arms.png"
               alt="Solomon Islands coat of arms"
               width={56}
               height={56}
