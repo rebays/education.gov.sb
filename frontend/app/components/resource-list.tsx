@@ -16,7 +16,7 @@ export function ResourceIcon({
   resource: Resource;
   className?: string;
 }) {
-  if (resource.category === "reports") {
+  if (resource.kind === "Report") {
     return (
       <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke}>
         <path d="M3 3v18h18" />
@@ -24,7 +24,7 @@ export function ResourceIcon({
       </svg>
     );
   }
-  if (resource.category === "videos") {
+  if (resource.kind === "Video") {
     return (
       <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke}>
         <rect x="2.5" y="5" width="19" height="14" rx="2" />
@@ -32,7 +32,7 @@ export function ResourceIcon({
       </svg>
     );
   }
-  if (resource.category === "learning") {
+  if (["Guide", "Workbook", "Manual", "Print pack"].includes(resource.kind)) {
     return (
       <svg viewBox="0 0 24 24" className={className} aria-hidden {...stroke}>
         <path d="M12 6c-1.5-1.3-3.6-2-6-2v14c2.4 0 4.5.7 6 2 1.5-1.3 3.6-2 6-2V4c-2.4 0-4.5.7-6 2z" />

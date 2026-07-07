@@ -18,7 +18,7 @@ export default function PublicationCover({
   return (
     <div
       className={cn(
-        "flex aspect-[3/4] flex-col rounded-xl bg-deep p-7 shadow-xl ring-1 ring-black/10",
+        "flex aspect-[3/4] flex-col rounded-xl bg-gradient-to-br from-[#15335c] via-deep to-[#081426] p-7 shadow-xl ring-1 ring-black/10",
         className,
       )}
     >

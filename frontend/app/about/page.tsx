@@ -97,7 +97,7 @@ export default function AboutPage() {
               </div>
               <div className="relative aspect-16/11 overflow-hidden rounded-2xl border border-border shadow-sm">
                 <Image
-                  src="/soloclassroom.png"
+                  src="/sample.png"
                   alt="A classroom in the Solomon Islands"
                   fill
                   sizes="(min-width: 1024px) 50vw, 100vw"

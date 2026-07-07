@@ -113,7 +113,7 @@ const curated: CurriculumResource[] = [
     format: "PDF",
     size: "6.8 MB",
     updated: "22 Apr 2026",
-    libraryRef: { category: "learning" as const, slug: "literacy-teacher-guide" },
+    libraryRef: { category: "primary" as const, slug: "literacy-teacher-guide" },
   })),
   ...["y1", "y2"].map((gradeId) => ({
     id: `phonics-flashcards-${gradeId}`,
@@ -126,7 +126,7 @@ const curated: CurriculumResource[] = [
     format: "ZIP",
     size: "12.4 MB",
     updated: "2 Feb 2026",
-    libraryRef: { category: "learning" as const, slug: "phonics-flashcards" },
+    libraryRef: { category: "primary" as const, slug: "phonics-flashcards" },
   })),
   {
     id: "numeracy-workbook-y3",
@@ -139,7 +139,7 @@ const curated: CurriculumResource[] = [
     format: "PDF",
     size: "4.1 MB",
     updated: "10 Mar 2026",
-    libraryRef: { category: "learning", slug: "numeracy-workbook-y3" },
+    libraryRef: { category: "primary", slug: "numeracy-workbook-y3" },
     previewUrl: "https://documents.iresource.gov.sb/embed/numeracy-workbook-y3.pdf",
   },
   ...["y4", "y5", "y6"].map((gradeId) => ({
@@ -153,7 +153,7 @@ const curated: CurriculumResource[] = [
     format: "PDF",
     size: "3.5 MB",
     updated: "18 Feb 2026",
-    libraryRef: { category: "learning" as const, slug: "science-kit-manual" },
+    libraryRef: { category: "primary" as const, slug: "science-kit-manual" },
   })),
   {
     id: "numeracy-warmups-slides-y2",

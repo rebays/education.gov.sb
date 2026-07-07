@@ -119,7 +119,7 @@ export default async function ResourcePage({
   const cat = getCategory(category);
   if (!resource || !cat) notFound();
 
-  const isVideo = resource.category === "videos";
+  const isVideo = resource.kind === "Video";
   const related = getResourcesByCategory(resource.category)
     .filter((r) => r.slug !== resource.slug)
     .slice(0, 3);

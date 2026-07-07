@@ -155,7 +155,7 @@ function SwatchCard({ s }: { s: Swatch }) {
 
 export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
   const typeRows = [
-    { label: "Display / Hero", spec: config.typeSpecs.display, cls: "font-serif text-5xl leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl", sample: "Building a brighter future through learning." },
+    { label: "Display / Hero", spec: config.typeSpecs.display, cls: "font-serif text-5xl leading-[1.05] tracking-tight sm:text-6xl lg:text-7xl", sample: "A brighter future through learning." },
     { label: "H1", spec: config.typeSpecs.h1, cls: "font-serif text-4xl leading-tight tracking-tight sm:text-5xl", sample: "Find what you need, by category." },
     { label: "H2", spec: config.typeSpecs.h2, cls: "font-serif text-3xl leading-tight", sample: "Reports & data across the sector" },
     { label: "H3", spec: config.typeSpecs.h3, cls: "font-serif text-xl", sample: "National Education Action Plan 2022–2026" },
@@ -550,8 +550,9 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The designed stand-in for a publication&apos;s cover: deep panel,
             gold rule, coat of arms, serif title, mono registry footer. Anchors
-            the publications index and each publication record; becomes the
-            fallback once the CMS supplies real cover art.
+            the publications index, each publication record, and the landing
+            page&apos;s cover shelf; becomes the fallback once the CMS supplies
+            real cover art.
           </p>
           <div className="flex flex-wrap items-start gap-8">
             <PublicationCover

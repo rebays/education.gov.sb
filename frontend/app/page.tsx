@@ -1,67 +1,104 @@
 import Image from "next/image";
 import Link from "next/link";
+import NewsBanner from "./components/news-banner";
 import Publications from "./components/publications";
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
 import TraditionalWatermark from "./components/traditional-watermark";
 import { categories } from "./lib/content";
+import { subjects } from "./lib/curriculum";
+
+/* subject suggestion pills under the hero search bar */
+const heroSubjectIds = [
+  "english",
+  "mathematics",
+  "science",
+  "social-studies",
+  "agriculture",
+];
+const heroSubjects = heroSubjectIds
+  .map((id) => subjects.find((s) => s.id === id))
+  .filter((s) => s !== undefined);
 
 export default function Home() {
   return (
     <div className="flex flex-1 flex-col">
       {/* ---------- HERO (full screen) ---------- */}
-      <section className="relative isolate flex min-h-svh flex-col text-white">
+      <section className="relative isolate flex min-h-svh flex-col overflow-hidden text-white">
         <Image
-          src="/soloclassroom.png"
+          src="/sample.png"
           alt=""
           fill
           priority
           sizes="100vw"
-          className="-z-20 object-cover"
+          className="-z-20 scale-[1.02] object-cover blur-[2px] saturate-75"
         />
         {/* brand overlay for legibility */}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top_right,rgba(8,20,40,0.94),rgba(8,20,40,0.72)_45%,rgba(20,82,155,0.5))]" />
+        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top_right,rgba(8,20,40,0.97),rgba(8,20,40,0.88)_45%,rgba(20,82,155,0.72))]" />
 
         {/* transparent header over hero */}
         <SiteHeader variant="overlay" />
 
-        {/* hero content */}
+        {/* hero content — centred, search-first, lifted above optical centre */}
         <div className="relative flex flex-1 items-center">
-          <div className="mx-auto w-full max-w-8xl px-6 py-20">
-            <h1 className="max-w-4xl font-serif text-5xl leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl">
-              Building a brigher future through learning.
+          <div className="mx-auto w-full max-w-6xl px-6 pb-36 pt-12 text-center">
+            <h1 className="font-serif text-5xl leading-[1.1] tracking-tight sm:text-6xl lg:text-7xl">
+              iResource
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-white/85 sm:text-xl">
-              The central hub for policies, reports, videos, and learning
-              resources from the Ministry of Education and Human Resources
-              Development.
+            <p className="mt-2 text-lg leading-8 text-white/80 sm:text-xl">
+              Building a brighter future through learning.
             </p>
 
             <form
               action="/search"
               role="search"
-              className="mt-10 flex w-full max-w-2xl flex-col gap-3 sm:flex-row"
+              className="relative mx-auto mt-10 w-full max-w-4xl"
             >
               <input
                 type="search"
                 name="q"
                 placeholder="Search documents, reports, videos…"
                 aria-label="Search the resource hub"
-                className="h-14 flex-1 rounded-lg border border-white/20 bg-white/95 px-5 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                className="h-14 w-full rounded-full border border-white/20 bg-white/95 pl-6 pr-28 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
               />
               <button
                 type="submit"
-                className="h-14 rounded-lg bg-accent px-8 text-base font-semibold text-accent-foreground transition-transform hover:scale-[1.02]"
+                className="absolute right-1.5 top-1/2 h-11 -translate-y-1/2 rounded-full bg-accent px-6 text-sm font-semibold text-accent-foreground transition-transform hover:scale-[1.02]"
               >
                 Search
               </button>
             </form>
+
+            {/* glass subject pills — suggested searches */}
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              {heroSubjects.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/search?q=${encodeURIComponent(s.name)}`}
+                  className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/20 hover:text-white"
+                >
+                  {s.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* scroll cue */}
-        <div className="relative pb-8 text-center text-xs uppercase tracking-[0.3em] text-white/60">
-          Scroll to explore
+        <div className="relative flex justify-center pb-8">
+          <svg
+            viewBox="0 0 24 24"
+            className="h-6 w-6 text-white/70 motion-safe:animate-bounce"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+          <span className="sr-only">Scroll to explore</span>
         </div>
       </section>
 
@@ -69,39 +106,34 @@ export default function Home() {
       <section className="relative isolate flex min-h-screen items-center overflow-hidden bg-background">
         <TraditionalWatermark id="wm-categories" />
         <div className="mx-auto w-full max-w-8xl px-6 py-20">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-            Browse the hub
-          </p>
-          <h2 className="mt-3 max-w-2xl font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
-            Find what you need, by category.
+          <h2 className="max-w-2xl font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
+            Resources by curriculum level.
           </h2>
+          <p className="mt-5 max-w-xl text-lg leading-8 text-muted">
+            Syllabuses, teacher guides, and classroom materials for every
+            stage of schooling.
+          </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {categories.map((c) => (
               <Link
                 key={c.slug}
                 href={`/resources/${c.slug}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition-all hover:-translate-y-1.5 hover:border-primary hover:shadow-xl"
+                className="group relative aspect-[3/4] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl sm:aspect-[4/5]"
               >
-                <div className="relative aspect-4/3 overflow-hidden">
-                  <Image
-                    src={c.image}
-                    alt=""
-                    fill
-                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <span className="absolute left-3 top-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold text-primary backdrop-blur">
-                    {c.count}
-                  </span>
-                </div>
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="font-serif text-xl text-foreground group-hover:text-primary">
+                <Image
+                  src={c.image}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover"
+                />
+                {/* brand-blue scrim — solid title zone, fully clear by the card's midpoint */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,var(--deep)_10%,rgba(13,31,60,0.92)_17%,rgba(13,31,60,0.78)_24%,rgba(13,31,60,0.6)_31%,rgba(13,31,60,0.4)_38%,rgba(13,31,60,0.2)_44%,rgba(13,31,60,0)_50%)]" />
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <h3 className="font-serif text-2xl leading-snug text-white transition-colors group-hover:text-accent">
                     {c.title}
                   </h3>
-                  <p className="mt-2 flex-1 text-sm leading-6 text-muted">
-                    {c.description}
-                  </p>
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                  <span className="mt-1.5 inline-flex items-center gap-2 text-sm font-medium text-white/90 underline decoration-white/40 underline-offset-4 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100">
                     Browse
                     <span className="transition-transform group-hover:translate-x-1">
                       →
@@ -111,6 +143,21 @@ export default function Home() {
               </Link>
             ))}
           </div>
+
+          <div className="mt-16">
+            <Link
+              href="/resources"
+              className="group inline-flex items-center gap-2 text-base font-semibold text-primary hover:underline"
+            >
+              Browse all resources
+              <span
+                className="transition-transform group-hover:translate-x-1"
+                aria-hidden
+              >
+                →
+              </span>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -119,46 +166,9 @@ export default function Home() {
         <Publications />
       </section>
 
-      {/* ---------- CTA — Scholarships (full screen, image bg) ---------- */}
-      <section className="relative isolate flex min-h-screen items-center text-white">
-        <Image
-          src="/cta-scholarships.jpg"
-          alt=""
-          fill
-          sizes="100vw"
-          className="-z-20 object-cover"
-        />
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(8,20,40,0.92),rgba(8,20,40,0.55))]" />
-        <div className="mx-auto w-full max-w-8xl px-6 py-24">
-          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.2em] text-accent">
-            Scholarships &amp; study awards
-          </p>
-          <h2 className="max-w-3xl font-serif text-4xl leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-            Invest in your future. Apply for a scholarship.
-          </h2>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-white/85">
-            The Ministry supports students across the Solomon Islands with
-            scholarships and study awards. Check your eligibility, apply, and
-            track your application on the national scholarships platform.
-          </p>
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <a
-              href="https://scholarships.education.gov.sb"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-14 items-center justify-center gap-2 rounded-lg bg-accent px-8 text-base font-semibold text-accent-foreground transition-transform hover:scale-[1.02]"
-            >
-              Apply for a scholarship
-              <span aria-hidden>↗</span>
-            </a>
-            <Link
-              href="/publications"
-              className="flex h-14 items-center justify-center rounded-lg border border-white/50 px-8 text-base font-semibold transition-colors hover:border-accent hover:text-accent"
-            >
-              Scholarship guidelines
-            </Link>
-          </div>
-        </div>
+      {/* ---------- NEWS (slim banner) ---------- */}
+      <section className="bg-background">
+        <NewsBanner />
       </section>
 
       {/* ---------- FOOTER ---------- */}

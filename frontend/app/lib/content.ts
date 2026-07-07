@@ -11,7 +11,11 @@
 /*  Resource library                                                   */
 /* ------------------------------------------------------------------ */
 
-export type CategorySlug = "documents" | "reports" | "videos" | "learning";
+export type CategorySlug =
+  | "early-childhood"
+  | "primary"
+  | "junior-secondary"
+  | "senior-secondary";
 
 export type ResourceCategory = {
   slug: CategorySlug;
@@ -24,40 +28,40 @@ export type ResourceCategory = {
 
 export const categories: ResourceCategory[] = [
   {
-    slug: "documents",
-    title: "Policies & Documents",
-    shortTitle: "Documents",
+    slug: "early-childhood",
+    title: "Early Childhood Education",
+    shortTitle: "Early Childhood",
     description:
-      "Education policies, acts, frameworks, circulars, and official ministry documents.",
-    image: "/cat-documents.jpg",
-    count: "320+ documents",
-  },
-  {
-    slug: "reports",
-    title: "Reports & Data",
-    shortTitle: "Reports",
-    description:
-      "Annual reports, statistics, performance reviews, and education sector data.",
-    image: "/cat-reports.jpg",
-    count: "85+ reports",
-  },
-  {
-    slug: "videos",
-    title: "Videos & Media",
-    shortTitle: "Videos",
-    description:
-      "Recorded events, training materials, announcements, and educational video content.",
-    image: "/cat-videos.jpg",
-    count: "140+ videos",
-  },
-  {
-    slug: "learning",
-    title: "Learning Resources",
-    shortTitle: "Learning",
-    description:
-      "Curriculum materials, teacher guides, and resources for schools and learners.",
+      "Play-based, language-rich resources for Solomon Islands children aged 3 to 5.",
     image: "/cat-resources.jpg",
-    count: "500+ resources",
+    count: "0 resources",
+  },
+  {
+    slug: "primary",
+    title: "Primary",
+    shortTitle: "Primary",
+    description:
+      "Years 1–6 across English, Mathematics, Health, Christian Life Education, Arts and Culture and Physical Education.",
+    image: "/soloclassroom.png",
+    count: "74 resources",
+  },
+  {
+    slug: "junior-secondary",
+    title: "Junior Secondary",
+    shortTitle: "Junior Secondary",
+    description:
+      "Years 7–9 across Agriculture, Arts and Culture, Business Studies, Christian Life Education, English, Health, Mathematics and Technology.",
+    image: "/svc-examinations.jpg",
+    count: "18 resources",
+  },
+  {
+    slug: "senior-secondary",
+    title: "Senior Secondary",
+    shortTitle: "Senior Secondary",
+    description:
+      "Years 10–12 — preparing students for examinations and post-secondary study.",
+    image: "/cat-reports.jpg",
+    count: "0 resources",
   },
 ];
 
@@ -87,7 +91,7 @@ export const resources: Resource[] = [
   {
     slug: "neap-2026-2030",
     title: "National Education Action Plan 2026–2030",
-    category: "documents",
+    category: "primary",
     kind: "Policy",
     summary:
       "The Ministry's five-year strategy for improving access, quality, and equity across the education sector.",
@@ -102,7 +106,7 @@ export const resources: Resource[] = [
   {
     slug: "curriculum-framework-primary",
     title: "National Curriculum Framework — Primary",
-    category: "documents",
+    category: "primary",
     kind: "Policy",
     summary:
       "Learning standards and subject outcomes for primary schools across the Solomon Islands.",
@@ -116,7 +120,7 @@ export const resources: Resource[] = [
   {
     slug: "education-act-2023",
     title: "Education Act 2023 — Consolidated Edition",
-    category: "documents",
+    category: "junior-secondary",
     kind: "Legislation",
     summary:
       "The consolidated Education Act including amendments, governing the administration of education services.",
@@ -131,7 +135,7 @@ export const resources: Resource[] = [
   {
     slug: "infrastructure-grants-guidelines",
     title: "School Infrastructure Grants — Guidelines",
-    category: "documents",
+    category: "primary",
     kind: "Guideline",
     summary:
       "Eligibility criteria and the application process for the 2026 school infrastructure grant round.",
@@ -146,7 +150,7 @@ export const resources: Resource[] = [
   {
     slug: "annual-performance-2025",
     title: "Education Sector Annual Performance Report 2025",
-    category: "reports",
+    category: "junior-secondary",
     kind: "Report",
     summary:
       "Enrolment, completion, and learning-outcome data measured against national education targets.",
@@ -160,7 +164,7 @@ export const resources: Resource[] = [
   {
     slug: "ece-statistics-2025",
     title: "Early Childhood Education Statistics 2025",
-    category: "reports",
+    category: "early-childhood",
     kind: "Report",
     summary:
       "Provincial enrolment and access data for early childhood education providers.",
@@ -174,7 +178,7 @@ export const resources: Resource[] = [
   {
     slug: "exam-results-analysis-2025",
     title: "National Examination Results Analysis 2025",
-    category: "reports",
+    category: "senior-secondary",
     kind: "Report",
     summary:
       "Analysis of SISE, SISC, and SINF examination outcomes by province, subject, and school type.",
@@ -188,7 +192,7 @@ export const resources: Resource[] = [
   {
     slug: "teacher-workforce-report-2025",
     title: "Teacher Workforce Report 2025",
-    category: "reports",
+    category: "junior-secondary",
     kind: "Report",
     summary:
       "Teacher numbers, qualifications, and deployment across all provinces and school levels.",
@@ -202,7 +206,7 @@ export const resources: Resource[] = [
   {
     slug: "tpd-series",
     title: "Teacher Professional Development Series",
-    category: "videos",
+    category: "primary",
     kind: "Video",
     summary:
       "Recorded training supporting classroom practice and the rollout of the national curriculum.",
@@ -215,7 +219,7 @@ export const resources: Resource[] = [
   {
     slug: "curriculum-rollout-briefing",
     title: "Curriculum Rollout — Provincial Briefing",
-    category: "videos",
+    category: "primary",
     kind: "Video",
     summary:
       "Briefing for provincial education authorities on the phased rollout of the revised curriculum.",
@@ -228,7 +232,7 @@ export const resources: Resource[] = [
   {
     slug: "school-leaders-forum-2026",
     title: "National School Leaders Forum 2026 — Keynotes",
-    category: "videos",
+    category: "senior-secondary",
     kind: "Video",
     summary:
       "Keynote addresses from the annual forum for principals and school leaders in Honiara.",
@@ -241,7 +245,7 @@ export const resources: Resource[] = [
   {
     slug: "literacy-week-highlights",
     title: "National Literacy Week — Highlights",
-    category: "videos",
+    category: "primary",
     kind: "Video",
     summary:
       "Highlights from school events across the provinces during National Literacy Week.",
@@ -255,7 +259,7 @@ export const resources: Resource[] = [
   {
     slug: "literacy-teacher-guide",
     title: "Early Grade Literacy — Teacher Guide",
-    category: "learning",
+    category: "primary",
     kind: "Guide",
     summary:
       "Structured lesson guidance for teaching early grade reading and writing, years 1–3.",
@@ -269,7 +273,7 @@ export const resources: Resource[] = [
   {
     slug: "numeracy-workbook-y3",
     title: "Numeracy Workbook — Year 3",
-    category: "learning",
+    category: "primary",
     kind: "Workbook",
     summary:
       "Student practice workbook aligned to the Year 3 mathematics syllabus.",
@@ -283,7 +287,7 @@ export const resources: Resource[] = [
   {
     slug: "science-kit-manual",
     title: "Primary Science Kit — Activity Manual",
-    category: "learning",
+    category: "primary",
     kind: "Manual",
     summary:
       "Hands-on activities using the standard primary science kit distributed to schools.",
@@ -297,7 +301,7 @@ export const resources: Resource[] = [
   {
     slug: "phonics-flashcards",
     title: "Phonics Flashcards — Print Pack",
-    category: "learning",
+    category: "early-childhood",
     kind: "Print pack",
     summary:
       "Printable phonics flashcards and word-building cards for early grade classrooms.",
@@ -512,7 +516,7 @@ export const news: NewsPost[] = [
     date: "14 May 2026",
     excerpt:
       "The five-year sector plan was launched in Honiara with provincial education authorities, partners, and school leaders in attendance.",
-    image: "/soloclassroom.png",
+    image: "/sample.png",
     body: [
       "The Ministry of Education and Human Resources Development has officially launched the National Education Action Plan 2026–2030, the sector's guiding strategy for the next five years.",
       "Speaking at the launch, the Permanent Secretary thanked the provincial education authorities, churches, and development partners who contributed to the plan through consultations held across all nine provinces.",
@@ -685,7 +689,7 @@ export const news: NewsPost[] = [
     date: "25 Mar 2026",
     excerpt:
       "Teachers in three provinces completed training on supporting learners with disabilities in mainstream classrooms.",
-    image: "/soloclassroom.png",
+    image: "/sample.png",
     body: [
       "Teachers from 150 schools have completed inclusive education training, learning practical strategies for supporting learners with disabilities in mainstream classrooms.",
       "The training was delivered with disability advocacy organisations and will expand to the remaining provinces in 2027.",
@@ -799,7 +803,7 @@ export const news: NewsPost[] = [
     date: "12 Feb 2026",
     excerpt:
       "Principals and chairs of school boards met in Honiara to discuss the rollout of the new sector plan.",
-    image: "/soloclassroom.png",
+    image: "/sample.png",
     body: [
       "More than 200 principals and school board chairs from Guadalcanal met in Honiara for the provincial education forum.",
       "Sessions covered the new sector plan, grant acquittals, and school improvement planning. Forums in the remaining provinces run through the first half of the year.",
@@ -939,7 +943,7 @@ export const news: NewsPost[] = [
     date: "28 Aug 2025",
     excerpt:
       "Play-based learning kits reached early childhood centres in partnership with UNICEF.",
-    image: "/soloclassroom.png",
+    image: "/sample.png",
     body: [
       "Three hundred early childhood education centres have received play-based learning kits through a partnership with UNICEF.",
       "The kits support the early learning development standards and include materials for counting, letters, and fine motor play.",

@@ -180,7 +180,9 @@ export default async function SearchPage({
                     <h3 className="font-serif text-lg text-foreground group-hover:text-primary">
                       {c.title}
                     </h3>
-                    <p className="mt-1 text-xs text-muted">{c.count}</p>
+                    <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-muted">
+                      {c.description}
+                    </p>
                   </Link>
                 ))}
               </div>
