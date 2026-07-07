@@ -495,7 +495,12 @@ export type NewsPost = {
   category: NewsCategory;
   date: string;
   excerpt: string;
-  image: string;
+  /** Optional — stories without one get the designed deep-blue fallback */
+  image?: string;
+  /**
+   * Body blocks. "## " prefix renders a section heading; "> " renders a
+   * pull quote, with an optional attribution after a "|" separator.
+   */
   body: string[];
 };
 
@@ -511,6 +516,7 @@ export const news: NewsPost[] = [
     body: [
       "The Ministry of Education and Human Resources Development has officially launched the National Education Action Plan 2026–2030, the sector's guiding strategy for the next five years.",
       "Speaking at the launch, the Permanent Secretary thanked the provincial education authorities, churches, and development partners who contributed to the plan through consultations held across all nine provinces.",
+      "> This plan belongs to every school, every community, and every child in the Solomon Islands.|Permanent Secretary, MEHRD",
       "The plan commits the Ministry to measurable improvements in access, quality, and system management, with progress reported annually. The full document and a summary version are available in the resource library.",
     ],
   },
