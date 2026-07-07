@@ -68,7 +68,7 @@ export function CurriculumSidebar({
   const hasActiveFilters = filters.type || filters.subjectId || filters.gradeId || filters.query;
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-5 lg:w-64">
+    <aside className="hidden w-full shrink-0 flex-col gap-5 lg:flex lg:w-64">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground/70">
           Filters

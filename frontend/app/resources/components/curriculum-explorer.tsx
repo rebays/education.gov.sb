@@ -14,6 +14,7 @@ import {
 import { CoverageMap } from "./coverage-map";
 import { CurriculumResourceList } from "./curriculum-resource-list";
 import { CurriculumSidebar, type CurriculumFilters } from "./curriculum-sidebar";
+import { MobileFilterIsland } from "./mobile-filter-island";
 
 type ViewMode = "map" | "list";
 
@@ -127,6 +128,7 @@ export function CurriculumExplorer() {
               onClick={() => setShowFilters((s) => !s)}
               aria-expanded={showFilters}
               aria-controls="curriculum-filters-panel"
+              className="hidden lg:inline-flex"
             >
               <Icon name="filter" className="h-4 w-4" />
               {showFilters ? "Hide filters" : "Show filters"}
@@ -170,8 +172,7 @@ export function CurriculumExplorer() {
           )}
         </div>
 
-        <div className="mt-6">
-
+        <div className="mt-6 pb-24 lg:pb-0">
           {viewMode === "map" ? (
             <CoverageMap
               subjects={subjects}
@@ -186,6 +187,15 @@ export function CurriculumExplorer() {
           )}
         </div>
       </div>
+
+      <MobileFilterIsland
+        resourceTypes={resourceTypes}
+        subjects={subjects}
+        grades={grades}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onShowMap={handleShowMap}
+      />
     </div>
   );
 }
