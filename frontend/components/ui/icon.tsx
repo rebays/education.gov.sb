@@ -27,6 +27,7 @@ export const icons = {
   bookmark: "M6 3h12v18l-6-4-6 4V3Z",
   share: "M7 12a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM22 6a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM22 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0ZM7 12l10-5.5M7 12l10 5.5",
   print: "M7 8V3h10v5M7 18H5v-6h14v6h-2M8 14h8v6H8v-6Z",
+  grid: "M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z",
   info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 11v6M12 7.5v.5",
 } as const
 

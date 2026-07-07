@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { Icon } from "@/components/ui/icon";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { Grade, ResourceType, Subject } from "../../lib/curriculum";
@@ -53,6 +55,7 @@ export function CurriculumSidebar({
   filters,
   onFilterChange,
   onReset,
+  onShowMap,
 }: {
   resourceTypes: ResourceType[];
   subjects: Subject[];
@@ -60,6 +63,7 @@ export function CurriculumSidebar({
   filters: CurriculumFilters;
   onFilterChange: (patch: Partial<CurriculumFilters>) => void;
   onReset: () => void;
+  onShowMap: () => void;
 }) {
   const hasActiveFilters = filters.type || filters.subjectId || filters.gradeId || filters.query;
 
@@ -106,6 +110,11 @@ export function CurriculumSidebar({
         onChange={(gradeId) => onFilterChange({ gradeId })}
         optionLabel={(id) => grades.find((g) => g.id === id)?.label ?? id}
       />
+
+      <Button variant="secondary" className="w-full" onClick={onShowMap}>
+        <Icon name="grid" className="h-4 w-4" />
+        Coverage Map
+      </Button>
     </aside>
   );
 }

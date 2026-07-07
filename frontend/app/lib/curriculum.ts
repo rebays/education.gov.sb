@@ -226,6 +226,18 @@ export function getCurriculumResourceById(id: string): CurriculumResource | unde
   return curriculumResources.find((r) => r.id === id);
 }
 
+const MONTH_INDEX: Record<string, number> = {
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+};
+
+function parseUpdated(date: string): number {
+  const [day, mon, year] = date.split(" ");
+  const month = MONTH_INDEX[mon];
+  if (month === undefined) return 0;
+  return new Date(Number(year), month, Number(day)).getTime();
+}
+
 export function getCurriculumResources(filter: {
   level: Level;
   subjectId?: string | null;
@@ -234,14 +246,16 @@ export function getCurriculumResources(filter: {
   query?: string | null;
 }): CurriculumResource[] {
   const q = filter.query?.trim().toLowerCase();
-  return curriculumResources.filter((r) => {
-    if (r.level !== filter.level) return false;
-    if (filter.subjectId && r.subjectId !== filter.subjectId) return false;
-    if (filter.gradeId && r.gradeId !== filter.gradeId) return false;
-    if (filter.type && r.type !== filter.type) return false;
-    if (q && !r.title.toLowerCase().includes(q)) return false;
-    return true;
-  });
+  return curriculumResources
+    .filter((r) => {
+      if (r.level !== filter.level) return false;
+      if (filter.subjectId && r.subjectId !== filter.subjectId) return false;
+      if (filter.gradeId && r.gradeId !== filter.gradeId) return false;
+      if (filter.type && r.type !== filter.type) return false;
+      if (q && !r.title.toLowerCase().includes(q)) return false;
+      return true;
+    })
+    .sort((a, b) => parseUpdated(b.updated) - parseUpdated(a.updated));
 }
 
 export function coverageCount(level: Level, subjectId: string, gradeId: string): number {
