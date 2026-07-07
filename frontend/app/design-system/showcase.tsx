@@ -3,6 +3,7 @@ import Image from "next/image";
 import PublicationCover from "../components/publication-cover";
 import TraditionalWatermark from "../components/traditional-watermark";
 import { publications } from "../lib/content";
+import CategoryTabs from "./category-tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon, icons } from "@/components/ui/icon";
@@ -108,17 +109,15 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 border-t border-border py-16 sm:py-20">
-      <div className="mx-auto w-full max-w-8xl px-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-          {eyebrow}
-        </p>
-        <h2 className="mt-3 font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
-          {title}
-        </h2>
-        {intro && <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">{intro}</p>}
-        <div className="mt-10">{children}</div>
-      </div>
+    <section id={id} className="scroll-mt-24 border-t border-border py-14 first:border-t-0 sm:py-16">
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+        {eyebrow}
+      </p>
+      <h2 className="mt-3 font-serif text-3xl tracking-tight text-foreground sm:text-4xl">
+        {title}
+      </h2>
+      {intro && <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">{intro}</p>}
+      <div className="mt-10">{children}</div>
     </section>
   );
 }
@@ -186,15 +185,6 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
               </span>
             </span>
           </Link>
-          <div className="flex items-center gap-5">
-            <nav className="hidden items-center gap-6 text-sm font-medium text-muted lg:flex">
-              {anchors.map(([id, label]) => (
-                <a key={id} href={`#${id}`} className="hover:text-primary">
-                  {label}
-                </a>
-              ))}
-            </nav>
-          </div>
         </div>
       </header>
 
@@ -217,6 +207,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
       </section>
 
+      {/* ---------- Category panels: rail + one category at a time ---------- */}
+      <CategoryTabs tabs={anchors}>
       {/* ---------- Colors ---------- */}
       <Section
         id="colors"
@@ -690,6 +682,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           ))}
         </ul>
       </Section>
+      </CategoryTabs>
 
       {/* ---------- Footer ---------- */}
       <footer className="border-t border-border bg-deep text-white">
