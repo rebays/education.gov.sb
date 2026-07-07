@@ -590,6 +590,385 @@ export const news: NewsPost[] = [
       "An evaluation in late 2026 will inform a decision on national rollout. Schools interested in future phases should contact the Ministry's ICT unit.",
     ],
   },
+  {
+    slug: "sise-results-2025",
+    title: "SISE 2025 results released to schools",
+    category: "Announcement",
+    date: "28 Apr 2026",
+    excerpt:
+      "Results for the Solomon Islands Secondary Entrance examination are now with schools; candidates should contact their principal.",
+    body: [
+      "Results for the 2025 Solomon Islands Secondary Entrance (SISE) examination have been released to schools through provincial education authorities.",
+      "Candidates should contact their school principal to receive their results. Certificates will follow through the usual provincial channels in the coming weeks.",
+    ],
+  },
+  {
+    slug: "new-classrooms-auki",
+    title: "Twelve new classrooms handed over in Auki",
+    category: "Press release",
+    date: "24 Apr 2026",
+    excerpt:
+      "The double-storey classroom blocks will ease overcrowding for more than 400 students at two schools in Malaita's capital.",
+    image: "/svc-registration.jpg",
+    body: [
+      "Two schools in Auki have received twelve new classrooms under the school infrastructure grants programme, easing overcrowding for more than 400 students.",
+      "The buildings meet the national safe-schools standard, including cyclone-rated roofing and accessible ramps. Construction was completed by local contractors with community support.",
+    ],
+  },
+  {
+    slug: "world-book-day-2026",
+    title: "Schools celebrate World Book Day with reading marathons",
+    category: "Event",
+    date: "23 Apr 2026",
+    excerpt:
+      "Students across the country marked World Book Day with reading marathons, storytelling, and book swaps.",
+    image: "/cat-resources.jpg",
+    body: [
+      "Schools across the Solomon Islands celebrated World Book Day with reading marathons, storytelling sessions in vernacular languages, and student book swaps.",
+      "The Ministry thanks the school libraries and community volunteers who organised events. Reading materials from the learning resources section remain free to download year-round.",
+    ],
+  },
+  {
+    slug: "teacher-graduation-2026",
+    title: "Over 300 teachers graduate from in-service programme",
+    category: "Press release",
+    date: "15 Apr 2026",
+    excerpt:
+      "The latest cohort completed school-based professional development modules in literacy and numeracy instruction.",
+    image: "/svc-teachers.jpg",
+    body: [
+      "More than 300 teachers have graduated from the school-based in-service training programme, completing modules in early grade literacy and numeracy instruction.",
+      "Graduates received certificates at ceremonies held in their own provinces, avoiding the cost and disruption of travel to Honiara.",
+    ],
+  },
+  {
+    slug: "school-feeding-pilot",
+    title: "School feeding pilot to begin in 20 rural schools",
+    category: "Announcement",
+    date: "12 Apr 2026",
+    excerpt:
+      "A locally sourced school meals pilot will run for two terms in selected rural primary schools.",
+    body: [
+      "Twenty rural primary schools will take part in a school feeding pilot from next term, serving meals prepared with locally sourced produce.",
+      "The pilot tests whether regular school meals improve attendance and concentration, with results informing a national policy decision in 2027.",
+    ],
+  },
+  {
+    slug: "education-radio-program",
+    title: "Education radio programme returns for term two",
+    category: "Announcement",
+    date: "1 Apr 2026",
+    excerpt:
+      "The weekly radio lessons for remote learners resume on SIBC with an expanded early grade line-up.",
+    body: [
+      "The Ministry's education radio programme returns for term two on SIBC, broadcasting weekly lessons for learners in remote communities.",
+      "This term's line-up expands early grade literacy segments and adds a weekly quiz for upper primary students. Broadcast times are published in the resource library.",
+    ],
+  },
+  {
+    slug: "ict-labs-western",
+    title: "Five ICT labs open in Western Province schools",
+    category: "Press release",
+    date: "28 Mar 2026",
+    excerpt:
+      "Solar-powered computer labs bring digital skills training to five community high schools.",
+    image: "/cat-videos.jpg",
+    body: [
+      "Five community high schools in Western Province have opened solar-powered ICT labs equipped with laptops and offline learning servers.",
+      "The labs support the digital skills strand of the revised curriculum and double as teacher resource centres after school hours.",
+    ],
+  },
+  {
+    slug: "inclusive-education-training",
+    title: "Inclusive education training reaches 150 schools",
+    category: "Press release",
+    date: "25 Mar 2026",
+    excerpt:
+      "Teachers in three provinces completed training on supporting learners with disabilities in mainstream classrooms.",
+    image: "/soloclassroom.png",
+    body: [
+      "Teachers from 150 schools have completed inclusive education training, learning practical strategies for supporting learners with disabilities in mainstream classrooms.",
+      "The training was delivered with disability advocacy organisations and will expand to the remaining provinces in 2027.",
+    ],
+  },
+  {
+    slug: "registration-deadline-2026",
+    title: "School registration renewals due 30 April",
+    category: "Announcement",
+    date: "20 Mar 2026",
+    excerpt:
+      "Schools with registrations expiring this year must submit renewal applications to their provincial authority by 30 April.",
+    body: [
+      "Schools whose registration expires in 2026 are reminded to submit renewal applications through their provincial education authority by 30 April.",
+      "Late renewals may affect grant eligibility for the 2027 school year. The renewal checklist is available in the document library.",
+    ],
+  },
+  {
+    slug: "curriculum-materials-distribution",
+    title: "New curriculum materials reach all nine provinces",
+    category: "Press release",
+    date: "15 Mar 2026",
+    excerpt:
+      "Shipments of revised primary syllabuses and teacher guides have arrived at provincial distribution points.",
+    image: "/cat-documents.jpg",
+    body: [
+      "Shipments of the revised primary curriculum materials — syllabuses, teacher guides, and student readers — have now reached distribution points in all nine provinces.",
+      "Education authorities will forward materials to schools before the start of term two. Digital copies remain available in the learning resources section.",
+    ],
+  },
+  {
+    slug: "science-fair-2026",
+    title: "National science fair set for July in Honiara",
+    category: "Event",
+    date: "12 Mar 2026",
+    excerpt:
+      "Secondary students will present projects on climate, energy, and food security at the national science fair.",
+    image: "/cat-reports.jpg",
+    body: [
+      "The national science fair returns this July at the Multipurpose Hall in Honiara, with secondary students presenting projects on climate, energy, and food security.",
+      "Provincial rounds run through May; winning projects earn places at the national event and a share of the equipment prize pool.",
+    ],
+  },
+  {
+    slug: "siemis-training-provinces",
+    title: "SIEMIS data training for provincial officers",
+    category: "Announcement",
+    date: "8 Mar 2026",
+    excerpt:
+      "Provincial education officers will complete refresher training on the education management information system.",
+    body: [
+      "Provincial education officers will complete refresher training on the Solomon Islands Education Management Information System (SIEMIS) over the coming month.",
+      "Accurate school data underpins grant allocations, teacher deployment, and the annual performance report, and the training supports this year's census round.",
+    ],
+  },
+  {
+    slug: "tvet-expansion-malaita",
+    title: "TVET expansion adds trades courses in Malaita",
+    category: "Press release",
+    date: "3 Mar 2026",
+    excerpt:
+      "Two rural training centres will offer new certificate courses in carpentry, plumbing, and small engine repair.",
+    image: "/svc-registration.jpg",
+    body: [
+      "Two rural training centres in Malaita will offer new certificate courses in carpentry, plumbing, and small engine repair from term two.",
+      "The expansion is part of the national skills strategy, matching training to employment demand in the provinces.",
+    ],
+  },
+  {
+    slug: "mobile-library-boat",
+    title: "Mobile library boat begins service in Marovo Lagoon",
+    category: "Press release",
+    date: "26 Feb 2026",
+    excerpt:
+      "A library boat stocked with readers and teacher guides will visit island schools across the lagoon each fortnight.",
+    image: "/cta-scholarships.jpg",
+    body: [
+      "A mobile library boat has begun fortnightly visits to island schools across Marovo Lagoon, carrying readers, teacher guides, and replacement curriculum materials.",
+      "The service is a partnership between the Ministry, Western Province, and community donors, and will be evaluated for expansion to other lagoon communities.",
+    ],
+  },
+  {
+    slug: "ece-policy-consultation",
+    title: "Early childhood policy consultation opens",
+    category: "Announcement",
+    date: "20 Feb 2026",
+    excerpt:
+      "Communities, churches, and providers are invited to comment on the draft early childhood education policy.",
+    body: [
+      "Public consultation has opened on the draft early childhood education policy, which sets standards for centres, teacher qualifications, and community management.",
+      "Written submissions close 31 March. Consultation meetings will be held in each province through February and March.",
+    ],
+  },
+  {
+    slug: "rural-teacher-housing",
+    title: "Sixty new teacher houses completed in remote schools",
+    category: "Press release",
+    date: "17 Feb 2026",
+    excerpt:
+      "The housing programme helps remote schools attract and keep qualified teachers.",
+    image: "/svc-teachers.jpg",
+    body: [
+      "Sixty new teacher houses have been completed at remote schools across five provinces under the rural teacher housing programme.",
+      "Adequate housing is one of the strongest factors in attracting and retaining qualified teachers at remote postings, a key challenge identified in the annual performance report.",
+    ],
+  },
+  {
+    slug: "education-forum-guadalcanal",
+    title: "Guadalcanal education forum draws 200 school leaders",
+    category: "Event",
+    date: "12 Feb 2026",
+    excerpt:
+      "Principals and chairs of school boards met in Honiara to discuss the rollout of the new sector plan.",
+    image: "/soloclassroom.png",
+    body: [
+      "More than 200 principals and school board chairs from Guadalcanal met in Honiara for the provincial education forum.",
+      "Sessions covered the new sector plan, grant acquittals, and school improvement planning. Forums in the remaining provinces run through the first half of the year.",
+    ],
+  },
+  {
+    slug: "wash-grants-round",
+    title: "WASH facilities grant round opens for applications",
+    category: "Announcement",
+    date: "5 Feb 2026",
+    excerpt:
+      "Grants for water, sanitation, and handwashing facilities are open to registered schools until 20 March.",
+    body: [
+      "Applications are open for the water, sanitation, and hygiene (WASH) facilities grant round, funding tanks, toilets, and handwashing stations.",
+      "Registered schools apply through their provincial education authority by 20 March. Priority goes to schools without a protected water supply.",
+    ],
+  },
+  {
+    slug: "literacy-survey-results",
+    title: "Early grade literacy survey shows steady gains",
+    category: "Press release",
+    date: "30 Jan 2026",
+    excerpt:
+      "The national early grade reading assessment records improvement for the third consecutive year.",
+    image: "/cat-reports.jpg",
+    body: [
+      "Results from the national early grade reading assessment show a third consecutive year of improvement in reading fluency and comprehension.",
+      "Gains are strongest in schools using the structured literacy teacher guides. The full report is available in the reports library.",
+    ],
+  },
+  {
+    slug: "scholarships-deadline-2026",
+    title: "Scholarship applications close 28 February",
+    category: "Announcement",
+    date: "15 Jan 2026",
+    excerpt:
+      "Applicants for 2026 tertiary scholarships must complete their applications on the national portal by the closing date.",
+    image: "/cta-scholarships.jpg",
+    body: [
+      "Applications for 2026 tertiary scholarships and study awards close on 28 February on the national scholarships portal.",
+      "Applicants should confirm their documents are complete before submitting; incomplete applications cannot be assessed after the closing date.",
+    ],
+  },
+  {
+    slug: "new-ps-appointment",
+    title: "New Permanent Secretary takes office at the Ministry",
+    category: "Announcement",
+    date: "12 Jan 2026",
+    excerpt:
+      "The incoming Permanent Secretary pledged continuity on the sector plan and closer work with the provinces.",
+    body: [
+      "The Ministry welcomed its new Permanent Secretary this week, following the retirement of the outgoing office holder after six years of service.",
+      "Taking office, the incoming Permanent Secretary pledged continuity in implementing the sector plan and closer working relationships with provincial education authorities.",
+    ],
+  },
+  {
+    slug: "partnership-nz-launch",
+    title: "New Zealand partnership renews support for basic education",
+    category: "Press release",
+    date: "8 Jan 2026",
+    excerpt:
+      "A renewed five-year partnership will support teacher training, learning materials, and school infrastructure.",
+    image: "/cat-documents.jpg",
+    body: [
+      "The Solomon Islands Government and New Zealand have renewed their education partnership for a further five years.",
+      "The partnership supports teacher professional development, learning materials production, and climate-resilient school infrastructure.",
+    ],
+  },
+  {
+    slug: "sports-competition-2025",
+    title: "National schools athletics championship concludes",
+    category: "Event",
+    date: "5 Dec 2025",
+    excerpt:
+      "Western Province topped the medal table at the national schools athletics championship in Honiara.",
+    image: "/cat-videos.jpg",
+    body: [
+      "The national schools athletics championship concluded at Lawson Tama Stadium, with Western Province topping the medal table.",
+      "More than 600 student athletes competed across three days. The Ministry congratulates all provincial teams and the volunteer officials.",
+    ],
+  },
+  {
+    slug: "world-teachers-day-2025",
+    title: "Solomon Islands honours teachers on World Teachers' Day",
+    category: "Event",
+    date: "5 Oct 2025",
+    excerpt:
+      "Ceremonies across the provinces recognised long-serving teachers and celebrated the profession.",
+    image: "/svc-teachers.jpg",
+    body: [
+      "Ceremonies across all nine provinces marked World Teachers' Day, recognising long-serving teachers and celebrating the profession's contribution to national development.",
+      "Forty teachers received long-service awards, including twelve who have taught for more than thirty years.",
+    ],
+  },
+  {
+    slug: "exam-prep-webinars",
+    title: "Exam preparation broadcasts begin for Form 5 and 6",
+    category: "Announcement",
+    date: "26 Sep 2025",
+    excerpt:
+      "Weekly revision broadcasts on radio and the hub support candidates preparing for national examinations.",
+    body: [
+      "Weekly examination revision broadcasts for Form 5 and Form 6 candidates begin this week on radio, with recordings available in the video library.",
+      "Sessions cover the core subjects, with past-paper walkthroughs from experienced examiners.",
+    ],
+  },
+  {
+    slug: "cyclone-recovery-schools",
+    title: "All cyclone-affected schools reopen after recovery works",
+    category: "Press release",
+    date: "18 Sep 2025",
+    excerpt:
+      "Repairs to 28 schools damaged in the April cyclone season are complete, with all students back in class.",
+    image: "/svc-registration.jpg",
+    body: [
+      "Repair works at the 28 schools damaged during the April cyclone season are complete, and all affected students are back in class.",
+      "Rebuilt classrooms meet the safe-schools standard, and the Ministry thanks the communities and partners who supported the recovery programme.",
+    ],
+  },
+  {
+    slug: "library-week-2025",
+    title: "National Library Week brings authors into classrooms",
+    category: "Event",
+    date: "8 Sep 2025",
+    excerpt:
+      "Local authors and storytellers visited schools across the country during National Library Week.",
+    image: "/cat-resources.jpg",
+    body: [
+      "Local authors and traditional storytellers visited classrooms across the country during National Library Week.",
+      "The week closed with the announcement of the national student writing competition winners, whose stories will be published as early readers.",
+    ],
+  },
+  {
+    slug: "unicef-ece-kits",
+    title: "Early learning kits delivered to 300 ECE centres",
+    category: "Press release",
+    date: "28 Aug 2025",
+    excerpt:
+      "Play-based learning kits reached early childhood centres in partnership with UNICEF.",
+    image: "/soloclassroom.png",
+    body: [
+      "Three hundred early childhood education centres have received play-based learning kits through a partnership with UNICEF.",
+      "The kits support the early learning development standards and include materials for counting, letters, and fine motor play.",
+    ],
+  },
+  {
+    slug: "budget-briefing-2026",
+    title: "Education budget briefing published for 2026",
+    category: "Announcement",
+    date: "15 Aug 2025",
+    excerpt:
+      "The Ministry has published a plain-language briefing on the 2026 education budget submission.",
+    body: [
+      "The Ministry has published a plain-language briefing on its 2026 budget submission, covering school grants, teacher payroll, and infrastructure priorities.",
+      "The briefing is part of the Ministry's commitment to transparent public financial management and is available in the document library.",
+    ],
+  },
+  {
+    slug: "teacher-payroll-portal",
+    title: "Teacher payroll enquiries move to new online portal",
+    category: "Announcement",
+    date: "4 Aug 2025",
+    excerpt:
+      "Teachers can now lodge and track payroll enquiries online using their registration number.",
+    body: [
+      "Teacher payroll enquiries can now be lodged and tracked through a new online portal, using the teacher's registration number and school code.",
+      "Paper and phone channels remain open during the transition. The Teaching Service Division aims to resolve standard enquiries within ten working days.",
+    ],
+  },
 ];
 
 export function getNewsPost(slug: string): NewsPost | undefined {

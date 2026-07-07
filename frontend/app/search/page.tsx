@@ -38,7 +38,6 @@ export default async function SearchPage({
 
       <PageHeader
         id="wm-search"
-        eyebrow="Search"
         title={query ? `Results for “${query}”` : "Search the hub."}
         crumbs={[{ label: "Search" }]}
       >

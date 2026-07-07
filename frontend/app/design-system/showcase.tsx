@@ -565,9 +565,11 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <SubHead>News briefs — front page</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The text-only briefs column from the newsroom front page: mono
-            date, category tag, serif headline, one-line excerpt. Carries
-            minor announcements with no image dependence — new posts land
-            here; editors promote the big ones to the lead slots.
+            date, category tag, serif headline, one-line excerpt. The front
+            page composes as a lead story, one band of five (two story cards
+            plus a three-item briefs column on the right), then everything
+            older as a plain &ldquo;More news&rdquo; headline list that loads
+            progressively (one auto-load, then a button).
           </p>
           <div className="max-w-md rounded-2xl border border-border bg-background px-6 py-1">
             <ul className="divide-y divide-border">

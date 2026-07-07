@@ -25,7 +25,6 @@ export default function PublicationsIndexPage() {
 
       <PageHeader
         id="wm-publications"
-        eyebrow="Policies & publications"
         title="The Ministry's official record."
         lead="National policies, sector performance reports, and guidelines — every entry carries a registry reference, a summary page, and the full document to download."
         crumbs={[{ label: "Publications" }]}
