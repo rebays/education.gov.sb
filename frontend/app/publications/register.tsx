@@ -105,18 +105,11 @@ export default function PublicationsRegister() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Filter the register by title, office, or reference"
-            placeholder="Filter the register…"
+            aria-label="Search publications by title, office, or reference"
+            placeholder="Search publications"
             className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
         </div>
-        <span
-          className="w-full text-right text-sm text-muted sm:w-auto"
-          aria-live="polite"
-        >
-          {filtered.length}{" "}
-          {filtered.length === 1 ? "publication" : "publications"} on record
-        </span>
       </div>
 
       {/* year-grouped register */}

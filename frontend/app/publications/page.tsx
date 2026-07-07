@@ -100,28 +100,6 @@ export default function PublicationsIndexPage() {
           <PublicationsRegister />
         </section>
 
-        {/* ---------- Missing-publication CTA ---------- */}
-        <section className="bg-surface">
-          <div className="mx-auto flex w-full max-w-8xl flex-wrap items-center justify-between gap-6 px-6 py-12">
-            <div>
-              <h2 className="font-serif text-2xl text-foreground">
-                Looking for a publication that isn&apos;t listed?
-              </h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
-                Older publications are still being digitised. The Ministry can
-                help you locate printed or archived documents that haven&apos;t
-                reached the register yet.
-              </p>
-            </div>
-            <Link
-              href="/about/contact"
-              className={cn(buttonVariants({ variant: "primary" }), "text-sm")}
-            >
-              Contact the Ministry
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </section>
       </main>
 
       <SiteFooter />
