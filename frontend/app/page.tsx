@@ -25,6 +25,7 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       {/* ---------- HERO (full screen) ---------- */}
       <section className="relative isolate flex min-h-svh flex-col overflow-hidden text-white">
+        {/*
         <Image
           src="/sample.png"
           alt=""
@@ -33,8 +34,9 @@ export default function Home() {
           sizes="100vw"
           className="-z-20 scale-[1.02] object-cover blur-[2px] saturate-75"
         />
-        {/* brand overlay for legibility */}
-        <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top_right,rgba(8,20,40,0.97),rgba(8,20,40,0.88)_45%,rgba(20,82,155,0.72))]" />
+        */}
+        {/* brand background — lighter deep glow at the bottom fading into deep */}
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_100%,#1e355f_0%,var(--deep)_60%)]" />
 
         {/* transparent header over hero */}
         <SiteHeader variant="overlay" />

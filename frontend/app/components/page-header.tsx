@@ -23,13 +23,13 @@ export default function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <section className="relative isolate overflow-hidden bg-deep text-white">
+    <section className="relative isolate flex min-h-[40vh] overflow-hidden bg-deep text-white sm:min-h-[45vh]">
       <TraditionalWatermark
         id={id}
         corners={["top-right", "bottom-left"]}
         className="text-white opacity-[0.05]"
       />
-      <div className="mx-auto w-full max-w-8xl px-6 py-14 sm:py-16">
+      <div className="mx-auto flex w-full max-w-8xl flex-col justify-center px-6 py-24 sm:py-28">
         {crumbs && crumbs.length > 0 && (
           <nav aria-label="Breadcrumb" className="mb-6">
             <ol className="flex flex-wrap items-center gap-2 text-xs text-white/60">

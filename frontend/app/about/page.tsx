@@ -5,6 +5,7 @@ import PageHeader from "../components/page-header";
 import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
 import TraditionalWatermark from "../components/traditional-watermark";
+import AboutServices from "./services-section";
 
 export const metadata: Metadata = {
   title: "About",
@@ -72,13 +73,10 @@ export default function AboutPage() {
         {/* purpose + pillars */}
         <section className="relative isolate overflow-hidden bg-surface">
           <TraditionalWatermark id="wm-about-purpose" />
-          <div className="mx-auto w-full max-w-8xl px-6 py-16 sm:py-20">
+          <div className="mx-auto w-full max-w-8xl px-6 py-20 sm:py-24">
             <div className="grid gap-12 lg:grid-cols-[1fr_1.05fr] lg:items-center">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-                  Our purpose
-                </p>
-                <h2 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-foreground sm:text-4xl">
+                <h2 className="font-serif text-3xl leading-tight tracking-tight text-foreground sm:text-4xl">
                   A national portal, built for every learner.
                 </h2>
                 <p className="mt-5 text-base leading-7 text-muted">
@@ -108,19 +106,14 @@ export default function AboutPage() {
             </div>
 
             <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {pillars.map((p, i) => (
+              {pillars.map((p) => (
                 <div
                   key={p.title}
                   className="flex flex-col rounded-2xl border border-border bg-background p-7 shadow-sm"
                 >
-                  <div className="flex items-center gap-4">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      {p.icon}
-                    </span>
-                    <span className="font-mono text-sm tabular-nums text-muted">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                  </div>
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center text-primary">
+                    {p.icon}
+                  </span>
                   <h3 className="mt-5 font-serif text-2xl text-foreground">
                     {p.title}
                   </h3>
@@ -131,14 +124,13 @@ export default function AboutPage() {
           </div>
         </section>
 
+        <AboutServices />
+
         {/* get in touch */}
-        <section className="bg-background">
-          <div className="mx-auto grid w-full max-w-8xl gap-10 px-6 py-16 sm:py-20 lg:grid-cols-[1fr_1.1fr] lg:items-start">
+        <section className="bg-surface">
+          <div className="mx-auto grid w-full max-w-8xl gap-10 px-6 py-20 sm:py-24 lg:grid-cols-[1fr_1.1fr] lg:items-start">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-                Get in touch
-              </p>
-              <h2 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-foreground sm:text-4xl">
+              <h2 className="font-serif text-3xl leading-tight tracking-tight text-foreground sm:text-4xl">
                 We&apos;re here to help.
               </h2>
               <p className="mt-4 max-w-md text-base leading-7 text-muted">

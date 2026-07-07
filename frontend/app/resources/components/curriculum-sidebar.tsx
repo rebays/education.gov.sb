@@ -84,6 +84,30 @@ export function CurriculumSidebar({
         )}
       </div>
 
+      <div>
+        <Label
+          htmlFor="filter-search"
+          className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-foreground/70"
+        >
+          Search
+        </Label>
+        <div className="relative">
+          <Icon
+            name="search"
+            className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted"
+          />
+          <input
+            id="filter-search"
+            type="search"
+            value={filters.query}
+            onChange={(e) => onFilterChange({ query: e.target.value })}
+            placeholder="Search resources…"
+            aria-label="Search curriculum resources"
+            className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+        </div>
+      </div>
+
       <FilterSelect
         id="filter-resource-type"
         label="Resource type"

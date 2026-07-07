@@ -25,73 +25,76 @@ export default function NewsBanner() {
   );
   const [featured, ...rest] = sorted;
   if (!featured) return null;
-  const briefs = rest.slice(0, 3);
+  const briefs = rest.slice(0, 5);
 
   return (
     <div className="mx-auto w-full max-w-8xl px-6 py-24">
       <h2 className="font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
-        From the newsroom.
+        Latest from iResource.
       </h2>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-3">
-        {/* featured story — ≈2/3 */}
+        {/* featured story — ≈2/3, styled like the curriculum-section cards */}
         <Link
           href={`/news/${featured.slug}`}
-          className="group lg:col-span-2"
+          className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl lg:col-span-2"
         >
-          <div className="relative aspect-[16/9] overflow-hidden rounded-2xl border border-border">
-            {featured.image ? (
-              <>
-                <Image
-                  src={featured.image}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 60vw, 100vw"
-                  className="object-cover"
-                />
-                {/* brand-blue scrim */}
-                <div className="absolute inset-0 bg-gradient-to-t from-deep/60 via-deep/15 to-transparent" />
-              </>
-            ) : (
-              <div className="relative isolate flex h-full w-full items-center justify-center overflow-hidden bg-deep">
-                <TraditionalWatermark
-                  id="wm-news-featured"
-                  corners={["top-right", "bottom-left"]}
-                  className="z-0 text-white opacity-[0.06]"
-                />
-                <Image
-                  src="/coa-si.webp"
-                  alt=""
-                  width={56}
-                  height={56}
-                  className="h-14 w-auto opacity-80"
-                />
-              </div>
-            )}
-          </div>
-          <div className="mt-5 flex flex-wrap items-center gap-3">
-            <Badge variant={categoryVariant[featured.category]}>
-              {featured.category}
-            </Badge>
-            <span className="font-mono text-xs text-muted">
-              {featured.date}
+          {featured.image ? (
+            <>
+              <Image
+                src={featured.image}
+                alt=""
+                fill
+                sizes="(min-width: 1024px) 60vw, 100vw"
+                className="object-cover"
+              />
+              {/* brand-blue scrim — solid text zone, fades out around 82% so the badge sits inside the dark band */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,var(--deep)_22%,rgba(13,31,60,0.92)_32%,rgba(13,31,60,0.78)_42%,rgba(13,31,60,0.6)_52%,rgba(13,31,60,0.4)_62%,rgba(13,31,60,0.2)_72%,rgba(13,31,60,0)_82%)]" />
+            </>
+          ) : (
+            <div className="relative isolate flex h-full w-full items-center justify-center overflow-hidden bg-deep">
+              <TraditionalWatermark
+                id="wm-news-featured"
+                corners={["top-right", "bottom-left"]}
+                className="z-0 text-white opacity-[0.06]"
+              />
+              <Image
+                src="/coa-si.webp"
+                alt=""
+                width={56}
+                height={56}
+                className="h-14 w-auto opacity-80"
+              />
+            </div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge
+                variant={categoryVariant[featured.category]}
+                className="border border-white/25 bg-white/10 text-white backdrop-blur-md"
+              >
+                {featured.category}
+              </Badge>
+              <span className="font-mono text-xs text-white/80">
+                {featured.date}
+              </span>
+            </div>
+            <h3 className="mt-3 font-serif text-2xl leading-snug text-white transition-colors group-hover:text-accent sm:text-3xl">
+              {featured.title}
+            </h3>
+            <p className="mt-2 line-clamp-1 text-base leading-7 text-white/85">
+              {featured.excerpt}
+            </p>
+            <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/90 underline decoration-white/40 underline-offset-4 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100">
+              Read the story
+              <span
+                className="transition-transform group-hover:translate-x-1"
+                aria-hidden
+              >
+                →
+              </span>
             </span>
           </div>
-          <h3 className="mt-3 font-serif text-2xl leading-snug text-foreground transition-colors group-hover:text-primary sm:text-3xl">
-            {featured.title}
-          </h3>
-          <p className="mt-2 line-clamp-1 text-base leading-7 text-muted">
-            {featured.excerpt}
-          </p>
-          <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-            Read the story
-            <span
-              className="transition-transform group-hover:translate-x-1"
-              aria-hidden
-            >
-              →
-            </span>
-          </span>
         </Link>
 
         {/* in brief — ≈1/3, behind a column rule */}

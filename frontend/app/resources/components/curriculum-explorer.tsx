@@ -96,8 +96,8 @@ export function CurriculumExplorer() {
       )}
 
       <div className="min-w-0 flex-1">
-        {/* level tabs (map only) + search + filter pane toggle */}
-        <div className="flex flex-wrap items-center gap-4 border-b border-border">
+        {/* level tabs (map only) + intro/count + filter pane toggle */}
+        <div className="flex flex-wrap items-center gap-4 border-b border-border py-2">
           {viewMode === "map" && (
             <div role="tablist" aria-label="Curriculum level" className="flex gap-1">
               {levelTabs.map((tab) => (
@@ -120,21 +120,7 @@ export function CurriculumExplorer() {
             </div>
           )}
 
-          <div className="ml-auto flex flex-wrap items-center gap-3 py-2">
-            <div className="relative w-56 sm:w-72">
-              <Icon
-                name="search"
-                className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted"
-              />
-              <input
-                type="search"
-                value={filters.query}
-                onChange={(e) => handleFilterChange({ query: e.target.value })}
-                placeholder="Search resources…"
-                aria-label="Search curriculum resources"
-                className="h-11 w-full rounded-lg border border-border bg-background pl-10 pr-4 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               variant="secondary"
               size="sm"
@@ -145,39 +131,46 @@ export function CurriculumExplorer() {
               <Icon name="filter" className="h-4 w-4" />
               {showFilters ? "Hide filters" : "Show filters"}
             </Button>
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setFilters(emptyFilters)}
+              >
+                Clear filters
+              </Button>
+            )}
           </div>
+
+          {viewMode === "map" ? (
+            <div className="ml-auto flex flex-wrap items-center gap-3">
+              <Button variant="secondary" size="sm" onClick={handleBackToList}>
+                <Icon name="arrow" className="h-4 w-4 rotate-180" />
+                Back to resource list
+              </Button>
+              <p className="text-sm text-muted">
+                Coverage across every subject and {level === "primary" ? "year" : "form"} level.
+                Select a number to see the resources published for that subject and grade.
+              </p>
+            </div>
+          ) : (
+            <p className="ml-auto text-sm text-muted" aria-live="polite">
+              {hasActiveFilters ? (
+                <>
+                  {filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}
+                  {activeSubject && <> · {activeSubject.name}</>}
+                  {activeGrade && <> · {activeGrade.label}</>}
+                  {filters.type && <> · {filters.type}</>}
+                  {filters.query && <> · &ldquo;{filters.query}&rdquo;</>}
+                </>
+              ) : (
+                <>Showing {filteredResources.length} recently updated resources</>
+              )}
+            </p>
+          )}
         </div>
 
         <div className="mt-6">
-          {/* intro / back button */}
-          <div className="mb-4">
-            {viewMode === "map" ? (
-              <div className="flex flex-wrap items-center gap-4">
-                <Button variant="secondary" size="sm" onClick={handleBackToList}>
-                  <Icon name="arrow" className="h-4 w-4 rotate-180" />
-                  Back to resource list
-                </Button>
-                <p className="text-sm text-muted">
-                  Coverage across every subject and {level === "primary" ? "year" : "form"} level.
-                  Select a number to see the resources published for that subject and grade.
-                </p>
-              </div>
-            ) : (
-              <p className="text-sm text-muted" aria-live="polite">
-                {hasActiveFilters ? (
-                  <>
-                    {filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}
-                    {activeSubject && <> · {activeSubject.name}</>}
-                    {activeGrade && <> · {activeGrade.label}</>}
-                    {filters.type && <> · {filters.type}</>}
-                    {filters.query && <> · &ldquo;{filters.query}&rdquo;</>}
-                  </>
-                ) : (
-                  <>Showing {filteredResources.length} recently updated resources</>
-                )}
-              </p>
-            )}
-          </div>
 
           {viewMode === "map" ? (
             <CoverageMap

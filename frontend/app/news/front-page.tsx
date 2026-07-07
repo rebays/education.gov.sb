@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import TraditionalWatermark from "../components/traditional-watermark";
 import { news, type NewsCategory, type NewsPost } from "../lib/content";
@@ -170,7 +169,6 @@ function NewsBand({ band }: { band: Band }) {
 
 export default function NewsFrontPage() {
   const [active, setActive] = useState<"All" | NewsCategory>("All");
-  const [query, setQuery] = useState("");
   const [visibleHeadlines, setVisibleHeadlines] = useState(HEADLINES_INITIAL);
   const [autoLoadsUsed, setAutoLoadsUsed] = useState(0);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -178,19 +176,8 @@ export default function NewsFrontPage() {
   const sorted = [...news].sort(
     (a, b) => Date.parse(b.date) - Date.parse(a.date),
   );
-  const byCategory =
-    active === "All" ? sorted : sorted.filter((n) => n.category === active);
-
-  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const filtered =
-    terms.length === 0
-      ? byCategory
-      : byCategory.filter((n) => {
-          const haystack = [n.title, n.excerpt, n.category, n.date, ...n.body]
-            .join(" ")
-            .toLowerCase();
-          return terms.every((t) => haystack.includes(t));
-        });
+    active === "All" ? sorted : sorted.filter((n) => n.category === active);
 
   const [lead, ...rest] = filtered;
   const bands = toBands(rest.slice(0, BAND_SIZE * BAND_COUNT));
@@ -249,40 +236,20 @@ export default function NewsFrontPage() {
           );
         })}
 
-        {/* scoped search — recomposes the front page in place */}
-        <div className="relative ml-auto w-full sm:w-64">
-          <Icon
-            name="search"
-            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              resetLoading();
-            }}
-            aria-label="Search news"
-            placeholder="Search news"
-            className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
       </div>
 
       {filtered.length === 0 && (
         <p className="py-16 text-center text-sm text-muted">
-          {terms.length > 0
-            ? `No stories match “${query.trim()}”. Try a shorter term, or clear the search.`
-            : "No stories in this category yet."}
+          No stories in this category yet.
         </p>
       )}
 
-      {/* lead story */}
+      {/* lead story — image left, text right */}
       {lead && (
         <article className="mt-10 grid gap-8 pb-12 lg:grid-cols-5 lg:items-center">
           <Link
             href={`/news/${lead.slug}`}
-            className="group relative block aspect-[16/10] overflow-hidden rounded-2xl border border-border lg:col-span-3"
+            className="group relative block aspect-16/10 overflow-hidden rounded-2xl border border-border lg:col-span-3"
             tabIndex={-1}
             aria-hidden
           >
