@@ -141,7 +141,6 @@ export default async function ResourcePage({
 
       <PageHeader
         id={`wm-res-${resource.slug}`}
-        eyebrow={cat.title}
         title={resource.title}
         lead={resource.summary}
         crumbs={[

@@ -55,7 +55,6 @@ export default async function PublicationPage({
 
       <PageHeader
         id={`wm-pub-${pub.slug}`}
-        eyebrow={pub.type}
         title={pub.title}
         crumbs={[{ label: "Publications", href: "/publications" }, { label: ref }]}
       >

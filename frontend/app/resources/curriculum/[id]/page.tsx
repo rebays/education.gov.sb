@@ -63,7 +63,6 @@ export default async function CurriculumResourcePage({
 
       <PageHeader
         id={`wm-curriculum-${resource.id}`}
-        eyebrow={subject?.name ?? "Curriculum Index"}
         title={resource.title}
         lead={resource.summary}
         crumbs={[

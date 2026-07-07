@@ -5,12 +5,11 @@ export type Crumb = { label: string; href?: string };
 
 /**
  * Deep-blue title band used at the top of every inner page: breadcrumb,
- * eyebrow, serif title, optional lead paragraph and extra content (e.g. a
- * search form) via children.
+ * serif title, optional lead paragraph and extra content (e.g. a search
+ * form) via children.
  */
 export default function PageHeader({
   id,
-  eyebrow,
   title,
   lead,
   crumbs,
@@ -18,7 +17,6 @@ export default function PageHeader({
 }: {
   /** Unique id for the watermark SVG patterns on this page */
   id: string;
-  eyebrow: string;
   title: string;
   lead?: string;
   crumbs?: Crumb[];
@@ -55,10 +53,7 @@ export default function PageHeader({
             </ol>
           </nav>
         )}
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-accent">
-          {eyebrow}
-        </p>
-        <h1 className="mt-3 max-w-3xl font-serif text-4xl leading-[1.1] tracking-tight sm:text-5xl">
+        <h1 className="max-w-3xl font-serif text-4xl leading-[1.1] tracking-tight sm:text-5xl">
           {title}
         </h1>
         {lead && (

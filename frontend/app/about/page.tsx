@@ -63,7 +63,6 @@ export default function AboutPage() {
 
       <PageHeader
         id="wm-about"
-        eyebrow="About the platform"
         title="About iResource."
         lead="iResource is the official digital learning portal of the Solomon Islands — built by MEHRD with UNICEF Pacific support."
         crumbs={[{ label: "About" }]}

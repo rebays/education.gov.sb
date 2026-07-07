@@ -57,7 +57,6 @@ export default function ContactPage() {
 
       <PageHeader
         id="wm-contact"
-        eyebrow="About the Ministry"
         title="Contact us."
         lead="Questions about a document, a service, or the hub itself — send us a message or reach the right office directly."
         crumbs={[{ label: "About", href: "/about" }, { label: "Contact" }]}

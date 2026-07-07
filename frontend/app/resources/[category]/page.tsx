@@ -43,7 +43,6 @@ export default async function ResourceCategoryPage({
 
       <PageHeader
         id={`wm-cat-${cat.slug}`}
-        eyebrow="Resource library"
         title={cat.title}
         lead={cat.description}
         crumbs={[{ label: "Resources", href: "/resources" }, { label: cat.shortTitle }]}
