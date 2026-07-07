@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -35,12 +35,16 @@ export function MobileFilterIsland({
 }) {
   const [openPicker, setOpenPicker] = useState<PickerKey | null>(null);
   const [searchDraft, setSearchDraft] = useState(filters.query);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const items: { key: PickerKey; label: string; icon: IconName; active: boolean }[] = [
-    { key: "search", label: "Search", icon: "search", active: filters.query.length > 0 },
-    { key: "type", label: "Type", icon: "tag", active: filters.type !== null },
-    { key: "subject", label: "Subject", icon: "book", active: filters.subjectId !== null },
-    { key: "grade", label: "Grade", icon: "graduation", active: filters.gradeId !== null },
+  const activeSubject = subjects.find((s) => s.id === filters.subjectId);
+  const activeGrade = grades.find((g) => g.id === filters.gradeId);
+
+  const items: { key: PickerKey; category: string; value: string | null; icon: IconName }[] = [
+    { key: "search", category: "Search", value: filters.query || null, icon: "search" },
+    { key: "type", category: "Type", value: filters.type, icon: "tag" },
+    { key: "subject", category: "Subject", value: activeSubject?.name ?? null, icon: "book" },
+    { key: "grade", category: "Grade", value: activeGrade?.label ?? null, icon: "graduation" },
   ];
 
   function openSheet(key: PickerKey) {
@@ -51,39 +55,45 @@ export function MobileFilterIsland({
   return (
     <>
       <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 lg:hidden">
-        <div className="flex items-center gap-1 rounded-full border border-border bg-background/95 p-1.5 shadow-xl backdrop-blur">
-          {items.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => openSheet(item.key)}
-              aria-label={item.label}
-              className={cn(
-                "relative flex h-11 w-11 items-center justify-center rounded-full transition-colors",
-                item.active
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted hover:bg-surface-2 hover:text-foreground"
-              )}
-            >
-              <Icon name={item.icon} className="h-5 w-5" />
-              {item.active && (
-                <span
-                  aria-hidden
-                  className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-accent ring-2 ring-background"
-                />
-              )}
-            </button>
-          ))}
+        <div className="flex items-center gap-0.5 rounded-3xl border border-border bg-background/95 p-1.5 shadow-xl backdrop-blur">
+          {items.map((item) => {
+            const active = item.value !== null;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => openSheet(item.key)}
+                aria-label={active ? `${item.category}: ${item.value}` : item.category}
+                className={cn(
+                  "relative flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 transition-colors",
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted hover:bg-surface-2 hover:text-foreground"
+                )}
+              >
+                <Icon name={item.icon} className="h-5 w-5" />
+                <span aria-hidden className="max-w-14 truncate text-[10px] leading-none font-medium">
+                  {item.value ?? item.category}
+                </span>
+                {active && (
+                  <span
+                    aria-hidden
+                    className="absolute top-1 right-2 h-2 w-2 rounded-full bg-accent ring-2 ring-background"
+                  />
+                )}
+              </button>
+            );
+          })}
 
-          <span aria-hidden className="mx-1 h-6 w-px bg-border" />
+          <span aria-hidden className="mx-0.5 h-8 w-px bg-border" />
 
           <button
             type="button"
             onClick={onShowMap}
-            aria-label="Coverage Map"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
+            className="flex min-w-14 flex-col items-center justify-center gap-0.5 rounded-2xl px-2 py-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-foreground"
           >
             <Icon name="grid" className="h-5 w-5" />
+            <span className="text-[10px] leading-none font-medium">Map</span>
           </button>
         </div>
       </div>
@@ -127,7 +137,17 @@ export function MobileFilterIsland({
         }}
       />
 
-      <Sheet open={openPicker === "search"} onOpenChange={(open) => setOpenPicker(open ? "search" : null)}>
+      <Sheet
+        open={openPicker === "search"}
+        onOpenChange={(open) => setOpenPicker(open ? "search" : null)}
+        onOpenChangeComplete={(open) => {
+          // Focusing before the slide-in transition finishes pops the
+          // on-screen keyboard mid-animation, which resizes the visual
+          // viewport and made the sheet appear to jump/hide on real
+          // mobile devices. Focus only once the sheet has fully settled.
+          if (open) searchInputRef.current?.focus();
+        }}
+      >
         <SheetContent side="bottom" className="rounded-t-2xl">
           <SheetTitle className="sr-only">Search resources</SheetTitle>
           <SheetHeader className="border-b border-border">
@@ -147,7 +167,7 @@ export function MobileFilterIsland({
                 className="pointer-events-none absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-muted"
               />
               <input
-                autoFocus
+                ref={searchInputRef}
                 type="search"
                 value={searchDraft}
                 onChange={(e) => setSearchDraft(e.target.value)}
