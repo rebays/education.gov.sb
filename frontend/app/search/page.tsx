@@ -5,6 +5,7 @@ import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
 import {
   categories,
+  categoryHref,
   getCategory,
   resourceHref,
   searchContent,
@@ -191,7 +192,7 @@ export default async function SearchPage({
                 {categories.map((c) => (
                   <Link
                     key={c.slug}
-                    href={`/resources/${c.slug}`}
+                    href={categoryHref(c.slug)}
                     className="group rounded-2xl border border-border bg-surface p-5 transition-all hover:-translate-y-1 hover:border-primary hover:shadow-lg"
                   >
                     <h3 className="font-serif text-lg text-foreground group-hover:text-primary">

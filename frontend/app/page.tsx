@@ -6,7 +6,7 @@ import Publications from "./components/publications";
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
 import TraditionalWatermark from "./components/traditional-watermark";
-import { categories } from "./lib/content";
+import { categories, categoryHref } from "./lib/content";
 import { subjects } from "./lib/curriculum";
 
 /* subject suggestion pills under the hero search bar */
@@ -167,7 +167,7 @@ export default function Home() {
             {categories.map((c) => (
               <Link
                 key={c.slug}
-                href={`/resources/${c.slug}`}
+                href={categoryHref(c.slug)}
                 className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-sm transition-transform active:scale-[0.97]"
               >
                 <Image
@@ -196,7 +196,7 @@ export default function Home() {
             {categories.map((c) => (
               <Link
                 key={c.slug}
-                href={`/resources/${c.slug}`}
+                href={categoryHref(c.slug)}
                 className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl"
               >
                 <Image

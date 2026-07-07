@@ -627,6 +627,45 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
+          <SubHead>Page not found (404)</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The 404 page reuses the title band as a recovery surface: an
+            apologetic serif title, a search form, glass quick-link pills to
+            the four main sections, and a quiet mono error code. Below the
+            band, the page offers the &ldquo;browse instead&rdquo; category
+            cards shared with empty search results.
+          </p>
+          <div className="overflow-hidden rounded-2xl border border-border">
+            <PageHeader
+              id="wm-ds-404"
+              title="We can't find that page."
+              lead="The link may be outdated, or the page may have been moved. Try a search, or start again from one of the sections below."
+              crumbs={[{ label: "Page not found" }]}
+            >
+              <div className="mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row">
+                <div className="h-12 flex-1 rounded-lg border border-white/20 bg-white/95 px-4 text-base leading-[3rem] text-muted">
+                  Search documents, reports, videos…
+                </div>
+                <span className="flex h-12 items-center rounded-lg bg-accent px-6 text-sm font-semibold text-accent-foreground">
+                  Search
+                </span>
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                {["Resources", "Publications", "News", "About"].map((label) => (
+                  <span
+                    key={label}
+                    className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-8 font-mono text-xs text-white/50">Error 404</p>
+            </PageHeader>
+          </div>
+        </div>
+
+        <div className="mt-12">
           <SubHead>Accordion — services</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The selection accordion from the About page: hairline-ruled rows
