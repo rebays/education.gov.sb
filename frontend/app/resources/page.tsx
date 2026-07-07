@@ -17,7 +17,7 @@ export default function ResourceIndexPage() {
 
       <PageHeader
         id="wm-resources"
-        title="Every subject, every grade, in one map."
+        title="Digital Curriculum, one map to master your learning path."
         lead="See what's published against each subject and grade level at a glance, then drill into the resources behind any cell."
         crumbs={[{ label: "Resources" }]}
       />

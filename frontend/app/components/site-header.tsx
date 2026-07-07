@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import MobileNav from "./mobile-nav";
 
 /**
  * Shared site header.
@@ -102,6 +103,8 @@ export default function SiteHeader({
             </Link>
           ))}
         </nav>
+
+        <MobileNav items={primaryNav} variant={variant} />
       </div>
     </header>
   );

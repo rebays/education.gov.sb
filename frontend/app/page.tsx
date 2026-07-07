@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import NewsBanner from "./components/news-banner";
 import Publications from "./components/publications";
 import SiteFooter from "./components/site-footer";
@@ -115,18 +116,48 @@ export default function Home() {
             Syllabuses, teacher guides, and classroom materials for every
             stage of schooling.
           </p>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {/* compact 2x2 tiles — mobile only */}
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:hidden">
             {categories.map((c) => (
               <Link
                 key={c.slug}
                 href={`/resources/${c.slug}`}
-                className="group relative aspect-[3/4] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl sm:aspect-[4/5]"
+                className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-sm transition-transform active:scale-[0.97]"
               >
                 <Image
                   src={c.image}
                   alt=""
                   fill
-                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                  sizes="50vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,rgba(13,31,60,0.85)_32%,rgba(13,31,60,0.1)_65%,transparent_80%)]" />
+                <div className="absolute inset-x-0 bottom-0 p-3">
+                  <h3 className="text-sm leading-tight font-semibold text-white">
+                    {c.shortTitle}
+                  </h3>
+                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-white/75">
+                    Browse
+                    <Icon name="arrow" className="h-3 w-3" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* full editorial cards — tablet and up */}
+          <div className="mt-12 hidden gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+            {categories.map((c) => (
+              <Link
+                key={c.slug}
+                href={`/resources/${c.slug}`}
+                className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl"
+              >
+                <Image
+                  src={c.image}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 25vw, 50vw"
                   className="object-cover"
                 />
                 {/* brand-blue scrim — solid title zone, fully clear by the card's midpoint */}

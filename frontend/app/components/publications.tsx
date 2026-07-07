@@ -62,8 +62,10 @@ export default function Publications() {
         </Link>
       </div>
 
-      {/* right — fanned covers, latest in front */}
-      <div className="flex items-center justify-center py-10">
+      {/* right — fanned covers, latest in front. Hidden below `lg`, where
+          the grid stacks to one column and this would otherwise sit
+          beneath the list as three loose cards. */}
+      <div className="hidden items-center justify-center py-10 lg:flex">
         {fan.map((p, i) => (
           <Link
             key={p.slug}
