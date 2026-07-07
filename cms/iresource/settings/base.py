@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "resources",
     "menu",
     "news",
+    "publication",
     "grapple",
     "graphene_django",
     "wagtail_headless_preview",
@@ -181,7 +182,7 @@ GRAPHENE = {
     "SCHEMA": "grapple.schema.schema",
 }
 GRAPPLE = {
-    "APPS": ["home", "menu", "resources", "news"],
+    "APPS": ["home", "menu", "resources", "news", "publication"],
     "RICH_TEXT_FORMAT": "html",
     "EXPOSE_GRAPHIQL": True,
 }
