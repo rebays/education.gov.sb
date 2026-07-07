@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import Publications from "./components/publications";
-import Services from "./components/services";
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
 import TraditionalWatermark from "./components/traditional-watermark";
@@ -160,12 +159,6 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </section>
-
-      {/* ---------- SERVICES (full screen) ---------- */}
-      <section className="relative isolate flex min-h-screen items-center overflow-hidden bg-background">
-        <TraditionalWatermark id="wm-services" />
-        <Services />
       </section>
 
       {/* ---------- FOOTER ---------- */}
