@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
+import PublicationCover from "../components/publication-cover";
 import TraditionalWatermark from "../components/traditional-watermark";
+import { publications } from "../lib/content";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon, icons } from "@/components/ui/icon";
@@ -508,6 +510,62 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
                 </nav>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Register row — publications index</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The gazette-style entry used on the publications register: a mono
+            registry code (data, never decoration), a type badge, a serif
+            title, and a direct download action — grouped under large serif
+            year markers.
+          </p>
+          <div className="rounded-2xl border border-border bg-background px-6">
+            <div className="grid gap-4 border-b border-border py-6 last:border-0 sm:grid-cols-[160px_1fr] lg:grid-cols-[160px_1fr_auto] lg:gap-8">
+              <div>
+                <p className="font-mono text-xs text-muted">MEHRD/2026/03</p>
+                <Badge variant="primary" className="mt-2">Policy</Badge>
+              </div>
+              <div className="min-w-0">
+                <h4 className="font-serif text-xl leading-snug text-foreground">
+                  National Education Action Plan 2026–2030
+                </h4>
+                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">
+                  The Ministry&apos;s five-year strategy for improving access,
+                  quality, and equity across the education sector.
+                </p>
+                <p className="mt-2 text-xs text-muted">
+                  12 May 2026 · Strategic Support Unit
+                </p>
+              </div>
+              <div className="flex items-start gap-2 lg:flex-col lg:items-end">
+                <Button variant="secondary" size="sm" className="h-9 px-3 text-xs">
+                  <Icon name="download" className="size-3.5" />
+                  PDF
+                  <span className="font-mono font-normal text-muted">3.2 MB</span>
+                </Button>
+                <span className="inline-flex h-9 items-center gap-1 px-1 text-xs font-semibold text-primary">
+                  Summary <span aria-hidden>→</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Document cover — publications</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The designed stand-in for a publication&apos;s cover: deep panel,
+            gold rule, coat of arms, serif title, mono registry footer. Anchors
+            the publications index and each publication record; becomes the
+            fallback once the CMS supplies real cover art.
+          </p>
+          <div className="flex flex-wrap items-start gap-8">
+            <PublicationCover
+              publication={publications[0]}
+              className="w-[240px]"
+            />
           </div>
         </div>
       </Section>

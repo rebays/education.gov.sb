@@ -339,9 +339,10 @@ export type Publication = {
   size: string;
   office: string;
   summary: string;
+  /** "At a glance" bullets shown above the body, when provided */
+  keyPoints?: string[];
+  /** Body blocks; items starting with "## " render as section headings */
   body: string[];
-  /** Slug path of the matching file in the resource library, if any */
-  resource?: { category: CategorySlug; slug: string };
 };
 
 export const publications: Publication[] = [
@@ -355,12 +356,20 @@ export const publications: Publication[] = [
     office: "Strategic Support Unit",
     summary:
       "The Ministry's five-year strategy for improving access, quality, and equity across the education sector.",
+    keyPoints: [
+      "Three goals: equitable access, quality teaching and learning, and stronger system management.",
+      "Developed through consultations across all nine provinces.",
+      "Annual work plans, with a mid-term review scheduled for 2028.",
+      "Progress reported publicly through the sector performance report.",
+    ],
     body: [
+      "## Three goals for the sector",
       "The National Education Action Plan (NEAP) 2026–2030 sets the direction for the education sector over the next five years. It is built around three goals: improving equitable access to education at all levels, raising the quality of teaching and learning, and strengthening the management of the education system.",
+      "## Developed with the provinces",
       "The plan was developed through consultation with provincial education authorities, school leaders, churches, development partners, and communities across all nine provinces. It responds to the findings of the 2025 sector review and aligns with the National Development Strategy.",
+      "## Implementation and reporting",
       "Implementation is coordinated by the Strategic Support Unit, with annual work plans and a mid-term review scheduled for 2028. Progress is reported publicly through the Education Sector Annual Performance Report.",
     ],
-    resource: { category: "documents", slug: "neap-2026-2030" },
   },
   {
     slug: "annual-performance-2025",
@@ -372,12 +381,20 @@ export const publications: Publication[] = [
     office: "Planning, Coordination & Research Division",
     summary:
       "Enrolment, completion, and learning-outcome data measured against national education targets.",
+    keyPoints: [
+      "Early childhood enrolment continues to grow nationally.",
+      "Primary completion rates improved on 2024.",
+      "The gender gap in secondary enrolment is narrowing.",
+      "Teacher deployment to remote schools remains the key challenge.",
+    ],
     body: [
+      "## What the report covers",
       "The Annual Performance Report presents the state of the education sector for the 2025 school year, drawing on data from the Solomon Islands Education Management Information System (SIEMIS) and the national examination results.",
+      "## Key findings for 2025",
       "The 2025 report shows continued growth in early childhood enrolment, improved completion rates in primary education, and a narrowing gender gap in secondary enrolment. It also identifies persistent challenges in teacher deployment to remote schools and in the condition of school infrastructure.",
+      "## How the report is used",
       "The report is the primary accountability document for the sector and informs the annual budget submission and the joint sector review with development partners.",
     ],
-    resource: { category: "reports", slug: "annual-performance-2025" },
   },
   {
     slug: "curriculum-framework-primary",
@@ -394,7 +411,6 @@ export const publications: Publication[] = [
       "The framework emphasises literacy and numeracy in the early grades, learning in familiar languages, and the integration of local culture and environment into classroom practice. Subject syllabuses, teacher guides, and student materials are all derived from this framework.",
       "Schools and education authorities should use the framework alongside the phased rollout schedule published by the Curriculum Development Division.",
     ],
-    resource: { category: "documents", slug: "curriculum-framework-primary" },
   },
   {
     slug: "ece-statistics-2025",
@@ -411,7 +427,6 @@ export const publications: Publication[] = [
       "The 2025 data shows continued expansion of community-based ECE provision, with the largest growth in Malaita and Western provinces. Access remains lowest in remote and artificial-island communities.",
       "The digest supports provincial planning and the national target of universal access to two years of early childhood education before primary school.",
     ],
-    resource: { category: "reports", slug: "ece-statistics-2025" },
   },
   {
     slug: "infrastructure-grants-guidelines",
@@ -428,7 +443,6 @@ export const publications: Publication[] = [
       "Applications are made through provincial education authorities and are assessed against published criteria: enrolment pressure, the condition of existing facilities, disaster resilience, and community contribution.",
       "The guidelines include the application form, the assessment rubric, and the reporting requirements for schools that receive funding.",
     ],
-    resource: { category: "documents", slug: "infrastructure-grants-guidelines" },
   },
   {
     slug: "language-education-policy",
@@ -450,6 +464,23 @@ export const publications: Publication[] = [
 
 export function getPublication(slug: string): Publication | undefined {
   return publications.find((p) => p.slug === slug);
+}
+
+export function publicationYear(p: Publication): number {
+  return Number(p.date.trim().split(/\s+/).pop());
+}
+
+/**
+ * Official registry reference, e.g. MEHRD/2026/03 — numbered by publication
+ * order within the year. Mirrors how the CMS will assign reference codes.
+ */
+export function publicationRef(p: Publication): string {
+  const year = publicationYear(p);
+  const ofYear = publications
+    .filter((x) => publicationYear(x) === year)
+    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
+  const n = ofYear.findIndex((x) => x.slug === p.slug) + 1;
+  return `MEHRD/${year}/${String(n).padStart(2, "0")}`;
 }
 
 /* ------------------------------------------------------------------ */
