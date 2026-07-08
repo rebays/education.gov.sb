@@ -33,7 +33,7 @@ export const categories: ResourceCategory[] = [
     shortTitle: "Early Childhood",
     description:
       "Play-based, language-rich resources for Solomon Islands children aged 3 to 5.",
-    image: "/cat-resources.jpg",
+    image: "/ece-classroom.png",
     count: "0 resources",
   },
   {
@@ -42,7 +42,7 @@ export const categories: ResourceCategory[] = [
     shortTitle: "Primary",
     description:
       "Years 1–6 across English, Mathematics, Health, Christian Life Education, Arts and Culture and Physical Education.",
-    image: "/svc-teachers.jpg",
+    image: "/primary-classroom.png",
     count: "74 resources",
   },
   {
@@ -51,7 +51,7 @@ export const categories: ResourceCategory[] = [
     shortTitle: "Junior Secondary",
     description:
       "Years 7–9 across Agriculture, Arts and Culture, Business Studies, Christian Life Education, English, Health, Mathematics and Technology.",
-    image: "/svc-examinations.jpg",
+    image: "/junior-secondary-classroom.png",
     count: "18 resources",
   },
   {
@@ -60,7 +60,7 @@ export const categories: ResourceCategory[] = [
     shortTitle: "Senior Secondary",
     description:
       "Years 10–12 — preparing students for examinations and post-secondary study.",
-    image: "/cat-reports.jpg",
+    image: "/senior-secondary-classroom.png",
     count: "0 resources",
   },
 ];

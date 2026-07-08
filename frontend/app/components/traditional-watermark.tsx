@@ -56,11 +56,27 @@ export default function TraditionalWatermark({
   id,
   corners = ["bottom-left", "bottom-right"],
   className = "",
+  fill = false,
 }: {
   id: string;
   corners?: Corner[];
   className?: string;
+  /** Tile the motif evenly across the whole parent instead of fading in
+   *  from the corners — for panels where the pattern itself is the
+   *  point, not a faint accent (e.g. a page-header's photo-split band). */
+  fill?: boolean;
 }) {
+  if (fill) {
+    return (
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 -z-10 text-primary opacity-[0.06] ${className}`}
+      >
+        <Weave patternId={`${id}-fill`} />
+      </div>
+    );
+  }
+
   return (
     <div
       aria-hidden

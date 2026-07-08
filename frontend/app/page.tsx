@@ -39,6 +39,14 @@ export default function Home() {
         {/* brand background — lighter deep glow at the bottom fading into deep */}
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_100%,#1e355f_0%,var(--deep)_60%)]" />
 
+        {/* Isabel woven-mat pattern — faint, full-bleed, fading toward the
+            centre so it reads as texture in the night sky rather than a
+            photo */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-[url('/isabel-mat-crop.jpeg')] bg-cover bg-center bg-no-repeat opacity-[0.05] [filter:invert(1)] [mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)] [-webkit-mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)]"
+        />
+
         {/* transparent header over hero */}
         <SiteHeader variant="overlay" />
 
