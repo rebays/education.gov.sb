@@ -1,4 +1,13 @@
+"use client";
+
 import { categories } from "../lib/content";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /**
  * The flagship search bar from the landing hero, shared with the search
@@ -33,36 +42,30 @@ export default function HeroSearch({
       />
 
       {/* curriculum-level scope */}
-      <div className="relative hidden h-8 items-center border-l border-border pl-2 sm:flex">
+      <div className="hidden h-8 items-center border-l border-border pl-2 sm:flex">
         <label htmlFor="hero-level" className="sr-only">
           Curriculum level
         </label>
-        <select
-          id="hero-level"
-          key={defaultLevel}
-          name="level"
-          defaultValue={defaultLevel}
-          className="h-full appearance-none rounded-md bg-transparent pl-2 pr-8 text-sm font-medium text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-        >
-          <option value="">All levels</option>
-          {categories.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.shortTitle}
-            </option>
-          ))}
-        </select>
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-          className="pointer-events-none absolute right-2 size-4 text-muted"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
+        <Select key={defaultLevel} name="level" defaultValue={defaultLevel || null}>
+          <SelectTrigger
+            id="hero-level"
+            className="h-full w-auto gap-1 rounded-md border-0 bg-transparent px-2 text-sm font-medium text-muted focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0"
+          >
+            <SelectValue>
+              {(value: string | null) =>
+                categories.find((c) => c.slug === value)?.shortTitle ?? "All levels"
+              }
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent align="end">
+            <SelectItem value={null}>All levels</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c.slug} value={c.slug}>
+                {c.shortTitle}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <button

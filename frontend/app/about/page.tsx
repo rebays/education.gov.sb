@@ -6,12 +6,20 @@ import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
 import TraditionalWatermark from "../components/traditional-watermark";
 import AboutServices from "./services-section";
+import { TopicSelect } from "../components/topic-select";
 
 export const metadata: Metadata = {
   title: "About",
   description:
     "iResource is the official digital learning portal of the Solomon Islands — built by MEHRD with UNICEF Pacific support.",
 };
+
+const topics = [
+  ["general", "General enquiry"],
+  ["resource", "A document or resource"],
+  ["contribute", "Contributing to iResource"],
+  ["hub", "Problem with the platform"],
+] as const;
 
 const stroke = {
   fill: "none",
@@ -230,17 +238,7 @@ export default function AboutPage() {
                 >
                   Topic
                 </label>
-                <select
-                  id="about-contact-topic"
-                  name="topic"
-                  className="h-11 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  defaultValue="general"
-                >
-                  <option value="general">General enquiry</option>
-                  <option value="resource">A document or resource</option>
-                  <option value="contribute">Contributing to iResource</option>
-                  <option value="hub">Problem with the platform</option>
-                </select>
+                <TopicSelect id="about-contact-topic" defaultValue="general" topics={topics} />
               </div>
 
               <div className="mt-5 flex flex-col gap-1.5">

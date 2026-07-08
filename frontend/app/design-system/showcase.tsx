@@ -11,8 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Icon, icons } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ResourceCard } from "@/components/ui/resource-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /* ------------------------------------------------------------------ */
 /*  Config — the ONLY thing that differs between the two systems.      */
@@ -500,12 +506,17 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             </div>
             <div>
               <Label htmlFor="ds-category" className="mb-1.5 text-foreground">Select category</Label>
-              <NativeSelect id="ds-category" className="w-full">
-                <NativeSelectOption>Early Childhood</NativeSelectOption>
-                <NativeSelectOption>Primary</NativeSelectOption>
-                <NativeSelectOption>Junior Secondary</NativeSelectOption>
-                <NativeSelectOption>Senior Secondary</NativeSelectOption>
-              </NativeSelect>
+              <Select defaultValue="Early Childhood">
+                <SelectTrigger id="ds-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Early Childhood">Early Childhood</SelectItem>
+                  <SelectItem value="Primary">Primary</SelectItem>
+                  <SelectItem value="Junior Secondary">Junior Secondary</SelectItem>
+                  <SelectItem value="Senior Secondary">Senior Secondary</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="ds-phone" className="mb-1.5 text-foreground">Phone</Label>

@@ -1,7 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Label } from "@/components/ui/label";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Grade, ResourceType, Subject } from "../../lib/curriculum";
 
 function FilterSelect<T extends string>({
@@ -24,19 +30,19 @@ function FilterSelect<T extends string>({
       <Label htmlFor={id} className="mb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-foreground/70">
         {label}
       </Label>
-      <NativeSelect
-        id={id}
-        className="w-full"
-        value={active ?? ""}
-        onChange={(e) => onChange((e.target.value || null) as T | null)}
-      >
-        <NativeSelectOption value="">All</NativeSelectOption>
-        {options.map((opt) => (
-          <NativeSelectOption key={opt} value={opt}>
-            {optionLabel(opt)}
-          </NativeSelectOption>
-        ))}
-      </NativeSelect>
+      <Select value={active} onValueChange={(value) => onChange(value as T | null)}>
+        <SelectTrigger id={id}>
+          <SelectValue>{(value: T | null) => (value ? optionLabel(value) : "All")}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={null}>All</SelectItem>
+          {options.map((opt) => (
+            <SelectItem key={opt} value={opt}>
+              {optionLabel(opt)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
