@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import HeroSearch from "../components/hero-search";
 import PageHeader from "../components/page-header";
 import SiteFooter from "../components/site-footer";
 import SiteHeader from "../components/site-header";
 import {
   categories,
+  categoryHref,
   getCategory,
   resourceHref,
   searchContent,
@@ -49,27 +51,11 @@ export default async function SearchPage({
         title={query ? `Results for “${query}”` : "Search the hub."}
         crumbs={[{ label: "Search" }]}
       >
-        <form
-          action="/search"
-          role="search"
-          className="mt-8 flex w-full max-w-xl flex-col gap-3 sm:flex-row"
-        >
-          <input
-            key={query}
-            type="search"
-            name="q"
-            defaultValue={query}
-            placeholder="Search documents, reports, videos…"
-            aria-label="Search the resource hub"
-            className="h-12 flex-1 rounded-lg border border-white/20 bg-white/95 px-4 text-base text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <button
-            type="submit"
-            className="h-12 rounded-lg bg-accent px-6 text-sm font-semibold text-accent-foreground transition-transform hover:scale-[1.02]"
-          >
-            Search
-          </button>
-        </form>
+        <HeroSearch
+          defaultQuery={query}
+          defaultLevel={levelCategory?.slug ?? ""}
+          className="mt-8 max-w-2xl"
+        />
         {query && (
           <p className="mt-5 text-sm text-white/70" aria-live="polite">
             {results.length} {results.length === 1 ? "result" : "results"}
@@ -191,7 +177,7 @@ export default async function SearchPage({
                 {categories.map((c) => (
                   <Link
                     key={c.slug}
-                    href={`/resources/${c.slug}`}
+                    href={categoryHref(c.slug)}
                     className="group rounded-2xl border border-border bg-surface p-5 transition-all hover:-translate-y-1 hover:border-primary hover:shadow-lg"
                   >
                     <h3 className="font-serif text-lg text-foreground group-hover:text-primary">

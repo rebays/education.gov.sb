@@ -36,11 +36,20 @@ const levelTabs: { value: Level; label: string }[] = [
  * The list (most recently updated resources, filterable) is the default
  * landing state; the Coverage Map is opt-in via the sidebar button and via
  * drilling into a specific subject/grade cell.
+ *
+ * `initialLevel`/`initialFilters` seed the state from URL params
+ * (/resources?level=…&subject=…), already validated by the page.
  */
-export function CurriculumExplorer() {
-  const [level, setLevel] = useState<Level>("primary");
+export function CurriculumExplorer({
+  initialLevel = "primary",
+  initialFilters = emptyFilters,
+}: {
+  initialLevel?: Level;
+  initialFilters?: CurriculumFilters;
+}) {
+  const [level, setLevel] = useState<Level>(initialLevel);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [filters, setFilters] = useState<CurriculumFilters>(emptyFilters);
+  const [filters, setFilters] = useState<CurriculumFilters>(initialFilters);
   const [showFilters, setShowFilters] = useState(true);
 
   const subjects = useMemo(() => getSubjects(level), [level]);

@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Icon } from "@/components/ui/icon";
+import HeroSearch from "./components/hero-search";
 import NewsBanner from "./components/news-banner";
 import Publications from "./components/publications";
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
 import TraditionalWatermark from "./components/traditional-watermark";
-import { categories } from "./lib/content";
+import { categories, categoryHref } from "./lib/content";
 import { subjects } from "./lib/curriculum";
 
 /* subject suggestion pills under the hero search bar */
@@ -60,71 +61,7 @@ export default function Home() {
               Building a brighter future through learning.
             </p>
 
-            <form
-              action="/search"
-              role="search"
-              className="group mx-auto mt-10 flex h-14 w-full max-w-4xl items-center rounded-full border border-white/20 bg-white/95 pl-6 pr-1.5 focus-within:ring-2 focus-within:ring-accent"
-            >
-              <input
-                type="search"
-                name="q"
-                placeholder="Search documents, reports, videos…"
-                aria-label="Search the resource hub"
-                className="h-full min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted focus:outline-none"
-              />
-
-              {/* curriculum-level scope */}
-              <div className="relative hidden h-8 items-center border-l border-border pl-2 sm:flex">
-                <label htmlFor="hero-level" className="sr-only">
-                  Curriculum level
-                </label>
-                <select
-                  id="hero-level"
-                  name="level"
-                  defaultValue=""
-                  className="h-full appearance-none rounded-md bg-transparent pl-2 pr-8 text-sm font-medium text-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                >
-                  <option value="">All levels</option>
-                  {categories.map((c) => (
-                    <option key={c.slug} value={c.slug}>
-                      {c.shortTitle}
-                    </option>
-                  ))}
-                </select>
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                  className="pointer-events-none absolute right-2 size-4 text-muted"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </div>
-
-              <button
-                type="submit"
-                className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground transition-transform hover:scale-[1.02] sm:w-auto sm:gap-2 sm:px-5"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                  className="size-[18px] shrink-0"
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-3.5-3.5" />
-                </svg>
-                <span className="sr-only sm:not-sr-only">Search</span>
-              </button>
-            </form>
+            <HeroSearch className="mx-auto mt-10 max-w-4xl" />
 
             {/* glass subject pills — suggested searches */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
@@ -175,7 +112,7 @@ export default function Home() {
             {categories.map((c) => (
               <Link
                 key={c.slug}
-                href={`/resources/${c.slug}`}
+                href={categoryHref(c.slug)}
                 className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-sm transition-transform active:scale-[0.97]"
               >
                 <Image
@@ -204,7 +141,7 @@ export default function Home() {
             {categories.map((c) => (
               <Link
                 key={c.slug}
-                href={`/resources/${c.slug}`}
+                href={categoryHref(c.slug)}
                 className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl"
               >
                 <Image

@@ -69,6 +69,14 @@ export function getCategory(slug: string): ResourceCategory | undefined {
   return categories.find((c) => c.slug === slug);
 }
 
+/**
+ * There is no per-category page; category links land on the resource index
+ * pre-filtered to the matching curriculum level.
+ */
+export function categoryHref(slug: CategorySlug): string {
+  return `/resources?level=${slug}`;
+}
+
 export type Resource = {
   slug: string;
   title: string;

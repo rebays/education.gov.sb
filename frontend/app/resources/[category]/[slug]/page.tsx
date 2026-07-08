@@ -6,6 +6,7 @@ import ResourceList from "../../../components/resource-list";
 import SiteFooter from "../../../components/site-footer";
 import SiteHeader from "../../../components/site-header";
 import {
+  categoryHref,
   getCategory,
   getResource,
   getResourcesByCategory,
@@ -145,7 +146,7 @@ export default async function ResourcePage({
         lead={resource.summary}
         crumbs={[
           { label: "Resources", href: "/resources" },
-          { label: cat.shortTitle, href: `/resources/${cat.slug}` },
+          { label: cat.shortTitle, href: categoryHref(cat.slug) },
           { label: resource.title },
         ]}
       />
