@@ -45,7 +45,7 @@ export default function Home() {
             photo */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-[url('/isabel-mat-crop.jpeg')] bg-cover bg-center bg-no-repeat opacity-[0.05] [filter:invert(1)] [mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)] [-webkit-mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)]"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[url('/isabel-mat-crop.png')] bg-cover bg-center bg-no-repeat opacity-[0.05] [filter:invert(1)] [mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)] [-webkit-mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)]"
         />
 
         {/* transparent header over hero */}

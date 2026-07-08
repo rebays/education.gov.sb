@@ -48,8 +48,16 @@ export default function MobileNav({
         <span className="sr-only">Open menu</span>
       </SheetTrigger>
 
-      <SheetContent side="full" className="gap-0 p-0">
+      <SheetContent side="full" className="gap-0 overflow-hidden p-0">
         <SheetTitle className="sr-only">Site navigation</SheetTitle>
+
+        {/* traditional roundel — tucked into the corner so only its
+            top-left quarter shows, the rest bleeding off the bottom and
+            right edges of the sheet */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-80 -right-80 h-[640px] w-[640px] bg-[url('/circle-traditional-design.jpeg')] bg-contain bg-no-repeat opacity-[0.07]"
+        />
 
         {/* search first — top of the page so the keyboard never covers it */}
         <div className="px-6 pb-2 pt-20">
