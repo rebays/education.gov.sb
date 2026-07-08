@@ -93,6 +93,15 @@ export function CurriculumExplorer({
 
   return (
     <div className="mx-auto flex w-full max-w-8xl flex-col gap-8 px-6 py-12 lg:flex-row">
+      <MobileFilterIsland
+        resourceTypes={resourceTypes}
+        subjects={subjects}
+        grades={grades}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onShowMap={handleShowMap}
+      />
+
       {showFilters && (
         <CurriculumSidebar
           resourceTypes={resourceTypes}
@@ -165,7 +174,11 @@ export function CurriculumExplorer({
               </p>
             </div>
           ) : (
-            <p className="ml-auto text-sm text-muted" aria-live="polite">
+            <p
+              key={`${level}-${filters.type ?? ""}-${filters.subjectId ?? ""}-${filters.gradeId ?? ""}-${filters.query}`}
+              className="animate-in fade-in-0 slide-in-from-top-1 ml-auto text-sm text-muted duration-300"
+              aria-live="polite"
+            >
               {hasActiveFilters ? (
                 <>
                   {filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}
@@ -192,19 +205,15 @@ export function CurriculumExplorer({
               onCellClick={handleCellClick}
             />
           ) : (
-            <CurriculumResourceList resources={filteredResources} subjects={subjects} grades={grades} />
+            <CurriculumResourceList
+              key={`${level}-${filters.type ?? ""}-${filters.subjectId ?? ""}-${filters.gradeId ?? ""}-${filters.query}`}
+              resources={filteredResources}
+              subjects={subjects}
+              grades={grades}
+            />
           )}
         </div>
       </div>
-
-      <MobileFilterIsland
-        resourceTypes={resourceTypes}
-        subjects={subjects}
-        grades={grades}
-        filters={filters}
-        onFilterChange={handleFilterChange}
-        onShowMap={handleShowMap}
-      />
     </div>
   );
 }

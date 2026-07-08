@@ -54,7 +54,13 @@ export function MobileFilterIsland({
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 lg:hidden">
+      {/* rendered as the first child right at the top of the content
+          column, then pulled up with a negative margin so its natural
+          resting position straddles the seam between PageHeader and the
+          white content below — half sunk into the navy band, half into
+          the content. `sticky` keeps it reachable once you scroll past
+          that point instead of it scrolling away. */}
+      <div className="sticky top-24 z-40 -mt-20 mb-6 flex justify-center px-4 lg:hidden">
         <div className="flex items-center gap-0.5 rounded-3xl border border-border bg-background/95 p-1.5 shadow-xl backdrop-blur">
           {items.map((item) => {
             const active = item.value !== null;

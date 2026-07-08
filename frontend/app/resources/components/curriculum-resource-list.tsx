@@ -49,7 +49,7 @@ export function CurriculumResourceList({
 }) {
   if (resources.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-border bg-surface p-12 text-center">
+      <div className="animate-in fade-in-0 zoom-in-95 rounded-2xl border border-dashed border-border bg-surface p-12 text-center duration-300">
         <p className="text-[15px] text-muted">No resources match these filters yet.</p>
       </div>
     );
@@ -57,9 +57,11 @@ export function CurriculumResourceList({
 
   return (
     <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-      {resources.map((r) => (
+      {resources.map((r, i) => (
         <ResourceCard
           key={r.id}
+          className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-300"
+          style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
           {...toCardProps(
             r,
             subjects.find((s) => s.id === r.subjectId),

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import type { CSSProperties } from "react"
 
 import { Badge, type badgeVariants } from "@/components/ui/badge"
 import { Button, type buttonVariants } from "@/components/ui/button"
@@ -26,6 +27,7 @@ type ResourceCardBase = {
   meta: string
   badges: ResourceCardBadge[]
   className?: string
+  style?: CSSProperties
   /** Wraps the title in a link, e.g. to a detail page. */
   href?: string
 }
@@ -38,10 +40,11 @@ type ResourceCardProps = ResourceCardBase &
 
 /** The hub's core listing unit — documents, reports, and videos share this shell. */
 function ResourceCard(props: ResourceCardProps) {
-  const { title, description, meta, badges, className, href } = props
+  const { title, description, meta, badges, className, style, href } = props
 
   return (
     <article
+      style={style}
       className={cn(
         "group flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-xl",
         className
