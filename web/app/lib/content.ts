@@ -59,7 +59,7 @@ export const categories: ResourceCategory[] = [
     title: "Senior Secondary",
     shortTitle: "Senior Secondary",
     description:
-      "Years 10–12 — preparing students for examinations and post-secondary study.",
+      "Years 10–12, preparing students for examinations and post-secondary study.",
     image: "/senior-secondary-classroom.png",
     count: "0 resources",
   },

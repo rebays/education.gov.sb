@@ -65,7 +65,7 @@ function ResourceCard(props: ResourceCardProps) {
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-lg",
               props.icon === "report"
-                ? "bg-accent/20 text-(--accent-ink)"
+                ? "bg-accent/20 text-accent-ink"
                 : "bg-primary/10 text-primary"
             )}
           >

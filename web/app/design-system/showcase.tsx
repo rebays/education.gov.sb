@@ -72,7 +72,6 @@ export type ShowcaseConfig = {
     "display" | "h1" | "h2" | "h3" | "lead" | "body" | "small" | "eyebrow",
     string
   >;
-  deep: string;
 };
 
 /* ------------------------------------------------------------------ */
@@ -190,6 +189,31 @@ function SubHead({ children }: { children: React.ReactNode }) {
   );
 }
 
+function GradientCard({
+  name,
+  recipe,
+  usage,
+  gradient,
+}: {
+  name: string;
+  /** Token chain, set in mono. */
+  recipe: string;
+  usage: string;
+  gradient: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-border bg-background">
+      <div className={`flex h-28 items-end p-3 ${gradient}`}>
+        <span className="font-serif text-lg text-white">{name}</span>
+      </div>
+      <div className="space-y-1 p-3">
+        <p className="font-mono text-xs text-foreground">{recipe}</p>
+        <p className="pt-1 text-[13px] leading-snug text-muted">{usage}</p>
+      </div>
+    </div>
+  );
+}
+
 function SwatchCard({ s }: { s: Swatch }) {
   const textColor = s.on === "dark" ? "text-foreground" : "text-white";
   return (
@@ -298,6 +322,32 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             ))}
           </div>
         </div>
+
+        <div className="mt-12">
+          <SubHead>Gradients</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            Ink Deep never appears alone on full-bleed panels. It&apos;s
+            composed with two supporting tokens that exist only for these
+            treatments: <code>deep-soft</code> (#1E355F) lifts it and{" "}
+            <code>deep-2</code> (#081432) grounds it. The same tokens feed the
+            photo scrims (the <code>scrim-*</code> utilities in globals.css),
+            so a palette change re-tints those too.
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <GradientCard
+              name="Night sky"
+              recipe="deep-soft → deep · radial"
+              usage="The landing hero's background glow."
+              gradient="bg-[radial-gradient(ellipse_120%_80%_at_50%_100%,var(--deep-soft)_0%,var(--deep)_60%)]"
+            />
+            <GradientCard
+              name="Cover"
+              recipe="deep-soft → deep → deep-2"
+              usage="Publication cover panels; footer sits on flat deep-2."
+              gradient="bg-gradient-to-br from-deep-soft via-deep to-deep-2"
+            />
+          </div>
+        </div>
       </Section>
 
       {/* ---------- Typography ---------- */}
@@ -395,7 +445,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <SubHead>Traditional watermark</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The Pacific weave motif anchored to panel corners and faded toward
-            the centre — rendered at 5–6% opacity in the surface&apos;s text
+            the centre, rendered at 5–6% opacity in the surface&apos;s text
             colour, behind hero bands, section backgrounds, and image-less
             fallbacks. Ambience, never content.
           </p>
@@ -414,11 +464,11 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         id="motifs"
         eyebrow="Foundations"
         title="Traditional designs"
-        intro="Beyond the hand-drawn SVG watermark above, four photographed and illustrated Solomon Islands motifs — woven mat patterns, and panpipe and tema silhouettes — carry the same cultural language across hero, header, footer, and section backgrounds. Same recipe every time: strip the source art's white background into the surface behind it, then fade the edges so nothing sits in a hard-edged box."
+        intro="Beyond the hand-drawn SVG watermark above, four photographed and illustrated Solomon Islands motifs (woven mat patterns, and panpipe and tema silhouettes) carry the same cultural language across hero, header, footer, and section backgrounds. Same recipe every time: strip the source art's white background into the surface behind it, then fade the edges so nothing sits in a hard-edged box."
       >
         <div className="grid gap-10 sm:grid-cols-2">
           <div>
-            <SubHead>Hero background — Isabel mat weave</SubHead>
+            <SubHead>Hero background: Isabel mat weave</SubHead>
             <p className="mb-4 text-[15px] leading-relaxed text-muted">
               Full-bleed behind the landing hero at 5% opacity, inverted so
               the illustration&apos;s white ground disappears into the navy
@@ -437,7 +487,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           </div>
 
           <div>
-            <SubHead>Page header — woven column</SubHead>
+            <SubHead>Page header: woven column</SubHead>
             <p className="mb-4 text-[15px] leading-relaxed text-muted">
               Every inner-page title band carries this on its right side at
               14% opacity, fading to plain navy on the left via a linear
@@ -458,8 +508,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             <SubHead>Footer border strip</SubHead>
             <p className="mb-4 text-[15px] leading-relaxed text-muted">
               A tiled diamond-lattice strip dividing the footer&apos;s link
-              columns from the copyright bar — the one motif meant to be
-              seen plainly rather than sensed, at 20% opacity.
+              columns from the copyright bar. This is the one motif meant to
+              be seen plainly rather than sensed, at 20% opacity.
             </p>
             <div className="relative isolate flex h-56 items-center overflow-hidden rounded-2xl border border-border bg-deep">
               <div
@@ -473,11 +523,11 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           </div>
 
           <div>
-            <SubHead>Section accent — tema</SubHead>
+            <SubHead>Section accent: tema</SubHead>
             <p className="mb-4 text-[15px] leading-relaxed text-muted">
               A single tema silhouette anchors the landing page&apos;s
               Latest Publications section, bottom-right and rotated 180°,
-              at 6% opacity against the light surface tone — no invert
+              at 6% opacity against the light surface tone. No invert is
               needed here, since the source&apos;s own near-white
               background already matches.
             </p>
@@ -499,9 +549,9 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             <li>· Source art is black line-work on a white/near-white ground.</li>
             <li>· On dark surfaces, filter: invert(1) flips it to pale-on-navy so the white ground disappears.</li>
             <li>· On light surfaces matching the source&apos;s own ground, no invert is needed.</li>
-            <li>· A mask-image gradient — radial, linear, or none — replaces hard rectangular edges with a fade.</li>
+            <li>· A mask-image gradient (radial, linear, or none) replaces hard rectangular edges with a fade.</li>
             <li>· Opacity stays low, 5–20%, scaled to whether the motif is ambience or a deliberate accent.</li>
-            <li>· Every instance is aria-hidden and pointer-events-none — decoration, never content.</li>
+            <li>· Every instance is aria-hidden and pointer-events-none: decoration, never content.</li>
           </ul>
         </div>
       </Section>
@@ -512,9 +562,9 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         id="controls"
         eyebrow="Components"
         title="Controls &amp; forms"
-        intro="Buttons, inputs, badges, and confirmation actions — every control is built from the same role tokens, so the whole set re-skins together."
+        intro="Buttons, inputs, badges, and confirmation actions. Every control is built from the same role tokens, so the whole set re-skins together."
       >
-        <SubHead>Buttons — variants</SubHead>
+        <SubHead>Button variants</SubHead>
         <div className="flex flex-wrap items-center gap-4">
           <Button variant="primary">
             <Icon name="download" className="h-4 w-4" />
@@ -532,7 +582,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Buttons — sizes & states</SubHead>
+          <SubHead>Button sizes & states</SubHead>
           <div className="flex flex-wrap items-center gap-4">
             <Button size="sm">Small</Button>
             <Button size="md">Medium</Button>
@@ -592,7 +642,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Glass pills — suggested searches</SubHead>
+          <SubHead>Glass pills</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             Frosted-glass suggestion chips (<code>GlassPill</code>) under the
             hero search bar: white at 10% with backdrop blur and a soft
@@ -618,7 +668,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         intro="The hub's two search treatments and the in-place filtering patterns that narrow listings without leaving the page."
       >
         <div>
-          <SubHead>Search — hero pill</SubHead>
+          <SubHead>Hero search pill</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The flagship search, shared by the landing hero, the search
             results band, and the 404 page: a full pill on white with the
@@ -632,7 +682,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Search — header field</SubHead>
+          <SubHead>Header search field</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The workaday variant (<code>SearchField</code>) in the inner-page
             header: a compact rounded-lg field on the surface tone with the
@@ -649,12 +699,12 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Filter bar — chips & scoped search</SubHead>
+          <SubHead>Filter bar</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The in-place filter row used on the publications register and the
-            newsroom: type chips (<code>FilterChip</code> — the active chip
-            fills primary) with a scoped search (<code>SearchField</code>) at
-            the right end that recomposes the listing live.
+            newsroom: type chips (<code>FilterChip</code>, where the active
+            chip fills primary) with a scoped search (<code>SearchField</code>)
+            at the right end that recomposes the listing live.
           </p>
           <div className="rounded-2xl border border-border bg-background p-6">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-border pb-4">
@@ -683,7 +733,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         intro="How pages open and move: the site header, the deep-blue title band, and structural interactions."
       >
         <div>
-          <SubHead>Navigation — header</SubHead>
+          <SubHead>Site header</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The shared site header, rendered live in both variants:{" "}
             <code>solid</code> for inner pages (sticky, with the inline search
@@ -713,7 +763,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             <PageHeader
               id="wm-ds-pageheader"
               title="The Ministry's official record."
-              lead="National policies, sector performance reports, and guidelines — every entry carries a registry reference."
+              lead="National policies, sector performance reports, and guidelines. Every entry carries a registry reference."
               crumbs={[{ label: "Publications" }]}
             />
           </div>
@@ -760,8 +810,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The selection accordion (<code>Accordion</code>): hairline-ruled
             rows with serif titles, a rotating chevron, and a smooth grid-rows
-            height animation. One panel is always open — it&apos;s a selector,
-            not a toggle. Live component — try it.
+            height animation. One panel is always open, so it acts as a
+            selector rather than a toggle. Live component, try it.
           </p>
           <div className="max-w-2xl rounded-2xl border border-border bg-background px-6 pb-1 pt-2">
             <Accordion items={accordionItems} headingLevel="h4" />
@@ -769,7 +819,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Accordion — with media</SubHead>
+          <SubHead>Accordion with media</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The media variant (<code>MediaAccordion</code>), as used by the
             About page&apos;s services section: the open row drives a
@@ -787,7 +837,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         id="records"
         eyebrow="Components"
         title="Cards &amp; records"
-        intro="The library's content surfaces — cards, tiles, register rows, covers, and the data panels that describe official records."
+        intro="The library's content surfaces: cards, tiles, register rows, covers, and the data panels that describe official records."
       >
         <div>
           <SubHead>Resource cards</SubHead>
@@ -836,7 +886,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Category tile — curriculum levels</SubHead>
+          <SubHead>Category tile</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The landing page&apos;s level tiles: portrait photo under a
             brand-blue scrim that runs solid through the title zone and clears
@@ -854,12 +904,12 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Register row — publications index</SubHead>
+          <SubHead>Register row</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The gazette-style entry used on the publications register: a mono
             registry code (data, never decoration), a type badge, a serif
-            title, and a direct download action — grouped under large serif
-            year markers.
+            title, and a direct download action, all grouped under large
+            serif year markers.
           </p>
           <div className="rounded-2xl border border-border bg-background px-6 py-6">
             <PublicationRow publication={publications[0]} isLatest />
@@ -867,7 +917,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Document cover — publications</SubHead>
+          <SubHead>Document cover</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The designed stand-in for a publication&apos;s cover: deep panel,
             gold rule, coat of arms, serif title, mono registry footer. Anchors
@@ -884,11 +934,11 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Fact sheet — record sidebar</SubHead>
+          <SubHead>Fact sheet</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The spec table on resource and publication records: uppercase
             labels left, mono values right, hairline-ruled rows. Mono is for
-            data — never decoration.
+            data, never decoration.
           </p>
           <div className="max-w-sm rounded-2xl border border-border bg-surface p-6">
             <FactSheet
@@ -904,9 +954,9 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>At a glance — key points</SubHead>
+          <SubHead>At a glance</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
-            Check-marked key points shown above a publication&apos;s body —
+            Check-marked key points shown above a publication&apos;s body,
             the skimmable summary before the full text.
           </p>
           <AtAGlance
@@ -932,8 +982,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             The text-only briefs column: mono date, category tag, serif
             headline, one-line excerpt. Used behind a hairline column rule on
             the news index (as part of its lead band) and on the landing
-            page&apos;s newsroom section — it carries minor stories with no
-            image dependence.
+            page&apos;s newsroom section, where it carries minor stories with
+            no image dependence.
           </p>
           <div className="max-w-md rounded-2xl border border-border bg-background px-6 py-5">
             <BriefsColumn briefs={news.slice(1, 3)} />
@@ -945,8 +995,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The image-led news card: 16:10 photo, colour-coded category badge
             with mono date, serif headline, short excerpt. Stories without a
-            photo fall back to the designed deep panel — watermark and coat of
-            arms — so text-only announcements never break a card slot.
+            photo fall back to the designed deep panel (watermark and coat of
+            arms) so text-only announcements never break a card slot.
           </p>
           <div className="grid max-w-3xl gap-8 sm:grid-cols-2">
             <StoryCard story={storyWithImage} />
@@ -969,7 +1019,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Pull quote — news article</SubHead>
+          <SubHead>Pull quote</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             Official voices set apart in article bodies: an oversized gold
             quote mark, serif italic at 2xl, and a plain attribution line.
@@ -1005,8 +1055,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         <div className="mt-8 rounded-2xl border border-border bg-surface p-6">
           <SubHead>Motion principles</SubHead>
           <ul className="grid gap-2 text-[15px] leading-relaxed text-muted sm:grid-cols-2">
-            <li>· Subtle by default — 120–200ms hover, 240–320ms panels. Ease cubic-bezier(.2,.7,.3,1).</li>
-            <li>· Photographs lead — hero images fade in over ~300ms with a 2% scale.</li>
+            <li>· Subtle by default: 120–200ms hover, 240–320ms panels. Ease cubic-bezier(.2,.7,.3,1).</li>
+            <li>· Photographs lead. Hero images fade in over ~300ms with a 2% scale.</li>
             <li>· Cards lift on hover (−4px translate + shadow-xl), never on load.</li>
             <li>· Under prefers-reduced-motion, transitions drop to 0ms; nothing breaks.</li>
           </ul>
@@ -1018,14 +1068,14 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         id="accessibility"
         eyebrow="Principles"
         title="Accessibility"
-        intro="The hub serves the whole public. Contrast, focus, and clear labelling are non-negotiable — and hold in both themes."
+        intro="The hub serves the whole public. Contrast, focus, and clear labelling are non-negotiable, and hold in both themes."
       >
         <ul className="grid gap-4 sm:grid-cols-2">
           {[
             "All text meets WCAG 2.2 AA contrast on the canvas (ink 4.5:1+).",
-            "Focus rings are a 2px primary outline with 2px offset — never removed.",
+            "Focus rings are a 2px primary outline with 2px offset, never removed.",
             "Tap targets are at least 44×44px on mobile (button size ≥ md).",
-            "Status is never colour-only — badges always pair colour with a text label.",
+            "Status is never colour-only. Badges always pair colour with a text label.",
             "Images carry descriptive alt text; decorative images use empty alt.",
             "Form errors are announced via role=\"alert\", not colour alone.",
           ].map((item) => (

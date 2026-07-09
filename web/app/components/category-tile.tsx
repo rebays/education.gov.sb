@@ -39,7 +39,7 @@ export default function CategoryTile({
           sizes={sizes ?? "50vw"}
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,rgba(13,31,60,0.85)_32%,rgba(13,31,60,0.1)_65%,transparent_80%)]" />
+        <div className="absolute inset-0 scrim-tile-compact" />
         <div className="absolute inset-x-0 bottom-0 p-3">
           <h3 className="text-sm leading-tight font-semibold text-white">
             {title}
@@ -65,8 +65,7 @@ export default function CategoryTile({
         sizes={sizes ?? "(min-width: 1024px) 25vw, 50vw"}
         className="object-cover"
       />
-      {/* brand-blue scrim — solid title zone, fully clear by the card's midpoint */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,var(--deep)_10%,rgba(13,31,60,0.92)_17%,rgba(13,31,60,0.78)_24%,rgba(13,31,60,0.6)_31%,rgba(13,31,60,0.4)_38%,rgba(13,31,60,0.2)_44%,rgba(13,31,60,0)_50%)]" />
+      <div className="absolute inset-0 scrim-tile" />
       <div className="absolute inset-x-0 bottom-0 p-5">
         <h3 className="font-serif text-2xl leading-snug text-white transition-colors group-hover:text-accent">
           {title}

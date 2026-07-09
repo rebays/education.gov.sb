@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function SiteFooter() {
   return (
-    <footer className="bg-[#081432] text-white">
+    <footer className="bg-deep-2 text-white">
       <div>
         <div className="mx-auto flex w-full max-w-8xl flex-col gap-12 px-6 pb-32 pt-36 lg:flex-row lg:items-start lg:justify-between lg:gap-24">
           <div className="lg:max-w-md">

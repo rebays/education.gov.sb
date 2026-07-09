@@ -78,7 +78,7 @@ export default async function NewsPostPage({
               sizes="100vw"
               className="-z-20 object-cover"
             />
-            <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_top,rgba(8,20,40,0.92),rgba(8,20,40,0.45)_55%,rgba(8,20,40,0.25))]" />
+            <div className="absolute inset-0 -z-10 scrim-hero" />
           </>
         ) : (
           <div className="absolute inset-0 -z-20 bg-deep">

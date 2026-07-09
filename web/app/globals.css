@@ -110,7 +110,9 @@
   --warning: #b8791c;
   --error: #a83232;
 
-  --deep: #0d1f3c;          /* immersive panels, footer */
+  --deep: #0d1f3c;          /* immersive panels */
+  --deep-soft: #1e355f;     /* lifted deep — glows, gradient starts */
+  --deep-2: #081432;        /* darkest deep — footer, gradient ends */
 
   --font-display-role: var(--font-baskervville);
   --font-body-role: var(--font-source-sans);
@@ -132,10 +134,13 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-accent-ink: var(--accent-ink);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
   --color-deep: var(--deep);
+  --color-deep-soft: var(--deep-soft);
+  --color-deep-2: var(--deep-2);
 
   --font-sans: var(--font-sans);
   --font-serif: var(--font-display-role);
@@ -171,6 +176,63 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ================================================================== */
+/*  Brand-blue scrims — the deep gradients laid over photography.      */
+/*  All stops derive from the deep tokens so a palette change          */
+/*  re-tints every scrim.                                              */
+/* ================================================================== */
+
+/* Editorial tile: solid through the title zone, clear by the midpoint */
+@utility scrim-tile {
+  background-image: linear-gradient(
+    to top,
+    var(--deep) 0%,
+    var(--deep) 10%,
+    color-mix(in srgb, var(--deep) 92%, transparent) 17%,
+    color-mix(in srgb, var(--deep) 78%, transparent) 24%,
+    color-mix(in srgb, var(--deep) 60%, transparent) 31%,
+    color-mix(in srgb, var(--deep) 40%, transparent) 38%,
+    color-mix(in srgb, var(--deep) 20%, transparent) 44%,
+    transparent 50%
+  );
+}
+
+/* Compact mobile tile: shorter title zone, clear by 80% */
+@utility scrim-tile-compact {
+  background-image: linear-gradient(
+    to top,
+    var(--deep) 0%,
+    color-mix(in srgb, var(--deep) 85%, transparent) 32%,
+    color-mix(in srgb, var(--deep) 10%, transparent) 65%,
+    transparent 80%
+  );
+}
+
+/* Featured news banner: solid text band, fades out around 82% */
+@utility scrim-banner {
+  background-image: linear-gradient(
+    to top,
+    var(--deep) 0%,
+    var(--deep) 22%,
+    color-mix(in srgb, var(--deep) 92%, transparent) 32%,
+    color-mix(in srgb, var(--deep) 78%, transparent) 42%,
+    color-mix(in srgb, var(--deep) 60%, transparent) 52%,
+    color-mix(in srgb, var(--deep) 40%, transparent) 62%,
+    color-mix(in srgb, var(--deep) 20%, transparent) 72%,
+    transparent 82%
+  );
+}
+
+/* Article hero: darkest-deep wash for white text over a full-bleed photo */
+@utility scrim-hero {
+  background-image: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--deep-2) 92%, transparent),
+    color-mix(in srgb, var(--deep-2) 45%, transparent) 55%,
+    color-mix(in srgb, var(--deep-2) 25%, transparent)
+  );
 }
 
 body {

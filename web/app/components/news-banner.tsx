@@ -48,8 +48,7 @@ export default function NewsBanner() {
                 sizes="(min-width: 1024px) 60vw, 100vw"
                 className="object-cover"
               />
-              {/* brand-blue scrim — solid text zone, fades out around 82% so the badge sits inside the dark band */}
-              <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,var(--deep)_22%,rgba(13,31,60,0.92)_32%,rgba(13,31,60,0.78)_42%,rgba(13,31,60,0.6)_52%,rgba(13,31,60,0.4)_62%,rgba(13,31,60,0.2)_72%,rgba(13,31,60,0)_82%)]" />
+              <div className="absolute inset-0 scrim-banner" />
             </>
           ) : (
             <div className="relative isolate flex h-full w-full items-center justify-center overflow-hidden bg-deep">

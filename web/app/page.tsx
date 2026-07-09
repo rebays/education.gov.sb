@@ -38,7 +38,7 @@ export default function Home() {
         />
         */}
         {/* brand background — lighter deep glow at the bottom fading into deep */}
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_100%,#1e355f_0%,var(--deep)_60%)]" />
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_120%_80%_at_50%_100%,var(--deep-soft)_0%,var(--deep)_60%)]" />
 
         {/* Isabel woven-mat pattern — faint, full-bleed, fading toward the
             centre so it reads as texture in the night sky rather than a

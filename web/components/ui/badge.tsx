@@ -10,7 +10,7 @@ const badgeVariants = cva(
     variants: {
       variant: {
         primary: "bg-primary/10 text-primary",
-        accent: "bg-accent/20 text-[color:var(--accent-ink)]",
+        accent: "bg-accent/20 text-accent-ink",
         success: "bg-success/12 text-success",
         warning: "bg-warning/12 text-warning",
         error: "bg-error/12 text-error",
