@@ -1,3 +1,4 @@
+"use client"
 import { forwardRef, useState, type InputHTMLAttributes } from "react"
 
 import { Icon } from "@/components/ui/icon"
