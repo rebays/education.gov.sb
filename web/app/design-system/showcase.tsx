@@ -4,8 +4,12 @@ import PageHeader from "../components/page-header";
 import PublicationCover from "../components/publication-cover";
 import TraditionalWatermark from "../components/traditional-watermark";
 import { publications } from "../lib/content";
-import AccordionDemo from "./accordion-demo";
 import CategoryTabs from "./category-tabs";
+import {
+  Accordion,
+  MediaAccordion,
+  type MediaAccordionItem,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon, icons } from "@/components/ui/icon";
@@ -87,6 +91,30 @@ const breakpoints = [
   { prefix: "md:", range: "768–1023px", label: "tablet" },
   { prefix: "lg:", range: "1024–1279px", label: "desktop" },
   { prefix: "xl:", range: "1280px +", label: "wide" },
+];
+
+const accordionItems: MediaAccordionItem[] = [
+  {
+    title: "School registration & approvals",
+    tag: "Schools",
+    description:
+      "Register a new school, renew approvals, and meet national operating requirements.",
+    image: "/svc-registration.jpg",
+  },
+  {
+    title: "Examinations & results",
+    tag: "Students & parents",
+    description:
+      "Find exam timetables, sit national assessments, and access your results online.",
+    image: "/svc-examinations.jpg",
+  },
+  {
+    title: "Teacher services & payroll",
+    tag: "Teachers",
+    description:
+      "Manage teacher registration, professional development, and payroll enquiries.",
+    image: "/svc-teachers.jpg",
+  },
 ];
 
 const anchors = [
@@ -781,16 +809,28 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
         </div>
 
         <div className="mt-12">
-          <SubHead>Accordion — services</SubHead>
+          <SubHead>Accordion</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
-            The selection accordion from the About page: hairline-ruled rows
-            with serif titles, a rotating chevron, and a smooth grid-rows
+            The selection accordion (<code>Accordion</code>): hairline-ruled
+            rows with serif titles, a rotating chevron, and a smooth grid-rows
             height animation. One panel is always open — it&apos;s a selector,
-            not a toggle — and on the About page the open row also drives a
-            companion image. Live component — try it.
+            not a toggle. Live component — try it.
           </p>
           <div className="max-w-2xl rounded-2xl border border-border bg-background px-6 pb-1 pt-2">
-            <AccordionDemo />
+            <Accordion items={accordionItems} headingLevel="h4" />
+          </div>
+        </div>
+
+        <div className="mt-12">
+          <SubHead>Accordion — with media</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The media variant (<code>MediaAccordion</code>), as used by the
+            About page&apos;s services section: the open row drives a
+            crossfading companion image, captioned with the row&apos;s
+            audience tag and title.
+          </p>
+          <div className="rounded-2xl border border-border bg-background p-6">
+            <MediaAccordion items={accordionItems} headingLevel="h4" />
           </div>
         </div>
       </Section>
