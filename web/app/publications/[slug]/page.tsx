@@ -6,6 +6,8 @@ import PublicationCover from "../../components/publication-cover";
 import SiteFooter from "../../components/site-footer";
 import SiteHeader from "../../components/site-header";
 import { buttonVariants } from "@/components/ui/button";
+import { AtAGlance } from "@/components/ui/at-a-glance";
+import { FactSheet } from "@/components/ui/fact-sheet";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
@@ -77,25 +79,7 @@ export default async function PublicationPage({
 
             {/* at a glance */}
             {pub.keyPoints && pub.keyPoints.length > 0 && (
-              <div className="mt-8 max-w-2xl rounded-2xl border border-border bg-surface p-6">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
-                  At a glance
-                </p>
-                <ul className="mt-4 space-y-2.5">
-                  {pub.keyPoints.map((point) => (
-                    <li
-                      key={point}
-                      className="flex gap-3 text-sm leading-6 text-foreground"
-                    >
-                      <Icon
-                        name="check"
-                        className="mt-1 size-4 shrink-0 text-primary"
-                      />
-                      {point}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              <AtAGlance className="mt-8" points={pub.keyPoints} />
             )}
 
             <div className="mt-8 max-w-2xl space-y-6">
@@ -158,29 +142,16 @@ export default async function PublicationPage({
                   {pub.size}
                 </span>
               </a>
-              <dl className="mt-6 space-y-3.5">
-                {(
-                  [
-                    ["Reference", ref],
-                    ["Type", pub.type],
-                    ["Published", pub.date],
-                    ["Format", `${pub.format} · ${pub.size}`],
-                    ["Source office", pub.office],
-                  ] as [string, string][]
-                ).map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-baseline justify-between gap-4 border-b border-border/70 pb-3 last:border-0 last:pb-0"
-                  >
-                    <dt className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">
-                      {label}
-                    </dt>
-                    <dd className="text-right font-mono text-sm text-foreground">
-                      {value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <FactSheet
+                className="mt-6"
+                facts={[
+                  ["Reference", ref],
+                  ["Type", pub.type],
+                  ["Published", pub.date],
+                  ["Format", `${pub.format} · ${pub.size}`],
+                  ["Source office", pub.office],
+                ]}
+              />
             </div>
           </aside>
         </div>

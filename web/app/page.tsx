@@ -1,6 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
-import { Icon } from "@/components/ui/icon";
+import { GlassPill } from "@/components/ui/glass-pill";
+import CategoryTile from "./components/category-tile";
 import HeroSearch from "./components/hero-search";
 import NewsBanner from "./components/news-banner";
 import Publications from "./components/publications";
@@ -66,13 +66,12 @@ export default function Home() {
             {/* glass subject pills — suggested searches */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
               {heroSubjects.map((s) => (
-                <Link
+                <GlassPill
                   key={s.id}
                   href={`/search?q=${encodeURIComponent(s.name)}`}
-                  className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/20 hover:text-white"
                 >
                   {s.name}
-                </Link>
+                </GlassPill>
               ))}
             </div>
           </div>
@@ -110,61 +109,25 @@ export default function Home() {
           {/* compact 2x2 tiles — mobile only */}
           <div className="mt-8 grid grid-cols-2 gap-3 sm:hidden">
             {categories.map((c) => (
-              <Link
+              <CategoryTile
                 key={c.slug}
+                variant="compact"
                 href={categoryHref(c.slug)}
-                className="group relative aspect-[4/5] overflow-hidden rounded-2xl shadow-sm transition-transform active:scale-[0.97]"
-              >
-                <Image
-                  src={c.image}
-                  alt=""
-                  fill
-                  sizes="50vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,rgba(13,31,60,0.85)_32%,rgba(13,31,60,0.1)_65%,transparent_80%)]" />
-                <div className="absolute inset-x-0 bottom-0 p-3">
-                  <h3 className="text-sm leading-tight font-semibold text-white">
-                    {c.shortTitle}
-                  </h3>
-                  <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-white/75">
-                    Browse
-                    <Icon name="arrow" className="h-3 w-3" />
-                  </span>
-                </div>
-              </Link>
+                image={c.image}
+                title={c.shortTitle}
+              />
             ))}
           </div>
 
           {/* full editorial cards — tablet and up */}
           <div className="mt-12 hidden gap-6 sm:grid sm:grid-cols-2 lg:grid-cols-4">
             {categories.map((c) => (
-              <Link
+              <CategoryTile
                 key={c.slug}
                 href={categoryHref(c.slug)}
-                className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl"
-              >
-                <Image
-                  src={c.image}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 25vw, 50vw"
-                  className="object-cover"
-                />
-                {/* brand-blue scrim — solid title zone, fully clear by the card's midpoint */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,var(--deep)_10%,rgba(13,31,60,0.92)_17%,rgba(13,31,60,0.78)_24%,rgba(13,31,60,0.6)_31%,rgba(13,31,60,0.4)_38%,rgba(13,31,60,0.2)_44%,rgba(13,31,60,0)_50%)]" />
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <h3 className="font-serif text-2xl leading-snug text-white transition-colors group-hover:text-accent">
-                    {c.title}
-                  </h3>
-                  <span className="mt-1.5 inline-flex items-center gap-2 text-sm font-medium text-white/90 underline decoration-white/40 underline-offset-4 transition-opacity duration-300 lg:opacity-0 lg:group-hover:opacity-100">
-                    Browse
-                    <span className="transition-transform group-hover:translate-x-1">
-                      →
-                    </span>
-                  </span>
-                </div>
-              </Link>
+                image={c.image}
+                title={c.title}
+              />
             ))}
           </div>
 

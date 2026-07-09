@@ -20,10 +20,13 @@ export default function HeroSearch({
   defaultQuery = "",
   defaultLevel = "",
   className = "",
+  id = "hero-level",
 }: {
   defaultQuery?: string;
   defaultLevel?: string;
   className?: string;
+  /** Id for the curriculum-level select — override when rendering more than one instance per page. */
+  id?: string;
 }) {
   return (
     <form
@@ -43,12 +46,12 @@ export default function HeroSearch({
 
       {/* curriculum-level scope */}
       <div className="hidden h-8 items-center border-l border-border pl-2 sm:flex">
-        <label htmlFor="hero-level" className="sr-only">
+        <label htmlFor={id} className="sr-only">
           Curriculum level
         </label>
         <Select key={defaultLevel} name="level" defaultValue={defaultLevel || null}>
           <SelectTrigger
-            id="hero-level"
+            id={id}
             className="h-full w-auto gap-1 rounded-md border-0 bg-transparent px-2 text-sm font-medium text-muted focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-0"
           >
             <SelectValue>

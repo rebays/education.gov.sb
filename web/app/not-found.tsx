@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import HeroSearch from "./components/hero-search";
+import { GlassPill } from "@/components/ui/glass-pill";
 import PageHeader from "./components/page-header";
 import SiteFooter from "./components/site-footer";
 import SiteHeader from "./components/site-header";
@@ -34,13 +35,9 @@ export default function NotFound() {
 
         <div className="mt-6 flex flex-wrap items-center gap-2.5">
           {quickLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md transition-colors hover:border-white/40 hover:bg-white/20 hover:text-white"
-            >
+            <GlassPill key={link.href} href={link.href}>
               {link.label}
-            </Link>
+            </GlassPill>
           ))}
         </div>
 

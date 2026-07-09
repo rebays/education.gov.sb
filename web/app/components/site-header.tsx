@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import MobileNav from "./mobile-nav";
+import { SearchField } from "@/components/ui/search-field";
 
 /**
  * Shared site header.
@@ -71,28 +72,11 @@ export default function SiteHeader({
             <label htmlFor="header-search" className="sr-only">
               Search the resource hub
             </label>
-            <div className="relative">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
-              >
-                <circle cx="11" cy="11" r="7" />
-                <path d="m20 20-3.5-3.5" />
-              </svg>
-              <input
-                id="header-search"
-                type="search"
-                name="q"
-                placeholder="Search documents, reports, videos…"
-                className="h-10 w-full rounded-lg border border-border bg-surface pl-10 pr-4 text-sm text-foreground placeholder:text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
+            <SearchField
+              id="header-search"
+              name="q"
+              placeholder="Search documents, reports, videos…"
+            />
           </form>
         )}
 

@@ -6,6 +6,7 @@ import CopyLink from "../../components/copy-link";
 import SiteFooter from "../../components/site-footer";
 import SiteHeader from "../../components/site-header";
 import TraditionalWatermark from "../../components/traditional-watermark";
+import { PullQuote } from "@/components/ui/pull-quote";
 import { getNewsPost, news } from "../../lib/content";
 
 export function generateStaticParams() {
@@ -35,22 +36,11 @@ function BodyBlock({ block }: { block: string }) {
   if (block.startsWith("> ")) {
     const [quote, attribution] = block.slice(2).split("|");
     return (
-      <figure className="py-2">
-        <span
-          className="block font-serif text-5xl leading-none text-accent"
-          aria-hidden
-        >
-          “
-        </span>
-        <blockquote className="mt-1 font-serif text-2xl italic leading-snug text-foreground">
-          {quote.trim()}
-        </blockquote>
-        {attribution && (
-          <figcaption className="mt-3 text-sm font-semibold text-muted">
-            — {attribution.trim()}
-          </figcaption>
-        )}
-      </figure>
+      <PullQuote
+        className="py-2"
+        quote={quote.trim()}
+        attribution={attribution?.trim()}
+      />
     );
   }
   return <p className="text-base leading-8 text-foreground/90">{block}</p>;

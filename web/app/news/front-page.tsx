@@ -1,12 +1,18 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { FilterChip } from "@/components/ui/filter-chip";
 import { cn } from "@/lib/utils";
-import TraditionalWatermark from "../components/traditional-watermark";
+import {
+  BriefsColumn,
+  categoryVariant,
+  HeadlineList,
+  StoryCard,
+  StoryImage,
+} from "../components/news-cards";
 import { news, type NewsCategory, type NewsPost } from "../lib/content";
 
 /**
@@ -30,15 +36,6 @@ const filters: { label: string; value: "All" | NewsCategory }[] = [
   { label: "Events", value: "Event" },
 ];
 
-const categoryVariant: Record<
-  NewsCategory,
-  "primary" | "success" | "warning"
-> = {
-  Announcement: "primary",
-  "Press release": "success",
-  Event: "warning",
-};
-
 type Band = { cards: NewsPost[]; briefs: NewsPost[] };
 
 function toBands(posts: NewsPost[]): Band[] {
@@ -50,119 +47,18 @@ function toBands(posts: NewsPost[]): Band[] {
   return bands;
 }
 
-/** Story image, or the designed deep-blue fallback for text-only stories. */
-function StoryImage({
-  story,
-  sizes,
-  priority = false,
-}: {
-  story: NewsPost;
-  sizes: string;
-  priority?: boolean;
-}) {
-  if (!story.image) {
-    return (
-      <div className="relative isolate flex h-full w-full items-center justify-center overflow-hidden bg-deep">
-        <TraditionalWatermark
-          id={`wm-story-${story.slug}`}
-          corners={["top-right", "bottom-left"]}
-          className="z-0 text-white opacity-[0.06]"
-        />
-        <Image
-          src="/coat-of-arms.png"
-          alt=""
-          width={56}
-          height={56}
-          className="h-14 w-auto opacity-80"
-        />
-      </div>
-    );
-  }
-  return (
-    <Image
-      src={story.image}
-      alt=""
-      fill
-      priority={priority}
-      sizes={sizes}
-      className="object-cover transition-transform duration-500 group-hover:scale-105"
-    />
-  );
-}
-
-function StoryCard({ story }: { story: NewsPost }) {
-  return (
-    <article>
-      <Link
-        href={`/news/${story.slug}`}
-        className="group relative block aspect-[16/10] overflow-hidden rounded-2xl border border-border"
-        tabIndex={-1}
-        aria-hidden
-      >
-        <StoryImage story={story} sizes="(min-width: 1024px) 33vw, 100vw" />
-      </Link>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <Badge variant={categoryVariant[story.category]}>
-          {story.category}
-        </Badge>
-        <span className="font-mono text-xs text-muted">{story.date}</span>
-      </div>
-      <h3 className="mt-3 font-serif text-2xl leading-snug">
-        <Link
-          href={`/news/${story.slug}`}
-          className="text-foreground hover:text-primary"
-        >
-          {story.title}
-        </Link>
-      </h3>
-      <p className="mt-2 text-sm leading-6 text-muted">{story.excerpt}</p>
-    </article>
-  );
-}
-
-function BriefsColumn({ briefs }: { briefs: NewsPost[] }) {
-  return (
-    <aside
-      aria-label="News in brief"
-      className="lg:border-l lg:border-border lg:pl-10"
-    >
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
-        In brief
-      </p>
-      <ul className="mt-2 divide-y divide-border">
-        {briefs.map((b) => (
-          <li key={b.slug} className="py-5">
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="font-mono text-xs text-muted">{b.date}</span>
-              <span className="text-xs font-semibold text-primary">
-                {b.category}
-              </span>
-            </p>
-            <h4 className="mt-1.5 font-serif text-lg leading-snug">
-              <Link
-                href={`/news/${b.slug}`}
-                className="text-foreground hover:text-primary"
-              >
-                {b.title}
-              </Link>
-            </h4>
-            <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
-              {b.excerpt}
-            </p>
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
-}
-
 function NewsBand({ band }: { band: Band }) {
   return (
     <div className="grid gap-10 border-t border-border pt-10 lg:grid-cols-3">
       {band.cards.map((story) => (
         <StoryCard key={story.slug} story={story} />
       ))}
-      {band.briefs.length > 0 && <BriefsColumn briefs={band.briefs} />}
+      {band.briefs.length > 0 && (
+        <BriefsColumn
+          briefs={band.briefs}
+          className="lg:border-l lg:border-border lg:pl-10"
+        />
+      )}
     </div>
   );
 }
@@ -214,27 +110,18 @@ export default function NewsFrontPage() {
     <div>
       {/* filter bar */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-border pb-4">
-        {filters.map((f) => {
-          const isActive = active === f.value;
-          return (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => {
-                setActive(f.value);
-                resetLoading();
-              }}
-              aria-pressed={isActive}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-surface text-foreground hover:bg-surface-2"
-              }`}
-            >
-              {f.label}
-            </button>
-          );
-        })}
+        {filters.map((f) => (
+          <FilterChip
+            key={f.value}
+            active={active === f.value}
+            onClick={() => {
+              setActive(f.value);
+              resetLoading();
+            }}
+          >
+            {f.label}
+          </FilterChip>
+        ))}
 
       </div>
 
@@ -306,23 +193,7 @@ export default function NewsFrontPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
             More news
           </p>
-          <ul className="mt-3 divide-y divide-border border-t border-border">
-            {shownHeadlines.map((n) => (
-              <li key={n.slug}>
-                <Link
-                  href={`/news/${n.slug}`}
-                  className="group flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5"
-                >
-                  <h4 className="min-w-0 font-serif text-lg leading-snug text-foreground group-hover:text-primary">
-                    {n.title}
-                  </h4>
-                  <span className="shrink-0 text-xs text-muted">
-                    <span className="font-mono">{n.date}</span> · {n.category}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <HeadlineList posts={shownHeadlines} />
 
           {/* progressive loading: sentinel for auto-load, then a button */}
           {autoLoading && (

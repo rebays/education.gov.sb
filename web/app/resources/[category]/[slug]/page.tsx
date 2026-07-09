@@ -5,6 +5,7 @@ import PageHeader from "../../../components/page-header";
 import ResourceList from "../../../components/resource-list";
 import SiteFooter from "../../../components/site-footer";
 import SiteHeader from "../../../components/site-header";
+import { FactSheet } from "@/components/ui/fact-sheet";
 import {
   categoryHref,
   getCategory,
@@ -199,21 +200,7 @@ export default async function ResourcePage({
                 </span>
               </a>
 
-              <dl className="mt-6 space-y-3.5">
-                {facts.map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-baseline justify-between gap-4 border-b border-border/70 pb-3 last:border-0 last:pb-0"
-                  >
-                    <dt className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">
-                      {label}
-                    </dt>
-                    <dd className="text-right font-mono text-sm text-foreground">
-                      {value}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <FactSheet className="mt-6" facts={facts} />
             </div>
 
             <p className="mt-4 px-1 text-xs leading-5 text-muted">

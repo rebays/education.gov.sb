@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
-import { cn } from "@/lib/utils";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { SearchField } from "@/components/ui/search-field";
+import PublicationRow from "../components/publication-row";
 import {
   publications,
   publicationRef,
@@ -25,13 +23,6 @@ const filters: { label: string; value: "All" | PublicationType }[] = [
   { label: "Reports", value: "Report" },
   { label: "Guidelines", value: "Guideline" },
 ];
-
-const typeVariant: Record<PublicationType, "primary" | "success" | "warning"> =
-  {
-    Policy: "primary",
-    Report: "success",
-    Guideline: "warning",
-  };
 
 export default function PublicationsRegister() {
   const [active, setActive] = useState<"All" | PublicationType>("All");
@@ -76,40 +67,25 @@ export default function PublicationsRegister() {
     <div>
       {/* filter bar */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-border pb-4">
-        {filters.map((f) => {
-          const isActive = active === f.value;
-          return (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setActive(f.value)}
-              aria-pressed={isActive}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-surface text-foreground hover:bg-surface-2"
-              }`}
-            >
-              {f.label}
-            </button>
-          );
-        })}
+        {filters.map((f) => (
+          <FilterChip
+            key={f.value}
+            active={active === f.value}
+            onClick={() => setActive(f.value)}
+          >
+            {f.label}
+          </FilterChip>
+        ))}
 
         {/* scoped filter — narrows the register in place */}
-        <div className="relative ml-auto w-full sm:w-64">
-          <Icon
-            name="search"
-            className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search publications by title, office, or reference"
-            placeholder="Search publications"
-            className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm text-foreground placeholder:text-muted/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
-        </div>
+        <SearchField
+          className="ml-auto w-full sm:w-64"
+          inputClassName="bg-background pr-3 placeholder:text-muted/60"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search publications by title, office, or reference"
+          placeholder="Search publications"
+        />
       </div>
 
       {/* year-grouped register */}
@@ -134,64 +110,10 @@ export default function PublicationsRegister() {
             <ul className="divide-y divide-border border-t border-border">
               {items.map((p) => (
                 <li key={p.slug} className="py-6">
-                  <div className="grid gap-4 sm:grid-cols-[160px_1fr] lg:grid-cols-[160px_1fr_auto] lg:gap-8">
-                    {/* registry code + type */}
-                    <div>
-                      <p className="font-mono text-xs text-muted">
-                        {publicationRef(p)}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        <Badge variant={typeVariant[p.type]}>{p.type}</Badge>
-                        {p.slug === latestSlug && (
-                          <Badge variant="accent">Latest</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* title + summary */}
-                    <div className="min-w-0">
-                      <h4 className="font-serif text-xl leading-snug">
-                        <Link
-                          href={`/publications/${p.slug}`}
-                          className="text-foreground hover:text-primary"
-                        >
-                          {p.title}
-                        </Link>
-                      </h4>
-                      <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">
-                        {p.summary}
-                      </p>
-                      <p className="mt-2 text-xs text-muted">
-                        {p.date} · {p.office}
-                      </p>
-                    </div>
-
-                    {/* actions */}
-                    <div className="flex items-start gap-2 lg:flex-col lg:items-end">
-                      <a
-                        href="#"
-                        aria-label={`Download ${p.title} (${p.format}, ${p.size})`}
-                        title="Download will be available once the CMS is connected"
-                        className={cn(
-                          buttonVariants({ variant: "secondary", size: "sm" }),
-                          "h-9 px-3 text-xs",
-                        )}
-                      >
-                        <Icon name="download" className="size-3.5" />
-                        {p.format}
-                        <span className="font-mono font-normal text-muted">
-                          {p.size}
-                        </span>
-                      </a>
-                      <Link
-                        href={`/publications/${p.slug}`}
-                        className="inline-flex h-9 items-center gap-1 px-1 text-xs font-semibold text-primary hover:underline"
-                      >
-                        Summary
-                        <span aria-hidden>→</span>
-                      </Link>
-                    </div>
-                  </div>
+                  <PublicationRow
+                    publication={p}
+                    isLatest={p.slug === latestSlug}
+                  />
                 </li>
               ))}
             </ul>

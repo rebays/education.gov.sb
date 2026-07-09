@@ -1,15 +1,30 @@
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
+import CategoryTile from "../components/category-tile";
+import HeroSearch from "../components/hero-search";
+import {
+  BriefsColumn,
+  HeadlineList,
+  StoryCard,
+} from "../components/news-cards";
 import PageHeader from "../components/page-header";
 import PublicationCover from "../components/publication-cover";
+import PublicationRow from "../components/publication-row";
+import SiteHeader from "../components/site-header";
 import TraditionalWatermark from "../components/traditional-watermark";
-import { publications } from "../lib/content";
+import { categories, categoryHref, news, publications } from "../lib/content";
 import CategoryTabs from "./category-tabs";
 import {
   Accordion,
   MediaAccordion,
   type MediaAccordionItem,
 } from "@/components/ui/accordion";
+import { AtAGlance } from "@/components/ui/at-a-glance";
+import { FactSheet } from "@/components/ui/fact-sheet";
+import { FilterChip } from "@/components/ui/filter-chip";
+import { GlassPill } from "@/components/ui/glass-pill";
+import { PullQuote } from "@/components/ui/pull-quote";
+import { SearchField } from "@/components/ui/search-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Icon, icons } from "@/components/ui/icon";
@@ -116,6 +131,11 @@ const accordionItems: MediaAccordionItem[] = [
     image: "/svc-teachers.jpg",
   },
 ];
+
+/* live newsroom samples — one story with a photo, one text-only for the
+   designed fallback panel */
+const storyWithImage = news.find((n) => n.image) ?? news[0];
+const storyWithoutImage = news.find((n) => !n.image) ?? news[0];
 
 const anchors = [
   ["colors", "Colors", "Foundations"],
@@ -571,6 +591,23 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           </div>
         </div>
 
+        <div className="mt-12">
+          <SubHead>Glass pills — suggested searches</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            Frosted-glass suggestion chips (<code>GlassPill</code>) under the
+            hero search bar: white at 10% with backdrop blur and a soft
+            border, brightening on hover. Dark surfaces only.
+          </p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {["English", "Mathematics", "Science", "Social Studies"].map(
+              (s) => (
+                <GlassPill key={s} href={`/search?q=${encodeURIComponent(s)}`}>
+                  {s}
+                </GlassPill>
+              ),
+            )}
+          </div>
+        </div>
       </Section>
 
       {/* ---------- Search & filters ---------- */}
@@ -590,39 +627,24 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             and collapses to a circular icon-only button. Dark surfaces only.
           </p>
           <div className="relative isolate overflow-hidden rounded-2xl bg-deep p-10">
-            <div className="mx-auto flex h-14 w-full max-w-2xl items-center rounded-full border border-white/20 bg-white/95 pl-6 pr-1.5">
-              <span className="min-w-0 flex-1 truncate text-base text-muted">
-                Search documents, reports, videos…
-              </span>
-              <span className="hidden h-8 items-center gap-1.5 border-l border-border pl-4 pr-2 text-sm font-medium text-muted sm:flex">
-                All levels
-                <Icon name="chevron" className="size-4 rotate-90" />
-              </span>
-              <span className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground sm:w-auto sm:gap-2 sm:px-5">
-                <Icon name="search" className="size-[18px]" />
-                <span className="hidden sm:inline">Search</span>
-              </span>
-            </div>
+            <HeroSearch id="ds-hero-level" className="mx-auto max-w-2xl" />
           </div>
         </div>
 
         <div className="mt-12">
           <SubHead>Search — header field</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
-            The workaday variant in the inner-page header: a compact
-            rounded-lg field on the surface tone with the icon inset left. The
-            same treatment scopes listings in filter bars.
+            The workaday variant (<code>SearchField</code>) in the inner-page
+            header: a compact rounded-lg field on the surface tone with the
+            icon inset left. The same treatment scopes listings in filter
+            bars.
           </p>
           <div className="rounded-2xl border border-border bg-background p-6">
-            <div className="relative max-w-md">
-              <Icon
-                name="search"
-                className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
-              />
-              <div className="h-10 w-full rounded-lg border border-border bg-surface pl-10 pr-4 text-sm leading-10 text-muted">
-                Search documents, reports, videos…
-              </div>
-            </div>
+            <SearchField
+              className="max-w-md"
+              placeholder="Search documents, reports, videos…"
+              aria-label="Search the resource hub"
+            />
           </div>
         </div>
 
@@ -630,63 +652,27 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <SubHead>Filter bar — chips & scoped search</SubHead>
           <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
             The in-place filter row used on the publications register and the
-            newsroom: type chips (active chip fills primary) with a scoped
-            search input at the right end that recomposes the listing live.
+            newsroom: type chips (<code>FilterChip</code> — the active chip
+            fills primary) with a scoped search (<code>SearchField</code>) at
+            the right end that recomposes the listing live.
           </p>
           <div className="rounded-2xl border border-border bg-background p-6">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-3 border-b border-border pb-4">
               {["All", "Policies", "Reports", "Guidelines"].map((label, i) => (
-                <span
-                  key={label}
-                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
-                    i === 0
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-surface text-foreground"
-                  }`}
-                >
+                <FilterChip key={label} active={i === 0}>
                   {label}
-                </span>
+                </FilterChip>
               ))}
-              <div className="relative ml-auto w-full sm:w-64">
-                <Icon
-                  name="search"
-                  className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted"
-                />
-                <div className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm leading-10 text-muted/60">
-                  Search publications
-                </div>
-              </div>
+              <SearchField
+                className="ml-auto w-full sm:w-64"
+                inputClassName="bg-background pr-3 placeholder:text-muted/60"
+                placeholder="Search publications"
+                aria-label="Search publications"
+              />
             </div>
           </div>
         </div>
 
-        <div className="mt-12">
-          <SubHead>Glass pills — suggested searches</SubHead>
-          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
-            Frosted-glass suggestion chips under the hero search bar: white at
-            10% with backdrop blur and a soft border, brightening on hover.
-            Dark surfaces only.
-          </p>
-          <div className="relative isolate overflow-hidden rounded-2xl bg-deep p-10">
-            <TraditionalWatermark
-              id="wm-ds-glass"
-              corners={["bottom-left"]}
-              className="text-white opacity-[0.05]"
-            />
-            <div className="flex flex-wrap items-center gap-2.5">
-              {["English", "Mathematics", "Science", "Social Studies"].map(
-                (s) => (
-                  <span
-                    key={s}
-                    className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md"
-                  >
-                    {s}
-                  </span>
-                ),
-              )}
-            </div>
-          </div>
-        </div>
       </Section>
 
       {/* ---------- Navigation & structure ---------- */}
@@ -698,51 +684,20 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
       >
         <div>
           <SubHead>Navigation — header</SubHead>
+          <p className="mb-5 max-w-2xl text-[15px] leading-relaxed text-muted">
+            The shared site header, rendered live in both variants:{" "}
+            <code>solid</code> for inner pages (sticky, with the inline search
+            field) and <code>overlay</code> for pages with a full-bleed hero
+            behind it.
+          </p>
           <div className="space-y-4">
             {/* solid — inner pages carry an inline search field */}
             <div className="overflow-hidden rounded-2xl border border-border">
-              <div className="flex items-center justify-between gap-4 bg-background px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <Image src="/coat-of-arms.png" alt="" width={48} height={48} className="h-12 w-auto shrink-0" />
-                  <span className="flex flex-col leading-tight">
-                    <span className="text-base font-semibold text-foreground">education.gov.sb</span>
-                    <span className="text-xs text-muted">MEHRD</span>
-                  </span>
-                </div>
-                <div className="relative hidden max-w-56 flex-1 lg:block">
-                  <Icon
-                    name="search"
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-                  />
-                  <div className="h-9 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm leading-9 text-muted">
-                    Search…
-                  </div>
-                </div>
-                <nav className="hidden items-center gap-6 text-sm font-medium text-muted md:flex">
-                  <span className="text-primary">Resources</span>
-                  <span className="hover:text-primary">Publications</span>
-                  <span className="hover:text-primary">News</span>
-                  <span className="hover:text-primary">About</span>
-                </nav>
-              </div>
+              <SiteHeader />
             </div>
             {/* transparent over hero */}
-            <div className="overflow-hidden rounded-2xl">
-              <div className="flex items-center justify-between gap-4 bg-deep px-6 py-4 text-white">
-                <div className="flex items-center gap-3">
-                  <Image src="/coat-of-arms.png" alt="" width={48} height={48} className="h-12 w-auto shrink-0" />
-                  <span className="flex flex-col leading-tight">
-                    <span className="text-base font-semibold">education.gov.sb</span>
-                    <span className="text-xs text-white/70">MEHRD</span>
-                  </span>
-                </div>
-                <nav className="hidden items-center gap-6 text-sm font-medium text-white/80 md:flex">
-                  <span className="text-white">Resources</span>
-                  <span className="hover:text-accent">Publications</span>
-                  <span className="hover:text-accent">News</span>
-                  <span className="hover:text-accent">About</span>
-                </nav>
-              </div>
+            <div className="overflow-hidden rounded-2xl bg-deep text-white">
+              <SiteHeader variant="overlay" />
             </div>
           </div>
         </div>
@@ -780,27 +735,19 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
               lead="The link may be outdated, or the page may have been moved. Try a search, or start again from one of the sections below."
               crumbs={[{ label: "Page not found" }]}
             >
-              <div className="mt-8 flex h-14 w-full max-w-2xl items-center rounded-full border border-white/20 bg-white/95 pl-6 pr-1.5">
-                <span className="min-w-0 flex-1 truncate text-base text-muted">
-                  Search documents, reports, videos…
-                </span>
-                <span className="hidden h-8 items-center gap-1.5 border-l border-border pl-4 pr-2 text-sm font-medium text-muted sm:flex">
-                  All levels
-                  <Icon name="chevron" className="size-4 rotate-90" />
-                </span>
-                <span className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground sm:w-auto sm:gap-2 sm:px-5">
-                  <Icon name="search" className="size-[18px]" />
-                  <span className="hidden sm:inline">Search</span>
-                </span>
-              </div>
+              <HeroSearch id="ds-404-level" className="mt-8 max-w-2xl" />
               <div className="mt-6 flex flex-wrap items-center gap-2.5">
-                {["Resources", "Publications", "News", "About"].map((label) => (
-                  <span
-                    key={label}
-                    className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-sm font-medium text-white/90 backdrop-blur-md"
-                  >
+                {(
+                  [
+                    ["Resources", "/resources"],
+                    ["Publications", "/publications"],
+                    ["News", "/news"],
+                    ["About", "/about"],
+                  ] as [string, string][]
+                ).map(([label, href]) => (
+                  <GlassPill key={href} href={href}>
                     {label}
-                  </span>
+                  </GlassPill>
                 ))}
               </div>
               <p className="mt-8 font-mono text-xs text-white/50">Error 404</p>
@@ -897,24 +844,12 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             Browse action revealed on hover (always visible on touch).
           </p>
           <div className="max-w-60">
-            <div className="group relative aspect-[4/5] overflow-hidden rounded-2xl border border-border shadow-sm">
-              <Image
-                src="/svc-teachers.jpg"
-                alt=""
-                fill
-                sizes="240px"
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--deep)_0%,var(--deep)_10%,rgba(13,31,60,0.92)_17%,rgba(13,31,60,0.78)_24%,rgba(13,31,60,0.6)_31%,rgba(13,31,60,0.4)_38%,rgba(13,31,60,0.2)_44%,rgba(13,31,60,0)_50%)]" />
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <h4 className="font-serif text-2xl leading-snug text-white">
-                  Primary
-                </h4>
-                <span className="mt-1.5 inline-flex items-center gap-2 text-sm font-medium text-white/90 underline decoration-white/40 underline-offset-4">
-                  Browse <span aria-hidden>→</span>
-                </span>
-              </div>
-            </div>
+            <CategoryTile
+              href={categoryHref(categories[1].slug)}
+              image={categories[1].image}
+              title={categories[1].title}
+              sizes="240px"
+            />
           </div>
         </div>
 
@@ -926,35 +861,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             title, and a direct download action — grouped under large serif
             year markers.
           </p>
-          <div className="rounded-2xl border border-border bg-background px-6">
-            <div className="grid gap-4 border-b border-border py-6 last:border-0 sm:grid-cols-[160px_1fr] lg:grid-cols-[160px_1fr_auto] lg:gap-8">
-              <div>
-                <p className="font-mono text-xs text-muted">MEHRD/2026/03</p>
-                <Badge variant="primary" className="mt-2">Policy</Badge>
-              </div>
-              <div className="min-w-0">
-                <h4 className="font-serif text-xl leading-snug text-foreground">
-                  National Education Action Plan 2026–2030
-                </h4>
-                <p className="mt-1.5 max-w-2xl text-sm leading-6 text-muted">
-                  The Ministry&apos;s five-year strategy for improving access,
-                  quality, and equity across the education sector.
-                </p>
-                <p className="mt-2 text-xs text-muted">
-                  12 May 2026 · Strategic Support Unit
-                </p>
-              </div>
-              <div className="flex items-start gap-2 lg:flex-col lg:items-end">
-                <Button variant="secondary" size="sm" className="h-9 px-3 text-xs">
-                  <Icon name="download" className="size-3.5" />
-                  PDF
-                  <span className="font-mono font-normal text-muted">3.2 MB</span>
-                </Button>
-                <span className="inline-flex h-9 items-center gap-1 px-1 text-xs font-semibold text-primary">
-                  Summary <span aria-hidden>→</span>
-                </span>
-              </div>
-            </div>
+          <div className="rounded-2xl border border-border bg-background px-6 py-6">
+            <PublicationRow publication={publications[0]} isLatest />
           </div>
         </div>
 
@@ -983,29 +891,15 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             data — never decoration.
           </p>
           <div className="max-w-sm rounded-2xl border border-border bg-surface p-6">
-            <dl className="space-y-3.5">
-              {(
-                [
-                  ["Reference", "MEHRD/2026/05"],
-                  ["Type", "Policy"],
-                  ["Published", "12 May 2026"],
-                  ["Format", "PDF · 3.2 MB"],
-                  ["Source office", "Strategic Support Unit"],
-                ] as [string, string][]
-              ).map(([label, value]) => (
-                <div
-                  key={label}
-                  className="flex items-baseline justify-between gap-4 border-b border-border/70 pb-3 last:border-0 last:pb-0"
-                >
-                  <dt className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">
-                    {label}
-                  </dt>
-                  <dd className="text-right font-mono text-sm text-foreground">
-                    {value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+            <FactSheet
+              facts={[
+                ["Reference", "MEHRD/2026/05"],
+                ["Type", "Policy"],
+                ["Published", "12 May 2026"],
+                ["Format", "PDF · 3.2 MB"],
+                ["Source office", "Strategic Support Unit"],
+              ]}
+            />
           </div>
         </div>
 
@@ -1015,29 +909,13 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             Check-marked key points shown above a publication&apos;s body —
             the skimmable summary before the full text.
           </p>
-          <div className="max-w-2xl rounded-2xl border border-border bg-surface p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-ink">
-              At a glance
-            </p>
-            <ul className="mt-4 space-y-2.5">
-              {[
-                "Three goals: equitable access, quality teaching and learning, and stronger system management.",
-                "Developed through consultations across all nine provinces.",
-                "Annual work plans, with a mid-term review scheduled for 2028.",
-              ].map((point) => (
-                <li
-                  key={point}
-                  className="flex gap-3 text-sm leading-6 text-foreground"
-                >
-                  <Icon
-                    name="check"
-                    className="mt-1 size-4 shrink-0 text-primary"
-                  />
-                  {point}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <AtAGlance
+            points={[
+              "Three goals: equitable access, quality teaching and learning, and stronger system management.",
+              "Developed through consultations across all nine provinces.",
+              "Annual work plans, with a mid-term review scheduled for 2028.",
+            ]}
+          />
         </div>
       </Section>
 
@@ -1057,35 +935,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             page&apos;s newsroom section — it carries minor stories with no
             image dependence.
           </p>
-          <div className="max-w-md rounded-2xl border border-border bg-background px-6 py-1">
-            <ul className="divide-y divide-border">
-              <li className="py-5">
-                <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="font-mono text-xs text-muted">2 May 2026</span>
-                  <span className="text-xs font-semibold text-primary">Announcement</span>
-                </p>
-                <h4 className="mt-1.5 font-serif text-lg leading-snug text-foreground">
-                  2026 national examination timetable released
-                </h4>
-                <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
-                  Timetables for SISE, SISC, and SINF examinations are now
-                  available for schools and candidates.
-                </p>
-              </li>
-              <li className="py-5">
-                <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="font-mono text-xs text-muted">22 Jan 2026</span>
-                  <span className="text-xs font-semibold text-primary">Announcement</span>
-                </p>
-                <h4 className="mt-1.5 font-serif text-lg leading-snug text-foreground">
-                  2026 school infrastructure grant round now open
-                </h4>
-                <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted">
-                  Registered schools can apply through their provincial
-                  education authority.
-                </p>
-              </li>
-            </ul>
+          <div className="max-w-md rounded-2xl border border-border bg-background px-6 py-5">
+            <BriefsColumn briefs={news.slice(1, 3)} />
           </div>
         </div>
 
@@ -1098,54 +949,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             arms — so text-only announcements never break a card slot.
           </p>
           <div className="grid max-w-3xl gap-8 sm:grid-cols-2">
-            <article>
-              <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border">
-                <Image
-                  src="/svc-teachers.jpg"
-                  alt=""
-                  fill
-                  sizes="360px"
-                  className="object-cover"
-                />
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Badge variant="success">Press release</Badge>
-                <span className="font-mono text-xs text-muted">15 Apr 2026</span>
-              </div>
-              <h4 className="mt-3 font-serif text-xl leading-snug text-foreground">
-                Over 300 teachers graduate from in-service programme
-              </h4>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                The latest cohort completed school-based professional
-                development modules.
-              </p>
-            </article>
-            <article>
-              <div className="relative isolate flex aspect-[16/10] items-center justify-center overflow-hidden rounded-2xl border border-border bg-deep">
-                <TraditionalWatermark
-                  id="wm-ds-storycard"
-                  corners={["top-right", "bottom-left"]}
-                  className="z-0 text-white opacity-[0.06]"
-                />
-                <Image
-                  src="/coat-of-arms.png"
-                  alt=""
-                  width={56}
-                  height={56}
-                  className="h-14 w-auto opacity-80"
-                />
-              </div>
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Badge variant="primary">Announcement</Badge>
-                <span className="font-mono text-xs text-muted">28 Apr 2026</span>
-              </div>
-              <h4 className="mt-3 font-serif text-xl leading-snug text-foreground">
-                SISE 2025 results released to schools
-              </h4>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Candidates should contact their school principal for results.
-              </p>
-            </article>
+            <StoryCard story={storyWithImage} />
+            <StoryCard story={storyWithoutImage} />
           </div>
         </div>
 
@@ -1158,27 +963,8 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             with zero image demand; loads progressively (one auto-load, then
             a button).
           </p>
-          <div className="max-w-3xl rounded-2xl border border-border bg-background px-6">
-            <ul className="divide-y divide-border">
-              {(
-                [
-                  ["Education radio programme returns for term two", "1 Apr 2026", "Announcement"],
-                  ["Five ICT labs open in Western Province schools", "28 Mar 2026", "Press release"],
-                  ["School registration renewals due 30 April", "20 Mar 2026", "Announcement"],
-                ] as [string, string, string][]
-              ).map(([title, date, category]) => (
-                <li key={title}>
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5">
-                    <h4 className="min-w-0 font-serif text-lg leading-snug text-foreground">
-                      {title}
-                    </h4>
-                    <span className="shrink-0 text-xs text-muted">
-                      <span className="font-mono">{date}</span> · {category}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+          <div className="max-w-3xl rounded-2xl border border-border bg-background px-6 pb-1">
+            <HeadlineList posts={news.slice(3, 6)} />
           </div>
         </div>
 
@@ -1192,21 +978,10 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             colour-coded badge variants.
           </p>
           <div className="max-w-2xl rounded-2xl border border-border bg-background p-8">
-            <figure>
-              <span
-                className="block font-serif text-5xl leading-none text-accent"
-                aria-hidden
-              >
-                “
-              </span>
-              <blockquote className="mt-1 font-serif text-2xl italic leading-snug text-foreground">
-                This plan belongs to every school, every community, and every
-                child in the Solomon Islands.
-              </blockquote>
-              <figcaption className="mt-3 text-sm font-semibold text-muted">
-                — Permanent Secretary, MEHRD
-              </figcaption>
-            </figure>
+            <PullQuote
+              quote="This plan belongs to every school, every community, and every child in the Solomon Islands."
+              attribution="Permanent Secretary, MEHRD"
+            />
           </div>
         </div>
       </Section>

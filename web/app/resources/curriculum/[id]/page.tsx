@@ -10,6 +10,7 @@ import {
   getGrades,
   getSubjects,
 } from "../../../lib/curriculum";
+import { FactSheet } from "@/components/ui/fact-sheet";
 import { CurriculumResourceList } from "../../components/curriculum-resource-list";
 import { DownloadActions } from "../../components/download-actions";
 import { ResourcePreviewer } from "../../components/resource-previewer";
@@ -90,19 +91,7 @@ export default async function CurriculumResourcePage({
               <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground/70">
                 Details
               </h2>
-              <dl className="mt-4 space-y-3.5">
-                {facts.map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="flex items-baseline justify-between gap-4 border-b border-border/70 pb-3 last:border-0 last:pb-0"
-                  >
-                    <dt className="shrink-0 text-xs font-semibold uppercase tracking-wide text-muted">
-                      {label}
-                    </dt>
-                    <dd className="text-right font-mono text-sm text-foreground">{value}</dd>
-                  </div>
-                ))}
-              </dl>
+              <FactSheet className="mt-4" facts={facts} />
             </div>
 
             <DownloadActions resource={resource} />
