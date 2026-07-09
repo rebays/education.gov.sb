@@ -380,11 +380,11 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             <div className="relative isolate h-56 overflow-hidden rounded-2xl border border-border bg-deep">
               <div
                 aria-hidden
-                className="absolute inset-0 bg-[url('/isabel-mat-crop.jpeg')] bg-cover bg-center bg-no-repeat opacity-[0.14] [filter:invert(1)] [mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)] [-webkit-mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)]"
+                className="absolute inset-0 bg-[url('/isabel-mat-crop.png')] bg-cover bg-center bg-no-repeat opacity-[0.14] [filter:invert(1)] [mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)] [-webkit-mask-image:radial-gradient(140%_100%_at_50%_15%,#000_0%,transparent_65%)]"
               />
             </div>
             <p className="mt-2 font-mono text-[11px] text-muted">
-              isabel-mat-crop.jpeg · 5% opacity · invert · radial mask
+              isabel-mat-crop.png · 5% opacity · invert · radial mask
             </p>
           </div>
 
