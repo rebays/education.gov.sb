@@ -598,7 +598,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             hero search bar: white at 10% with backdrop blur and a soft
             border, brightening on hover. Dark surfaces only.
           </p>
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 rounded-2xl bg-deep p-6">
             {["English", "Mathematics", "Science", "Social Studies"].map(
               (s) => (
                 <GlassPill key={s} href={`/search?q=${encodeURIComponent(s)}`}>
