@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
  * filter bars. `className` sizes the wrapper; `inputClassName` re-tones
  * the field (e.g. bg-background inside filter bars).
  *
- * `shortcutHint` shows an "F" kbd badge on the right while the field is
+ * `shortcutHint` shows an "S" kbd badge on the right while the field is
  * empty and unfocused — pair it with `useSearchShortcut` on the same ref.
  */
 const SearchField = forwardRef<
@@ -59,7 +59,7 @@ const SearchField = forwardRef<
       />
       {showHint && (
         <Kbd className="absolute right-3 top-1/2 -translate-y-1/2 border-border bg-background text-muted">
-          F
+          S
         </Kbd>
       )}
     </div>

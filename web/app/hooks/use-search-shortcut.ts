@@ -1,42 +1,29 @@
 "use client";
 
-import { useEffect, type RefObject } from "react";
+import { useCallback, type RefObject } from "react";
 import { useShortcutEntry } from "../components/shortcuts-provider";
+import { useKeyShortcut } from "./use-key-shortcut";
 
 /**
- * Focuses `ref` when the user presses `key` (default "f"), mirroring the
- * single-letter search shortcuts on Gmail/GitHub. Ignored while focus is
- * already inside a form field/contenteditable or a modifier is held, so it
- * doesn't hijack typing elsewhere on the page.
+ * Focuses `ref` when the user presses `key` (default "s"), mirroring the
+ * single-letter search shortcuts on Gmail/GitHub. Pass `enabled = false` to
+ * suspend it (e.g. while another control on the same bar is claiming that
+ * key, such as an open dropdown's typeahead).
  */
 export function useSearchShortcut(
   ref: RefObject<HTMLInputElement | null>,
-  key = "f"
+  key = "s",
+  enabled = true
 ) {
   useShortcutEntry(key.toUpperCase(), "Focus search");
 
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key.toLowerCase() !== key || e.metaKey || e.ctrlKey || e.altKey) {
-        return;
-      }
-
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName;
-      if (
-        tag === "INPUT" ||
-        tag === "TEXTAREA" ||
-        tag === "SELECT" ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-
+  const handleTrigger = useCallback(
+    (e: KeyboardEvent) => {
       e.preventDefault();
       ref.current?.focus();
-    }
+    },
+    [ref]
+  );
 
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [ref, key]);
+  useKeyShortcut(key, handleTrigger, enabled);
 }
