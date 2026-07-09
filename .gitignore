@@ -4,5 +4,5 @@ __pycache__/
 *.py[cod]
 .env
 db.sqlite3
-cms/iresource/settings/local.py
+cms/config/settings/local.py
 cms/media/
