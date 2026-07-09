@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, type RefObject } from "react";
+import { useShortcutEntry } from "../components/shortcuts-provider";
 
 /**
  * Focuses `ref` when the user presses `key` (default "f"), mirroring the
@@ -12,6 +13,8 @@ export function useSearchShortcut(
   ref: RefObject<HTMLInputElement | null>,
   key = "f"
 ) {
+  useShortcutEntry(key.toUpperCase(), "Focus search");
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key.toLowerCase() !== key || e.metaKey || e.ctrlKey || e.altKey) {

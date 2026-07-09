@@ -31,6 +31,7 @@ export const icons = {
   tag: "M4 4h7l9 9-7 7-9-9V4Z M7.5 7.5v.01",
   info: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 11v6M12 7.5v.5",
   expand: "M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5",
+  keyboard: "M3 6h18v12H3V6ZM6.5 9.5v.01M10 9.5v.01M13.5 9.5v.01M17 9.5v.01M6.5 13v.01M10 13v.01M13.5 13v.01M17 13v.01M8 16.5h8",
 } as const
 
 export type IconName = keyof typeof icons

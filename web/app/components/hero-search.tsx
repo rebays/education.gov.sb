@@ -54,9 +54,17 @@ export default function HeroSearch({
           className="h-full w-full min-w-0 bg-transparent pr-8 text-base text-foreground placeholder:text-muted focus:outline-none"
         />
         {!hasText && (
-          <Kbd className="absolute right-0 border-border/60 bg-background/60 text-muted group-focus-within:hidden">
-            F
-          </Kbd>
+          <button
+            type="button"
+            onClick={() => inputRef.current?.focus()}
+            title="Press F to search"
+            aria-label="Focus search (shortcut: F)"
+            className="absolute right-0 hidden cursor-pointer sm:inline-flex group-focus-within:hidden"
+          >
+            <Kbd className="border-accent/40 bg-accent/10 text-accent-ink shadow-sm transition-colors hover:border-accent hover:bg-accent/20">
+              F
+            </Kbd>
+          </button>
         )}
       </div>
 

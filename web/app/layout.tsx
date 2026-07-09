@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Baskervville, Source_Sans_3, Figtree } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { AccessibilityMenu } from "./components/accessibility-menu";
+import { ShortcutsProvider } from "./components/shortcuts-provider";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
@@ -38,7 +40,12 @@ export default function RootLayout({
       data-theme="classic"
       className={cn("h-full", "antialiased", sourceSans.variable, baskervville.variable, "font-sans", figtree.variable)}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ShortcutsProvider>
+          {children}
+          <AccessibilityMenu />
+        </ShortcutsProvider>
+      </body>
     </html>
   );
 }
