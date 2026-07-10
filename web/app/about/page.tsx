@@ -11,7 +11,7 @@ import { TopicSelect } from "@/components/shared/topic-select";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "education.gov.sb is the official digital learning portal of the Solomon Islands — built by MEHRD with UNICEF Pacific support.",
+    "The official digital learning portal of the Solomon Islands",
 };
 
 const topics = [
@@ -72,8 +72,8 @@ export default function AboutPage() {
 
       <PageHeader
         id="wm-about"
-        title="About education.gov.sb."
-        lead="education.gov.sb is the official digital learning portal of the Solomon Islands — built by MEHRD with UNICEF Pacific support."
+        title="About"
+        lead="The official digital learning portal of the Solomon Islands"
         crumbs={[{ label: "About" }]}
       />
 
@@ -88,15 +88,14 @@ export default function AboutPage() {
                   A national portal, built for every learner.
                 </h2>
                 <p className="mt-5 text-base leading-7 text-muted">
-                  education.gov.sb is the official digital learning portal of the
+                  The official digital learning portal of the
                   Solomon Islands, built to ensure every student has access to
                   high-quality, curriculum-aligned educational materials,
                   regardless of their location or internet connectivity.
                 </p>
                 <p className="mt-4 text-base leading-7 text-muted">
                   It is a collaborative initiative — with the Ministry of
-                  Education and Human Resources Development (MEHRD) as
-                  official lead and UNICEF Pacific as global partner — built
+                  Education and Human Resources Development (MEHRD), built
                   on three pillars designed to overcome the unique challenges
                   of education in the Pacific.
                 </p>
