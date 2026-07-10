@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import CopyLink from "../../components/copy-link";
-import SiteFooter from "../../components/site-footer";
-import SiteHeader from "../../components/site-header";
-import TraditionalWatermark from "../../components/traditional-watermark";
+import CopyLink from "@/components/shared/copy-link";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
+import TraditionalWatermark from "@/components/shared/traditional-watermark";
 import { PullQuote } from "@/components/ui/pull-quote";
 import { getNewsPost, news } from "../../lib/content";
 

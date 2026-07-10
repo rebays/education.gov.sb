@@ -9,10 +9,10 @@ import {
   resourceHref,
   searchContent,
   type SearchResult,
-} from "../lib/content";
+} from "@/app/lib/content";
 import { useShortcutEntry } from "./shortcuts-provider";
-import { useKeyShortcut } from "../hooks/use-key-shortcut";
-import { useSearchShortcut } from "../hooks/use-search-shortcut";
+import { useKeyShortcut } from "@/app/hooks/use-key-shortcut";
+import { useSearchShortcut } from "@/app/hooks/use-search-shortcut";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {

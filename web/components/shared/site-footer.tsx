@@ -16,7 +16,7 @@ export default function SiteFooter() {
               className="h-14 w-auto shrink-0"
             />
             <span className="flex flex-col leading-tight">
-              <span className="font-serif text-3xl text-white">education.gov.sb</span>
+              <span className="font-serif text-3xl text-white">Resource Hub</span>
               <span className="mt-1 text-sm text-white/60">
                 Ministry of Education &amp; Human Resources Development
               </span>

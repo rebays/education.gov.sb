@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import PageHeader from "../components/page-header";
-import SiteFooter from "../components/site-footer";
-import SiteHeader from "../components/site-header";
-import TraditionalWatermark from "../components/traditional-watermark";
+import PageHeader from "@/components/shared/page-header";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
+import TraditionalWatermark from "@/components/shared/traditional-watermark";
 import AboutServices from "./services-section";
-import { TopicSelect } from "../components/topic-select";
+import { TopicSelect } from "@/components/shared/topic-select";
 
 export const metadata: Metadata = {
   title: "About",

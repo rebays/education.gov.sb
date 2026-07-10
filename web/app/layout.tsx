@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Baskervville, Source_Sans_3, Figtree } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { AccessibilityMenu } from "./components/accessibility-menu";
-import { ShortcutsProvider } from "./components/shortcuts-provider";
+import { AccessibilityMenu } from "@/components/shared/accessibility-menu";
+import { ShortcutsProvider } from "@/components/shared/shortcuts-provider";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 

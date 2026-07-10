@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FilterChip } from "@/components/ui/filter-chip";
 import { SearchField } from "@/components/ui/search-field";
-import PublicationRow from "../components/publication-row";
+import PublicationRow from "@/components/shared/publication-row";
 import {
   publications,
   publicationRef,

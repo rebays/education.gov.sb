@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import PageHeader from "../components/page-header";
-import PublicationCover from "../components/publication-cover";
-import SiteFooter from "../components/site-footer";
-import SiteHeader from "../components/site-header";
+import PageHeader from "@/components/shared/page-header";
+import PublicationCover from "@/components/shared/publication-cover";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";

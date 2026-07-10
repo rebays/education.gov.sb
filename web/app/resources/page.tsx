@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import PageHeader from "../components/page-header";
-import SiteFooter from "../components/site-footer";
-import SiteHeader from "../components/site-header";
+import PageHeader from "@/components/shared/page-header";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
 import {
   getGrades,
   getSubjects,
@@ -9,8 +9,8 @@ import {
   type Level,
   type ResourceType,
 } from "../lib/curriculum";
-import { CurriculumExplorer } from "./components/curriculum-explorer";
-import type { CurriculumFilters } from "./components/curriculum-sidebar";
+import { CurriculumExplorer } from "@/components/resources/curriculum-explorer";
+import type { CurriculumFilters } from "@/components/resources/curriculum-sidebar";
 
 export const metadata: Metadata = {
   title: "Curriculum Index",

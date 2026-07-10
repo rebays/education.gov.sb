@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import type { CurriculumResource } from "../../lib/curriculum";
+import type { CurriculumResource } from "@/app/lib/curriculum";
 
 type PreviewKind = "pdf" | "slides" | "video" | "generic";
 type Stage = "loading" | "embed-fallback" | "failed" | "ready";

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import type { Grade, ResourceType, Subject } from "../../lib/curriculum";
+import type { Grade, ResourceType, Subject } from "@/app/lib/curriculum";
 import type { CurriculumFilters } from "./curriculum-sidebar";
 
 type PickerKey = "search" | "type" | "subject" | "grade";

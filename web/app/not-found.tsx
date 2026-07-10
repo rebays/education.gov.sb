@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import HeroSearch from "./components/hero-search";
+import HeroSearch from "@/components/shared/hero-search";
 import { GlassPill } from "@/components/ui/glass-pill";
-import PageHeader from "./components/page-header";
-import SiteFooter from "./components/site-footer";
-import SiteHeader from "./components/site-header";
+import PageHeader from "@/components/shared/page-header";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
 import { categories, categoryHref } from "./lib/content";
 
 export const metadata: Metadata = {

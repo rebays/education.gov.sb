@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import PageHeader from "../../components/page-header";
-import PublicationCover from "../../components/publication-cover";
-import SiteFooter from "../../components/site-footer";
-import SiteHeader from "../../components/site-header";
+import PageHeader from "@/components/shared/page-header";
+import PublicationCover from "@/components/shared/publication-cover";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
 import { buttonVariants } from "@/components/ui/button";
 import { AtAGlance } from "@/components/ui/at-a-glance";
 import { FactSheet } from "@/components/ui/fact-sheet";

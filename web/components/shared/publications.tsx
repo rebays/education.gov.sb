@@ -1,6 +1,6 @@
 import Link from "next/link";
 import PublicationCover from "./publication-cover";
-import { publications, publicationRef } from "../lib/content";
+import { publications, publicationRef } from "@/app/lib/content";
 
 /**
  * Landing-page publications section — an editorial split: heading, blurb,

@@ -1,5 +1,5 @@
 import { ResourceCard, type ResourceCardProps } from "@/components/ui/resource-card";
-import type { CurriculumResource, Grade, Subject } from "../../lib/curriculum";
+import type { CurriculumResource, Grade, Subject } from "@/app/lib/curriculum";
 
 function toCardProps(
   resource: CurriculumResource,

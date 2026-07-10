@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { Grade, ResourceType, Subject } from "../../lib/curriculum";
+import type { Grade, ResourceType, Subject } from "@/app/lib/curriculum";
 
 function FilterSelect<T extends string>({
   id,

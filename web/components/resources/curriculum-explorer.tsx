@@ -10,7 +10,7 @@ import {
   getSubjects,
   resourceTypes,
   type Level,
-} from "../../lib/curriculum";
+} from "@/app/lib/curriculum";
 import { CoverageMap } from "./coverage-map";
 import { CurriculumResourceList } from "./curriculum-resource-list";
 import { CurriculumSidebar, type CurriculumFilters } from "./curriculum-sidebar";

@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import TraditionalWatermark from "./traditional-watermark";
-import type { NewsCategory, NewsPost } from "../lib/content";
+import type { NewsCategory, NewsPost } from "@/app/lib/content";
 
 /**
  * The newsroom's shared story surfaces: the image-led story card, the

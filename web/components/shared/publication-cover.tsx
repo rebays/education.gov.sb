@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { publicationRef, type Publication } from "../lib/content";
+import { publicationRef, type Publication } from "@/app/lib/content";
 
 /**
  * Designed stand-in for a publication's cover — deep-blue panel, gold rule,

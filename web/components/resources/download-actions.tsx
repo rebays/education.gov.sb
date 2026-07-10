@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import type { CurriculumResource } from "../../lib/curriculum";
+import type { CurriculumResource } from "@/app/lib/curriculum";
 
 /**
  * Download stays a styled stand-in (no real file store wired up yet, so

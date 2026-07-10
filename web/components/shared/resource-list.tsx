@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { type Resource, resourceHref } from "../lib/content";
+import { type Resource, resourceHref } from "@/app/lib/content";
 
 const stroke = {
   fill: "none",

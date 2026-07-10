@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import TraditionalWatermark from "./traditional-watermark";
 import { Badge } from "@/components/ui/badge";
-import { news, type NewsCategory } from "../lib/content";
+import { news, type NewsCategory } from "@/app/lib/content";
 
 const categoryVariant: Record<
   NewsCategory,

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import PageHeader from "../components/page-header";
-import SiteFooter from "../components/site-footer";
-import SiteHeader from "../components/site-header";
+import PageHeader from "@/components/shared/page-header";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
 import NewsFrontPage from "./front-page";
 
 export const metadata: Metadata = {

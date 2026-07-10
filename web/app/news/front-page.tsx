@@ -12,7 +12,7 @@ import {
   HeadlineList,
   StoryCard,
   StoryImage,
-} from "../components/news-cards";
+} from "@/components/shared/news-cards";
 import { news, type NewsCategory, type NewsPost } from "../lib/content";
 
 /**

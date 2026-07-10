@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, type RefObject } from "react";
-import { useShortcutEntry } from "../components/shortcuts-provider";
+import { useShortcutEntry } from "@/components/shared/shortcuts-provider";
 import { useKeyShortcut } from "./use-key-shortcut";
 
 /**

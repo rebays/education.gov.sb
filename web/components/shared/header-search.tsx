@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { SearchField } from "@/components/ui/search-field";
-import { useSearchShortcut } from "../hooks/use-search-shortcut";
+import { useSearchShortcut } from "@/app/hooks/use-search-shortcut";
 
 /**
  * The inner-page header's search form. Split out from `SiteHeader` so the

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import PageHeader from "../../../components/page-header";
-import SiteFooter from "../../../components/site-footer";
-import SiteHeader from "../../../components/site-header";
+import PageHeader from "@/components/shared/page-header";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
 import {
   curriculumResources,
   getCurriculumResourceById,
@@ -11,9 +11,9 @@ import {
   getSubjects,
 } from "../../../lib/curriculum";
 import { FactSheet } from "@/components/ui/fact-sheet";
-import { CurriculumResourceList } from "../../components/curriculum-resource-list";
-import { DownloadActions } from "../../components/download-actions";
-import { ResourcePreviewer } from "../../components/resource-previewer";
+import { CurriculumResourceList } from "@/components/resources/curriculum-resource-list";
+import { DownloadActions } from "@/components/resources/download-actions";
+import { ResourcePreviewer } from "@/components/resources/resource-previewer";
 
 export function generateStaticParams() {
   return curriculumResources.map((r) => ({ id: r.id }));

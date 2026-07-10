@@ -7,7 +7,7 @@ import {
   publicationRef,
   type Publication,
   type PublicationType,
-} from "../lib/content";
+} from "@/app/lib/content";
 
 export const typeVariant: Record<PublicationType, "primary" | "success" | "warning"> =
   {

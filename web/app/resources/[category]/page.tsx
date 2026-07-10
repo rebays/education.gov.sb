@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import PageHeader from "../../components/page-header";
-import ResourceList from "../../components/resource-list";
-import SiteFooter from "../../components/site-footer";
-import SiteHeader from "../../components/site-header";
+import PageHeader from "@/components/shared/page-header";
+import ResourceList from "@/components/shared/resource-list";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
 import {
   categories,
   getCategory,

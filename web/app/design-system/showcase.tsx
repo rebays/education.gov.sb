@@ -1,17 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import CategoryTile from "../components/category-tile";
-import HeroSearch from "../components/hero-search";
+import CategoryTile from "@/components/shared/category-tile";
+import HeroSearch from "@/components/shared/hero-search";
 import {
   BriefsColumn,
   HeadlineList,
   StoryCard,
-} from "../components/news-cards";
-import PageHeader from "../components/page-header";
-import PublicationCover from "../components/publication-cover";
-import PublicationRow from "../components/publication-row";
-import SiteHeader from "../components/site-header";
-import TraditionalWatermark from "../components/traditional-watermark";
+} from "@/components/shared/news-cards";
+import PageHeader from "@/components/shared/page-header";
+import PublicationCover from "@/components/shared/publication-cover";
+import PublicationRow from "@/components/shared/publication-row";
+import SiteHeader from "@/components/shared/site-header";
+import TraditionalWatermark from "@/components/shared/traditional-watermark";
 import { categories, categoryHref, news, publications } from "../lib/content";
 import CategoryTabs from "./category-tabs";
 import {

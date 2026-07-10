@@ -1,6 +1,6 @@
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
-import type { Grade, Subject } from "../../lib/curriculum";
+import type { Grade, Subject } from "@/app/lib/curriculum";
 
 function intensityClass(count: number): string {
   if (count === 0) return "";

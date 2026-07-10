@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { GlassPill } from "@/components/ui/glass-pill";
-import CategoryTile from "./components/category-tile";
-import HeroSearch from "./components/hero-search";
-import NewsBanner from "./components/news-banner";
-import Publications from "./components/publications";
-import SiteFooter from "./components/site-footer";
-import SiteHeader from "./components/site-header";
-import TraditionalWatermark from "./components/traditional-watermark";
+import CategoryTile from "@/components/shared/category-tile";
+import HeroSearch from "@/components/shared/hero-search";
+import NewsBanner from "@/components/shared/news-banner";
+import Publications from "@/components/shared/publications";
+import SiteFooter from "@/components/shared/site-footer";
+import SiteHeader from "@/components/shared/site-header";
+import TraditionalWatermark from "@/components/shared/traditional-watermark";
 import { categories, categoryHref } from "./lib/content";
 import { subjects } from "./lib/curriculum";
 
