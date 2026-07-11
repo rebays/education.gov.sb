@@ -4,13 +4,21 @@ from django.utils.text import slugify
 
 from grapple.models import (
     GraphQLRichText,
+    GraphQLSnippet,
     GraphQLStreamfield,
     GraphQLString,
 )
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
 from wagtail import blocks
-from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
+from wagtail.admin.panels import (
+    FieldPanel,
+    FieldRowPanel,
+    MultiFieldPanel,
+    MultipleChooserPanel,
+)
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Page
+from wagtail.models import Orderable, Page
 from wagtail.search import index
 
 from .panels import FilePreviewPanel
@@ -24,7 +32,7 @@ class PublicationIndexPage(Page):
     max_count = 1
 
 
-class Publication(index.Indexed, models.Model):
+class Publication(index.Indexed, ClusterableModel):
     class PublicationType(models.TextChoices):
         POLICY = "policy", "Policy"
         REPORT = "report", "Report"
@@ -58,6 +66,14 @@ class Publication(index.Indexed, models.Model):
         choices=Office.choices,
         blank=True,
         help_text="Owning division or office.",
+    )
+    newer_entry = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        help_text="Newer publication that supersedes this one, shown as a link on the frontend.",
     )
     summary = models.TextField(
         blank=True,
@@ -103,6 +119,19 @@ class Publication(index.Indexed, models.Model):
             ],
             heading="Content",
         ),
+        MultiFieldPanel(
+            [
+                FieldPanel("newer_entry"),
+                MultipleChooserPanel(
+                    "related_publications",
+                    chooser_field_name="related",
+                    max_num=3,
+                    label="Related publication",
+                    help_text="Pick up to 3 related publications shown on the frontend.",
+                ),
+            ],
+            heading="Related publications",
+        ),
     ]
 
     search_fields = [
@@ -120,6 +149,7 @@ class Publication(index.Indexed, models.Model):
         GraphQLString("date"),
         GraphQLString("publication_type"),
         GraphQLString("office"),
+        GraphQLSnippet("newer_entry", "publication.Publication"),
         GraphQLString("summary"),
         GraphQLStreamfield("key_points"),
         GraphQLRichText("body"),
@@ -144,3 +174,22 @@ class Publication(index.Indexed, models.Model):
         ordering = ["-date"]
         verbose_name = "Publication"
         verbose_name_plural = "Publications"
+
+
+class RelatedPublication(Orderable):
+    parent = ParentalKey(
+        Publication,
+        related_name="related_publications",
+        on_delete=models.CASCADE,
+    )
+    related = models.ForeignKey(
+        Publication,
+        related_name="+",
+        on_delete=models.CASCADE,
+    )
+
+    panels = [FieldPanel("related")]
+
+    class Meta(Orderable.Meta):
+        verbose_name = "Related publication"
+        verbose_name_plural = "Related publications"
