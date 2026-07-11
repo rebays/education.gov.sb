@@ -1,5 +1,6 @@
 from home.models import HomePage
 
+from django.core.cache import cache
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 
@@ -33,6 +34,12 @@ class HomeTests(WagtailPageTestCase):
         Site.objects.create(hostname="testsite", root_page=root_page, is_default_site=True)
         self.homepage = HomePage(title="Home")
         root_page.add_child(instance=self.homepage)
+
+    def tearDown(self):
+        # The Site created above is rolled back without firing delete signals,
+        # leaving Wagtail's cached site root paths pointing at a dead site id;
+        # clear the cache so later tests see a consistent state
+        cache.clear()
 
     def test_homepage_is_renderable(self):
         self.assertPageIsRenderable(self.homepage)

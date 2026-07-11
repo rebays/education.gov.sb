@@ -199,15 +199,13 @@ WAGTAILSEARCH_BACKENDS = {
 # e.g. in notification emails. Don't include '/admin' or a trailing slash
 WAGTAILADMIN_BASE_URL = "http://example.com"
 
-# Allowed file extensions for documents in the document library.
+# Allowed file extensions for documents in the document library, also enforced
+# by the resource library's upload form.
 # This can be omitted to allow all files, but note that this may present a security risk
 # if untrusted users are allowed to upload files -
 # see https://docs.wagtail.org/en/stable/advanced_topics/deploying.html#user-uploaded-files
 WAGTAILDOCS_EXTENSIONS = ['csv', 'docx', 'key', 'odt', 'pdf', 'pptx', 'rtf', 'txt', 'xlsx', 'zip']
 
-# Maximum upload size for documents in bytes.
+# Maximum upload size for documents in bytes, also enforced by the resource
+# library's upload form.
 WAGTAILDOCS_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
-
-# Custom document model for the resource library (resource type, language,
-# revision date etc.). Must be set before any documents exist in the database.
-WAGTAILDOCS_DOCUMENT_MODEL = "resources.ResourceDocument"

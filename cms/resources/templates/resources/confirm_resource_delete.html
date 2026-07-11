@@ -1,0 +1,17 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+
+{% block titletag %}Delete resource | Resource Library{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title="Delete resource" subtitle=resource.title icon="doc-full" %}
+
+    <div class="nice-padding" style="margin-top: 20px;">
+        <p>Are you sure you want to delete <strong>{{ resource.title }}</strong>? The file will be removed from storage.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="button no">Yes, delete it</button>
+            <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Cancel</a>
+        </form>
+    </div>
+{% endblock %}

@@ -228,14 +228,18 @@
                         </a>
                     {% endfor %}
                     {% for doc in page_obj %}
-                        <a class="rl-card" href="{% url 'wagtaildocs:edit' doc.pk %}" title="Edit this document">
+                        {% if can_edit_documents %}
+                            <a class="rl-card" href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this resource">
+                        {% else %}
+                            <a class="rl-card" href="{{ doc.url }}" title="Download">
+                        {% endif %}
                             <span class="rl-card__thumb">
                                 {% icon name="doc-full" %}
                                 {% if doc.file_extension %}<span class="rl-card__ext">{{ doc.file_extension|upper }}</span>{% endif %}
                             </span>
                             <span class="rl-card__title">{{ doc.title }}</span>
                             <span class="rl-card__meta">
-                                {{ doc.get_resource_type_display }}{% if search_query %} · {{ doc.collection.name }}{% endif %}
+                                {{ doc.get_resource_type_display }}{% if search_query %} · {{ doc.folder.name }}{% endif %}
                             </span>
                         </a>
                     {% endfor %}
@@ -275,18 +279,22 @@
                                 <td class="title">
                                     <div class="title-wrapper">
                                         {% icon name="doc-full" classname="initial" %}
-                                        <a href="{% url 'wagtaildocs:edit' doc.pk %}" title="Edit this document">{{ doc.title }}</a>
+                                        {% if can_edit_documents %}
+                                            <a href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this resource">{{ doc.title }}</a>
+                                        {% else %}
+                                            <a href="{{ doc.url }}" title="Download">{{ doc.title }}</a>
+                                        {% endif %}
                                     </div>
                                 </td>
                                 <td>{{ doc.get_resource_type_display }}</td>
-                                {% if search_query %}<td>{{ doc.collection.name }}</td>{% endif %}
+                                {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
                                 <td>{{ doc.language|default:"—" }}</td>
                                 <td>{% if doc.revision_date %}{{ doc.revision_date|date:"j M Y" }}{% else %}—{% endif %}</td>
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
                                 <td>
                                     <a href="{{ doc.url }}" title="Download">Download</a>
                                     {% if can_delete_documents %}
-                                        · <a href="{% url 'wagtaildocs:delete' doc.pk %}" class="no" title="Delete this document">Delete</a>
+                                        · <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="no" title="Delete this resource">Delete</a>
                                     {% endif %}
                                 </td>
                             </tr>

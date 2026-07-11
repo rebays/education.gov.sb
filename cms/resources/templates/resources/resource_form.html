@@ -1,0 +1,29 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+
+{% block titletag %}{{ page_title }} | Resource Library{% endblock %}
+
+{% block content %}
+    {% include "wagtailadmin/shared/header.html" with title=page_title subtitle=resource.title icon="doc-full" %}
+
+    <div class="nice-padding" style="margin-top: 20px;">
+        <nav aria-label="Folder breadcrumb" style="margin-bottom: 15px;">
+            {% for crumb in breadcrumbs %}
+                <a href="{% url 'resource_library:folder' crumb.pk %}">{{ crumb.name }}</a>
+                {% if not forloop.last %}<span aria-hidden="true"> / </span>{% endif %}
+            {% endfor %}
+        </nav>
+
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+            {% for field in form %}
+                {% formattedfield field=field %}
+            {% endfor %}
+            <div style="margin-top: 20px;">
+                <button type="submit" class="button">Save</button>
+                <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Cancel</a>
+                <a href="{{ resource.url }}" class="button button-secondary" style="margin-left: 10px;">Download current file</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
