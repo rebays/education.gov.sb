@@ -1,10 +1,10 @@
 {% extends "wagtailadmin/base.html" %}
 {% load wagtailadmin_tags %}
 
-{% block titletag %}Upload documents | Resource Library{% endblock %}
+{% block titletag %}Upload files | Resource Library{% endblock %}
 
 {% block content %}
-    {% include "wagtailadmin/shared/header.html" with title="Upload documents" subtitle=folder.name icon="folder-open-inverse" %}
+    {% include "wagtailadmin/shared/header.html" with title="Upload files" subtitle=folder.name icon="folder-open-inverse" %}
 
     <div class="nice-padding" style="margin-top: 20px;">
         <nav aria-label="Folder breadcrumb" style="margin-bottom: 15px;">
@@ -14,7 +14,9 @@
             {% endfor %}
         </nav>
 
-        <p>You can select multiple files. Each document's title is taken from its filename, and the fields below are applied to every file — individual documents can be edited afterwards.</p>
+        <p>You can select multiple files; each file's label is taken from its filename and can be edited afterwards.
+           <strong>Create a separate resource per file</strong> makes each file its own resource page (in its own folder, with the details below applied{% if is_root %} — the only option at the library root{% endif %}).
+           <strong>Add the files to this folder's resource page</strong> attaches them all to <em>{{ folder.name }}</em> instead.</p>
 
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}

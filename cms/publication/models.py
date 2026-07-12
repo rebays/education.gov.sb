@@ -3,8 +3,8 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from grapple.models import (
+    GraphQLForeignKey,
     GraphQLRichText,
-    GraphQLSnippet,
     GraphQLStreamfield,
     GraphQLString,
 )
@@ -149,7 +149,10 @@ class Publication(index.Indexed, ClusterableModel):
         GraphQLString("date"),
         GraphQLString("publication_type"),
         GraphQLString("office"),
-        GraphQLSnippet("newer_entry", "publication.Publication"),
+        # GraphQLSnippet would require Publication to be a registered Wagtail
+        # snippet; it isn't, and referencing it that way breaks the whole
+        # schema at type-resolution time
+        GraphQLForeignKey("newer_entry", "publication.Publication"),
         GraphQLString("summary"),
         GraphQLStreamfield("key_points"),
         GraphQLRichText("body"),

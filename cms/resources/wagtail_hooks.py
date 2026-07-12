@@ -1,10 +1,14 @@
+import graphene
 from django.contrib.auth.models import Permission
+from django.db.models import Count
 from django.urls import include, path, reverse
+from grapple.registry import registry
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.viewsets.chooser import ChooserViewSet
 from wagtail.documents.wagtail_hooks import DocumentsSummaryItem
 
+from .models import ResourceFolder
 from .views import user_has_library_access
 
 
@@ -62,6 +66,43 @@ resource_chooser_viewset = ResourceChooserViewSet("resource_chooser")
 @hooks.register("register_admin_viewset")
 def register_resource_chooser_viewset():
     return resource_chooser_viewset
+
+
+# --- Frontend GraphQL queries ---
+# Convention: the folder tree is CMS-side organisation only. A folder that
+# directly contains files is a "resource page"; the hierarchy itself is never
+# exposed to the frontend.
+
+
+def resource_pages_queryset():
+    return ResourceFolder.objects.annotate(
+        direct_file_count=Count("resources")
+    ).filter(direct_file_count__gt=0)
+
+
+class ResourcePagesQuery(graphene.ObjectType):
+    resource_pages = graphene.List(
+        lambda: registry.models[ResourceFolder],
+        resource_type=graphene.String(),
+    )
+    resource_page = graphene.Field(
+        lambda: registry.models[ResourceFolder],
+        slug=graphene.String(required=True),
+    )
+
+    def resolve_resource_pages(self, info, resource_type=None, **kwargs):
+        queryset = resource_pages_queryset().order_by("name")
+        if resource_type:
+            queryset = queryset.filter(resource_type=resource_type)
+        return queryset
+
+    def resolve_resource_page(self, info, slug, **kwargs):
+        return resource_pages_queryset().filter(slug=slug).first()
+
+
+@hooks.register("register_schema_query")
+def register_resource_pages_query(query_mixins):
+    query_mixins.append(ResourcePagesQuery)
 
 
 # --- Hide the built-in Documents app from the admin ---

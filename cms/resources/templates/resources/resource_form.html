@@ -4,7 +4,7 @@
 {% block titletag %}{{ page_title }} | Resource Library{% endblock %}
 
 {% block content %}
-    {% include "wagtailadmin/shared/header.html" with title=page_title subtitle=resource.title icon="doc-full" %}
+    {% include "wagtailadmin/shared/header.html" with title=page_title subtitle=resource.display_label icon="doc-full" %}
 
     <div class="nice-padding" style="margin-top: 20px;">
         <nav aria-label="Folder breadcrumb" style="margin-bottom: 15px;">

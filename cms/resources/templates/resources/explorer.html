@@ -142,9 +142,9 @@
             </h1>
             <div class="rl-folder-actions">
                 {% if not is_root and can_change_folder %}
-                    <a href="{% url 'resource_library:rename_folder' folder.pk %}"
+                    <a href="{% url 'resource_library:edit_folder' folder.pk %}"
                        class="button button-secondary rl-icon-btn"
-                       title="Rename folder" aria-label="Rename folder">
+                       title="Edit folder details" aria-label="Edit folder details">
                         {% icon name="edit" %}
                     </a>
                 {% endif %}
@@ -219,6 +219,7 @@
                             <span class="rl-card__thumb">{% icon name="folder-open-inverse" %}</span>
                             <span class="rl-card__title">{{ sub.name }}</span>
                             <span class="rl-card__meta">
+                                {% if sub.resource_type %}{{ sub.get_resource_type_display }} · {% endif %}
                                 {% if sub.document_count or sub.folder_count %}
                                     {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}
                                 {% else %}
@@ -229,7 +230,7 @@
                     {% endfor %}
                     {% for doc in page_obj %}
                         {% if can_edit_documents %}
-                            <a class="rl-card" href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this resource">
+                            <a class="rl-card" href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this file">
                         {% else %}
                             <a class="rl-card" href="{{ doc.url }}" title="Download">
                         {% endif %}
@@ -237,9 +238,9 @@
                                 {% if doc.is_video %}{% icon name="media" %}{% else %}{% icon name="doc-full" %}{% endif %}
                                 {% if doc.file_extension %}<span class="rl-card__ext">{{ doc.file_extension|upper }}</span>{% endif %}
                             </span>
-                            <span class="rl-card__title">{{ doc.title }}</span>
+                            <span class="rl-card__title">{{ doc.display_label }}</span>
                             <span class="rl-card__meta">
-                                {{ doc.get_resource_type_display }}{% if search_query %} · {{ doc.folder.name }}{% endif %}
+                                {{ doc.language|upper }}{% if search_query %} · {{ doc.folder.name }}{% endif %}
                             </span>
                         </a>
                     {% endfor %}
@@ -252,7 +253,6 @@
                             <th>Type</th>
                             {% if search_query %}<th>Folder</th>{% endif %}
                             <th>Language</th>
-                            <th>Revision</th>
                             <th>Size</th>
                             <th></th>
                         </tr>
@@ -266,9 +266,8 @@
                                         <a href="{% url 'resource_library:folder' sub.pk %}">{{ sub.name }}</a>
                                     </div>
                                 </td>
-                                <td>Folder · {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}</td>
+                                <td>Folder{% if sub.resource_type %} · {{ sub.get_resource_type_display }}{% endif %} · {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}</td>
                                 {% if search_query %}<td></td>{% endif %}
-                                <td></td>
                                 <td></td>
                                 <td></td>
                                 <td></td>
@@ -280,21 +279,20 @@
                                     <div class="title-wrapper">
                                         {% if doc.is_video %}{% icon name="media" classname="initial" %}{% else %}{% icon name="doc-full" classname="initial" %}{% endif %}
                                         {% if can_edit_documents %}
-                                            <a href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this resource">{{ doc.title }}</a>
+                                            <a href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this file">{{ doc.display_label }}</a>
                                         {% else %}
-                                            <a href="{{ doc.url }}" title="Download">{{ doc.title }}</a>
+                                            <a href="{{ doc.url }}" title="Download">{{ doc.display_label }}</a>
                                         {% endif %}
                                     </div>
                                 </td>
-                                <td>{{ doc.get_resource_type_display }}</td>
+                                <td>{{ doc.file_extension|upper }}</td>
                                 {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
                                 <td>{{ doc.language|default:"—" }}</td>
-                                <td>{% if doc.revision_date %}{{ doc.revision_date|date:"j M Y" }}{% else %}—{% endif %}</td>
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
                                 <td>
                                     <a href="{{ doc.url }}" title="Download">Download</a>
                                     {% if can_delete_documents %}
-                                        · <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="no" title="Delete this resource">Delete</a>
+                                        · <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="no" title="Delete this file">Delete</a>
                                     {% endif %}
                                 </td>
                             </tr>

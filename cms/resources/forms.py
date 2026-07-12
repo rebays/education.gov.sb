@@ -5,11 +5,26 @@ from django.core.validators import FileExtensionValidator
 from django.template.defaultfilters import filesizeformat
 from wagtail.admin.widgets import AdminDateInput
 
-from .models import Resource, is_video_filename
+from .models import Resource, ResourceFolder, is_video_filename
 
 
-class FolderForm(forms.Form):
-    name = forms.CharField(label="Folder name", max_length=255)
+class FolderForm(forms.ModelForm):
+    """
+    Create/edit form for a folder. The details are optional: they only
+    surface on the frontend once the folder holds files and thereby becomes
+    a resource page.
+    """
+
+    class Meta:
+        model = ResourceFolder
+        fields = ["name", "description", "resource_type", "revision_date"]
+        widgets = {
+            "description": forms.Textarea(attrs={"rows": 3}),
+            "revision_date": AdminDateInput,
+        }
+        help_texts = {
+            "description": "Shown on the resource page once this folder has files.",
+        }
 
 
 class ResourceFileField(forms.FileField):
@@ -79,44 +94,54 @@ class MultipleResourceFileField(ResourceFileField):
         return [f for f in cleaned if f is not None]
 
 
-class MultipleDocumentUploadForm(forms.Form):
+class UploadForm(forms.Form):
     """
-    Bulk upload form: the metadata fields are applied to every selected file;
-    each resource's title is derived from its filename.
+    Bulk upload form. In "separate" mode each file becomes its own resource
+    folder (the details below applied to each); in "add" mode the files are
+    added to the current folder and the details are ignored. Each file's
+    label is derived from its filename.
     """
 
+    MODE_SEPARATE = "separate"
+    MODE_ADD = "add"
+    MODE_CHOICES = [
+        (MODE_SEPARATE, "Create a separate resource per file"),
+        (MODE_ADD, "Add the files to this folder's resource page"),
+    ]
+
     files = MultipleResourceFileField(label="Files")
-    resource_type = forms.ChoiceField(
-        choices=Resource.ResourceType.choices,
-        initial=Resource.ResourceType.PDS,
+    mode = forms.ChoiceField(
+        choices=MODE_CHOICES,
+        widget=forms.RadioSelect,
+        label="Upload as",
     )
     language = forms.CharField(
         max_length=10,
         required=False,
         initial="en",
-        help_text="ISO language code, e.g. en, fr, de",
+        help_text="ISO language code applied to every file, e.g. en, fr, de",
     )
-    revision_date = forms.DateField(required=False, widget=AdminDateInput)
     description = forms.CharField(
-        required=False, widget=forms.Textarea(attrs={"rows": 3})
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text="Applied to each new resource; ignored when adding files to this folder.",
+    )
+    resource_type = forms.ChoiceField(
+        choices=[("", "---------")] + list(ResourceFolder.ResourceType.choices),
+        required=False,
+        help_text="Applied to each new resource; ignored when adding files to this folder.",
+    )
+    revision_date = forms.DateField(
+        required=False,
+        widget=AdminDateInput,
+        help_text="Applied to each new resource; ignored when adding files to this folder.",
     )
 
 
 class ResourceForm(forms.ModelForm):
-    """Edit form for a single resource; replacing the file is optional."""
+    """Edit form for a single file; replacing the file itself is optional."""
 
     class Meta:
         model = Resource
-        fields = [
-            "title",
-            "file",
-            "resource_type",
-            "description",
-            "language",
-            "revision_date",
-        ]
+        fields = ["label", "file", "language"]
         field_classes = {"file": ResourceFileField}
-        widgets = {
-            "revision_date": AdminDateInput,
-            "description": forms.Textarea(attrs={"rows": 3}),
-        }

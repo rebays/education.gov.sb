@@ -8,7 +8,7 @@ from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from wagtail.search.backends import get_search_backend
 
-from .forms import FolderForm, MultipleDocumentUploadForm, ResourceForm
+from .forms import FolderForm, ResourceForm, UploadForm
 from .models import Resource, ResourceFolder
 
 DOCUMENTS_PER_PAGE = 50
@@ -52,6 +52,30 @@ def get_breadcrumbs(root, folder):
     return [f for f in folder.get_ancestors() if f.depth >= root.depth] + [folder]
 
 
+def annotate_folder_counts(folders):
+    """
+    Annotate each folder with the file and folder counts of its whole
+    subtree, using one aggregate query and treebeard's materialised paths.
+    """
+    if not folders:
+        return
+    counts = list(
+        Resource.objects.values("folder__path").annotate(count=Count("id"))
+    )
+    all_paths = list(ResourceFolder.objects.values_list("path", flat=True))
+    for folder in folders:
+        folder.document_count = sum(
+            row["count"]
+            for row in counts
+            if row["folder__path"].startswith(folder.path)
+        )
+        folder.folder_count = sum(
+            1
+            for path in all_paths
+            if path.startswith(folder.path) and path != folder.path
+        )
+
+
 def explorer(request, folder_id=None):
     check_library_access(request)
     root, folder = get_folder(folder_id)
@@ -63,39 +87,25 @@ def explorer(request, folder_id=None):
         layout = request.session.get(LAYOUT_SESSION_KEY, DEFAULT_LAYOUT)
 
     search_query = request.GET.get("q", "").strip()
+    backend = get_search_backend()
     if search_query:
-        # Search covers the current folder and everything below it
+        # Search covers the current folder and everything below it: folders
+        # match on name/description, files on their label
         subtree = ResourceFolder.objects.filter(path__startswith=folder.path)
-        subfolders = []
-        documents = get_search_backend().search(
+        subfolders = [
+            f
+            for f in backend.search(search_query, ResourceFolder.objects.all())
+            if f.path.startswith(folder.path) and f.pk != folder.pk
+        ]
+        documents = backend.search(
             search_query,
             Resource.objects.filter(folder__in=subtree).select_related("folder"),
         )
     else:
         subfolders = list(folder.get_children().order_by("name"))
-        documents = Resource.objects.filter(folder=folder).order_by("title")
+        documents = Resource.objects.filter(folder=folder).order_by("label")
 
-        # Annotate each subfolder with the file and folder counts of its whole
-        # subtree, using one aggregate query and treebeard's materialised paths
-        counts = (
-            Resource.objects.filter(folder__in=folder.get_descendants())
-            .values("folder__path")
-            .annotate(count=Count("id"))
-        )
-        descendant_paths = list(
-            folder.get_descendants().values_list("path", flat=True)
-        )
-        for sub in subfolders:
-            sub.document_count = sum(
-                row["count"]
-                for row in counts
-                if row["folder__path"].startswith(sub.path)
-            )
-            sub.folder_count = sum(
-                1
-                for path in descendant_paths
-                if path.startswith(sub.path) and path != sub.path
-            )
+    annotate_folder_counts(subfolders)
 
     page_obj = Paginator(documents, DOCUMENTS_PER_PAGE).get_page(request.GET.get("p"))
 
@@ -135,9 +145,7 @@ def add_folder(request, parent_id):
 
     form = FolderForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        folder = parent.add_child(
-            instance=ResourceFolder(name=form.cleaned_data["name"])
-        )
+        folder = parent.add_child(instance=form.save(commit=False))
         messages.success(request, f"Folder '{folder.name}' created.")
         return redirect("resource_library:folder", folder.pk)
 
@@ -153,7 +161,7 @@ def add_folder(request, parent_id):
     )
 
 
-def rename_folder(request, folder_id):
+def edit_folder(request, folder_id):
     check_library_access(request)
     if not request.user.has_perm("resources.change_resourcefolder"):
         raise PermissionDenied
@@ -161,11 +169,10 @@ def rename_folder(request, folder_id):
     if folder.pk == root.pk:
         raise PermissionDenied
 
-    form = FolderForm(request.POST or None, initial={"name": folder.name})
+    form = FolderForm(request.POST or None, instance=folder)
     if request.method == "POST" and form.is_valid():
-        folder.name = form.cleaned_data["name"]
-        folder.save()
-        messages.success(request, f"Folder renamed to '{folder.name}'.")
+        form.save()
+        messages.success(request, f"Folder '{folder.name}' updated.")
         return redirect("resource_library:folder", folder.pk)
 
     return render(
@@ -173,7 +180,7 @@ def rename_folder(request, folder_id):
         "resources/folder_form.html",
         {
             "form": form,
-            "page_title": "Rename folder",
+            "page_title": "Edit folder",
             "folder": folder,
             "breadcrumbs": get_breadcrumbs(root, folder),
         },
@@ -217,31 +224,62 @@ def upload(request, folder_id):
     if not request.user.has_perm("resources.add_resource"):
         raise PermissionDenied
     root, folder = get_folder(folder_id)
+    is_root = folder.pk == root.pk
+
+    # Sensible default: a folder that already has files is a resource page,
+    # so new files join it; otherwise each file becomes its own resource.
+    default_mode = (
+        UploadForm.MODE_ADD
+        if not is_root and folder.resources.exists()
+        else UploadForm.MODE_SEPARATE
+    )
 
     if request.method == "POST":
-        form = MultipleDocumentUploadForm(request.POST, request.FILES)
+        form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
+            mode = form.cleaned_data["mode"]
+            if is_root:
+                # The root is organisational by definition — it never becomes
+                # a resource page itself
+                mode = UploadForm.MODE_SEPARATE
+            language = form.cleaned_data["language"]
             for f in form.cleaned_data["files"]:
+                stem = Path(f.name).stem
+                if mode == UploadForm.MODE_SEPARATE:
+                    target = folder.add_child(
+                        instance=ResourceFolder(
+                            name=stem,
+                            description=form.cleaned_data["description"],
+                            resource_type=form.cleaned_data["resource_type"],
+                            revision_date=form.cleaned_data["revision_date"],
+                        )
+                    )
+                else:
+                    target = folder
                 resource = Resource(
-                    title=Path(f.name).stem,
+                    folder=target,
                     file=f,
-                    folder=folder,
+                    label=stem,
+                    language=language,
                     uploaded_by_user=request.user,
-                    resource_type=form.cleaned_data["resource_type"],
-                    language=form.cleaned_data["language"],
-                    revision_date=form.cleaned_data["revision_date"],
-                    description=form.cleaned_data["description"],
                 )
                 resource.set_file_metadata()
                 resource.save()
             count = len(form.cleaned_data["files"])
-            messages.success(
-                request,
-                f"{count} document{'s' if count != 1 else ''} added to '{folder.name}'.",
-            )
+            if mode == UploadForm.MODE_SEPARATE:
+                message = (
+                    f"{count} resource{'s' if count != 1 else ''} "
+                    f"created in '{folder.name}'."
+                )
+            else:
+                message = (
+                    f"{count} file{'s' if count != 1 else ''} "
+                    f"added to '{folder.name}'."
+                )
+            messages.success(request, message)
             return redirect("resource_library:folder", folder.pk)
     else:
-        form = MultipleDocumentUploadForm()
+        form = UploadForm(initial={"mode": default_mode})
 
     return render(
         request,
@@ -249,6 +287,7 @@ def upload(request, folder_id):
         {
             "form": form,
             "folder": folder,
+            "is_root": is_root,
             "breadcrumbs": get_breadcrumbs(root, folder),
         },
     )
@@ -272,7 +311,7 @@ def edit_resource(request, resource_id):
             resource.save()
             if file_changed and old_file_name != resource.file.name:
                 resource.file.storage.delete(old_file_name)
-            messages.success(request, f"'{resource.title}' updated.")
+            messages.success(request, f"'{resource.display_label}' updated.")
             return redirect("resource_library:folder", folder.pk)
     else:
         form = ResourceForm(instance=resource)
@@ -282,7 +321,7 @@ def edit_resource(request, resource_id):
         "resources/resource_form.html",
         {
             "form": form,
-            "page_title": "Edit resource",
+            "page_title": "Edit file",
             "resource": resource,
             "folder": folder,
             "breadcrumbs": get_breadcrumbs(root, folder),
@@ -298,9 +337,9 @@ def delete_resource(request, resource_id):
     root, folder = get_folder(resource.folder_id)
 
     if request.method == "POST":
-        title = resource.title
+        label = resource.display_label
         resource.delete()
-        messages.success(request, f"'{title}' deleted.")
+        messages.success(request, f"'{label}' deleted.")
         return redirect("resource_library:folder", folder.pk)
 
     return render(
