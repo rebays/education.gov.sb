@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
   getCurriculumResources,
@@ -33,13 +33,48 @@ const levelTabs: { value: Level; label: string }[] = [
  * component (so it can still export `metadata`) and delegates interactivity
  * here.
  *
- * The list (most recently updated resources, filterable) is the default
- * landing state; the Coverage Map is opt-in via the sidebar button and via
- * drilling into a specific subject/grade cell.
+ * The default landing state shows filter instructions rather than an
+ * unfiltered list — resources only render once at least one filter
+ * (search, type, subject, or grade) is applied. The Coverage Map is opt-in
+ * via the sidebar button and via drilling into a specific subject/grade
+ * cell.
  *
  * `initialLevel`/`initialFilters` seed the state from URL params
  * (/resources?level=…&subject=…), already validated by the page.
  */
+const filterInstructionSteps: { icon: IconName; title: string; description: string }[] = [
+  { icon: "search", title: "Search", description: "Type a keyword to search resource titles." },
+  { icon: "tag", title: "Resource type", description: "Narrow to documents, videos, assessments, or syllabi." },
+  { icon: "book", title: "Subject", description: "Pick a subject to see everything published for it." },
+  { icon: "graduation", title: "Grade / year level", description: "Filter to a specific year or form level." },
+];
+
+function FilterInstructions() {
+  return (
+    <div className="animate-in fade-in-0 zoom-in-95 rounded-2xl border border-dashed border-border bg-surface p-12 text-center duration-300">
+      <Icon name="filter" className="mx-auto h-8 w-8 text-muted" />
+      <h2 className="mt-4 font-serif text-xl text-foreground">Find the resources you need</h2>
+      <p className="mx-auto mt-2 max-w-md text-[15px] text-muted">
+        Use the filters to search by keyword, or narrow by resource type, subject, and grade level.
+        Matching resources will appear here as soon as you apply a filter.
+      </p>
+      <dl className="mx-auto mt-8 grid max-w-2xl gap-4 text-left sm:grid-cols-2">
+        {filterInstructionSteps.map((step) => (
+          <div
+            key={step.title}
+            className="flex items-start gap-3 rounded-xl border border-border bg-background p-4"
+          >
+            <Icon name={step.icon} className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <div>
+              <dt className="text-sm font-semibold text-foreground">{step.title}</dt>
+              <dd className="mt-0.5 text-sm text-muted">{step.description}</dd>
+            </div>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
 export function CurriculumExplorer({
   initialLevel = "primary",
   initialFilters = emptyFilters,
@@ -190,7 +225,7 @@ export function CurriculumExplorer({
                   {filters.query && <> · &ldquo;{filters.query}&rdquo;</>}
                 </>
               ) : (
-                <>Showing {filteredResources.length} recently updated resources</>
+                <>Use the filters to find resources</>
               )}
             </p>
           )}
@@ -206,13 +241,15 @@ export function CurriculumExplorer({
               }
               onCellClick={handleCellClick}
             />
-          ) : (
+          ) : hasActiveFilters ? (
             <CurriculumResourceList
               key={`${level}-${filters.type ?? ""}-${filters.subjectId ?? ""}-${filters.gradeId ?? ""}-${filters.query}`}
               resources={filteredResources}
               subjects={subjects}
               grades={grades}
             />
+          ) : (
+            <FilterInstructions />
           )}
         </div>
       </div>

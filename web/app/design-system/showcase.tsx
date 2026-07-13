@@ -844,7 +844,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <ResourceCard
               variant="document"
-              icon="document"
+              image="/text_book_y6.png"
               badges={[
                 { label: "Policy", tone: "primary" },
                 { label: "Published", tone: "success", icon: "check" },
@@ -857,7 +857,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
 
             <ResourceCard
               variant="report"
-              icon="report"
+              image="/text_book_teachers_guide_y9.png"
               badges={[
                 { label: "Report", tone: "accent" },
                 { label: "New · 2 days", tone: "accent" },

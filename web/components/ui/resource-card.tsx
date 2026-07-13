@@ -1,3 +1,4 @@
+import Image from "next/image"
 import Link from "next/link"
 import type { CSSProperties } from "react"
 
@@ -25,7 +26,7 @@ type ResourceCardBase = {
 
 type ResourceCardProps = ResourceCardBase &
   (
-    | { variant: "document" | "report"; icon: IconName }
+    | { variant: "document" | "report"; image: string }
     | { variant: "video"; duration: string }
   )
 
@@ -48,49 +49,36 @@ function ResourceCard(props: ResourceCardProps) {
         className
       )}
     >
-      {props.variant === "video" ? (
-        <div className="relative flex aspect-video items-center justify-center bg-deep">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 backdrop-blur transition-transform group-hover:scale-110">
-            <Icon name="video" className="h-6 w-6" />
-          </span>
-          <span className="absolute bottom-3 right-3 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[11px] text-white">
-            {props.duration}
-          </span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 border-b border-border bg-surface px-5 py-4">
-          <span
-            className={cn(
-              "flex h-10 w-10 items-center justify-center rounded-lg",
-              props.icon === "report"
-                ? "bg-accent/20 text-accent-ink"
-                : "bg-primary/10 text-primary"
-            )}
-          >
-            <Icon name={props.icon} className="h-5 w-5" />
-          </span>
-          <div className="flex flex-wrap gap-1.5">
-            {badges.map((b) => (
-              <Badge key={b.label} variant={b.tone}>
-                {b.icon && <Icon name={b.icon} className="h-3.5 w-3.5" />}
-                {b.label}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-deep">
+        {props.variant === "video" ? (
+          <>
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 backdrop-blur transition-transform group-hover:scale-110">
+              <Icon name="video" className="h-6 w-6" />
+            </span>
+            <span className="absolute bottom-3 right-3 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[11px] text-white">
+              {props.duration}
+            </span>
+          </>
+        ) : (
+          <Image
+            src={props.image}
+            alt=""
+            fill
+            sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        )}
+      </div>
 
       <div className="flex flex-1 flex-col p-5">
-        {props.variant === "video" && (
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            {badges.map((b) => (
-              <Badge key={b.label} variant={b.tone}>
-                {b.icon && <Icon name={b.icon} className="h-3.5 w-3.5" />}
-                {b.label}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {badges.map((b) => (
+            <Badge key={b.label} variant={b.tone}>
+              {b.icon && <Icon name={b.icon} className="h-3.5 w-3.5" />}
+              {b.label}
+            </Badge>
+          ))}
+        </div>
         <h4 className="font-serif text-xl leading-snug text-foreground group-hover:text-primary">
           {href ? (
             <Link
