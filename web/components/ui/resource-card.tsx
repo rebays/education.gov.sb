@@ -2,7 +2,6 @@ import Link from "next/link"
 import type { CSSProperties } from "react"
 
 import { Badge, type badgeVariants } from "@/components/ui/badge"
-import { Button, type buttonVariants } from "@/components/ui/button"
 import { Icon, type IconName } from "@/components/ui/icon"
 import { cn } from "@/lib/utils"
 import type { VariantProps } from "class-variance-authority"
@@ -11,14 +10,6 @@ type ResourceCardBadge = {
   label: string
   tone?: VariantProps<typeof badgeVariants>["variant"]
   icon?: IconName
-}
-
-type ResourceCardAction = {
-  label: string
-  href?: string
-  onClick?: () => void
-  icon?: IconName
-  variant?: VariantProps<typeof buttonVariants>["variant"]
 }
 
 type ResourceCardBase = {
@@ -34,11 +25,17 @@ type ResourceCardBase = {
 
 type ResourceCardProps = ResourceCardBase &
   (
-    | { variant: "document" | "report"; icon: IconName; actions?: ResourceCardAction[] }
+    | { variant: "document" | "report"; icon: IconName }
     | { variant: "video"; duration: string }
   )
 
-/** The hub's core listing unit — documents, reports, and videos share this shell. */
+/**
+ * The hub's core listing unit — documents, reports, and videos share this
+ * shell. The card's single action is navigation: when `href` is set the
+ * whole card is clickable via the stretched title link (an `after`
+ * overlay). Downloads deliberately live on the detail page, where a
+ * multi-file resource can present each file with context.
+ */
 function ResourceCard(props: ResourceCardProps) {
   const { title, description, meta, badges, className, style, href } = props
 
@@ -46,7 +43,8 @@ function ResourceCard(props: ResourceCardProps) {
     <article
       style={style}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-xl",
+        "group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-xl",
+        "has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-primary has-[a:focus-visible]:ring-offset-2",
         className
       )}
     >
@@ -95,7 +93,10 @@ function ResourceCard(props: ResourceCardProps) {
         )}
         <h4 className="font-serif text-xl leading-snug text-foreground group-hover:text-primary">
           {href ? (
-            <Link href={href} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2">
+            <Link
+              href={href}
+              className="after:absolute after:inset-0 focus-visible:outline-none"
+            >
               {title}
             </Link>
           ) : (
@@ -104,28 +105,10 @@ function ResourceCard(props: ResourceCardProps) {
         </h4>
         <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{description}</p>
         <p className="mt-4 font-mono text-[12px] text-muted">{meta}</p>
-
-        {props.variant !== "video" && props.actions && props.actions.length > 0 && (
-          <div className="mt-4 flex items-center gap-2">
-            {props.actions.map((a) => (
-              <Button
-                key={a.label}
-                size="sm"
-                variant={a.variant ?? "primary"}
-                onClick={a.onClick}
-                nativeButton={!a.href}
-                render={a.href ? <Link href={a.href} /> : undefined}
-              >
-                {a.icon && <Icon name={a.icon} className="h-4 w-4" />}
-                {a.label}
-              </Button>
-            ))}
-          </div>
-        )}
       </div>
     </article>
   )
 }
 
 export { ResourceCard }
-export type { ResourceCardProps, ResourceCardBadge, ResourceCardAction }
+export type { ResourceCardProps, ResourceCardBadge }

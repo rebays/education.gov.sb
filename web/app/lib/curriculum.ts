@@ -90,7 +90,10 @@ export type CurriculumResource = {
   type: ResourceType;
   summary: string;
   format: string;
+  /** File size — always a byte figure, even for videos. */
   size: string;
+  /** Running time, set for videos only. */
+  duration?: string;
   updated: string;
   /** Set when this mirrors a real item in the general resource library. */
   libraryRef?: { category: CategorySlug; slug: string };
@@ -178,12 +181,17 @@ function hash(input: string): number {
   return h;
 }
 
-const fillerKinds: { type: ResourceType; format: string; size: string }[] = [
+const fillerKinds: {
+  type: ResourceType;
+  format: string;
+  size: string;
+  duration?: string;
+}[] = [
   { type: "Syllabus", format: "PDF", size: "1.2 MB" },
   { type: "Teacher Guide", format: "PDF", size: "3.4 MB" },
   { type: "Workbook", format: "PDF", size: "2.1 MB" },
   { type: "Assessment", format: "PDF", size: "0.8 MB" },
-  { type: "Video", format: "MP4", size: "9 min" },
+  { type: "Video", format: "MP4", size: "85 MB", duration: "9 min" },
   { type: "Print Pack", format: "ZIP", size: "5.6 MB" },
 ];
 
@@ -211,6 +219,7 @@ function generatedFiller(): CurriculumResource[] {
             summary: `${kind.type} materials supporting the ${subject.name} syllabus for ${grade.label}.`,
             format: kind.format,
             size: kind.size,
+            duration: kind.duration,
             updated: updateDates[(seed + i) % updateDates.length],
           });
         }

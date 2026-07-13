@@ -54,6 +54,7 @@ export default async function CurriculumResourcePage({
     ["Grade / year level", grade?.label ?? resource.gradeId],
     ["Type", resource.type],
     ["Format", resource.format],
+    ...(resource.duration ? [["Duration", resource.duration] as [string, string]] : []),
     ["File size", resource.size],
     ["Updated", resource.updated],
   ];
@@ -102,10 +103,7 @@ export default async function CurriculumResourcePage({
         {related.length > 0 && (
           <section className="bg-surface">
             <div className="mx-auto w-full max-w-8xl px-6 py-14">
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-                More {subject?.name ?? "subject"} resources
-              </p>
-              <h2 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-foreground">
+              <h2 className="font-serif text-3xl leading-tight tracking-tight text-foreground">
                 Related resources.
               </h2>
               <div className="mt-8">

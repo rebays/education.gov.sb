@@ -1,6 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { Icon } from "@/components/ui/icon";
+
+/** External-link marker: an SVG so mobile emoji fonts never claim it (a raw ↗ renders as an emoji on iOS/Android). */
+function ExternalMark() {
+  return (
+    <Icon
+      name="external"
+      className="ml-1 inline-block h-3.5 w-3.5 align-[-0.125em]"
+    />
+  );
+}
+
 export default function SiteFooter() {
   return (
     <footer className="bg-deep-2 text-white">
@@ -60,7 +72,8 @@ export default function SiteFooter() {
             <ul className="mt-3 space-y-2 text-sm text-white/70">
               <li>
                 <a href="https://mehrd.gov.sb" className="hover:text-accent">
-                  Main website ↗
+                  Main website
+                  <ExternalMark />
                 </a>
               </li>
               <li>
@@ -80,7 +93,8 @@ export default function SiteFooter() {
             <ul className="mt-3 space-y-2 text-sm text-white/70">
               <li>
                 <a href="https://solomons.gov.sb" className="hover:text-accent">
-                  Solomon Islands Government ↗
+                  Solomon Islands Government
+                  <ExternalMark />
                 </a>
               </li>
               <li>
@@ -88,7 +102,8 @@ export default function SiteFooter() {
                   href="https://scholarships.education.gov.sb"
                   className="hover:text-accent"
                 >
-                  Scholarships portal ↗
+                  Scholarships portal
+                  <ExternalMark />
                 </a>
               </li>
             </ul>

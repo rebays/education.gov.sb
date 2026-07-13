@@ -159,10 +159,7 @@ export default async function PublicationPage({
         {/* related publications */}
         <section className="bg-surface">
           <div className="mx-auto w-full max-w-8xl px-6 py-14">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
-              Keep reading
-            </p>
-            <h2 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-foreground">
+            <h2 className="font-serif text-3xl leading-tight tracking-tight text-foreground">
               Related publications.
             </h2>
             <div className="mt-8 grid gap-6 md:grid-cols-3">

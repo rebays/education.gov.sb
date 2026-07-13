@@ -13,10 +13,10 @@ function toCardProps(
   if (resource.type === "Video") {
     return {
       variant: "video",
-      duration: resource.size,
+      duration: resource.duration ?? "",
       title: resource.title,
       description: resource.summary,
-      meta: `${gradeLabel} · Updated ${resource.updated} · ${resource.format}`,
+      meta: `${gradeLabel} · Updated ${resource.updated} · ${resource.format} · ${resource.size}`,
       badges: [...badges, { label: "Video", tone: "primary" }],
       href,
     };
@@ -31,10 +31,6 @@ function toCardProps(
     meta: `${gradeLabel} · Updated ${resource.updated} · ${resource.format} · ${resource.size}`,
     badges: [...badges, { label: resource.type, tone: isAssessment ? "accent" : "primary" }],
     href,
-    actions: [
-      { label: "Preview", variant: "primary", href },
-      { label: "Download", icon: "download", variant: "ghost" },
-    ],
   };
 }
 

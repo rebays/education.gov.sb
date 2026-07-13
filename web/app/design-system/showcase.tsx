@@ -849,13 +849,10 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
                 { label: "Policy", tone: "primary" },
                 { label: "Published", tone: "success", icon: "check" },
               ]}
+              href="#"
               title="National Education Action Plan 2022–2026"
               description="The Ministry's medium-term strategy for access, quality, and management across the sector."
               meta="Published 12 Mar 2026 · PDF · 3.1 MB"
-              actions={[
-                { label: "Download", icon: "download", variant: "primary" },
-                { label: "Preview", variant: "ghost" },
-              ]}
             />
 
             <ResourceCard
@@ -865,18 +862,16 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
                 { label: "Report", tone: "accent" },
                 { label: "New · 2 days", tone: "accent" },
               ]}
+              href="#"
               title="Performance Assessment Report 2025"
               description="Enrolment, completion, and literacy indicators across all nine provinces and Honiara."
               meta="Published 28 Jun 2026 · PDF · 8.7 MB"
-              actions={[
-                { label: "Download", icon: "download", variant: "primary" },
-                { label: "Preview", variant: "ghost" },
-              ]}
             />
 
             <ResourceCard
               variant="video"
               duration="12:04"
+              href="#"
               badges={[{ label: "Video", tone: "primary" }]}
               title="Teacher training: the new primary curriculum"
               description="A recorded session for teachers rolling out the updated Standard 1–3 materials."
