@@ -102,7 +102,6 @@ export function CurriculumExplorer({
   function handleLevelChange(next: Level) {
     setLevel(next);
     setFilters(emptyFilters);
-    setViewMode("list");
   }
 
   function handleFilterChange(patch: Partial<CurriculumFilters>) {
