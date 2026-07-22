@@ -17,6 +17,11 @@ class HomePage(HeadlessMixin, Page):
     pass
 
 
+class PillarBlock(blocks.StructBlock):
+    title = blocks.CharBlock(max_length=100)
+    text = blocks.TextBlock()
+
+
 class AboutPage(HeadlessMixin, Page):
     """The single About page for the site — always lives directly under HomePage."""
 
@@ -38,17 +43,7 @@ class AboutPage(HeadlessMixin, Page):
         help_text="Illustrative image for the purpose section.",
     )
     pillars = StreamField(
-        [
-            (
-                "pillar",
-                blocks.StructBlock(
-                    [
-                        ("title", blocks.CharBlock(max_length=100)),
-                        ("text", blocks.TextBlock()),
-                    ]
-                ),
-            ),
-        ],
+        [("pillar", PillarBlock())],
         use_json_field=True,
         blank=True,
         help_text="'Built on three pillars' cards.",
