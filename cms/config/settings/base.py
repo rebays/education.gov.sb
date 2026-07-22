@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+import os
 from pathlib import Path
 
 import dj_database_url
@@ -219,3 +220,13 @@ RESOURCE_LIBRARY_EXTENSIONS = [
 ]
 RESOURCE_LIBRARY_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
 RESOURCE_LIBRARY_VIDEO_MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200MB
+
+# Wagtail Headless Preview
+WAGTAIL_HEADLESS_PREVIEW = {
+    "CLIENT_URLS": {
+        "default": "{SITE_ROOT_URL}/api/preview",
+    },
+    "SERVE_BASE_URL": os.environ["SERVE_BASE_URL"],
+    "REDIRECT_ON_PREVIEW": True, 
+    "ENFORCE_TRAILING_SLASH": True, 
+}
