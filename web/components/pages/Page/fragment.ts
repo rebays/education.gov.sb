@@ -1,5 +1,5 @@
 export const PAGE_FRAGMENT = /* GraphQL */ `
-  fragment Page on Page {
+  fragment PageBase on PageInterface {
     __typename
     id
     urlPath

@@ -6,7 +6,7 @@ export const GET_PAGE = /* GraphQL */ `
   ${ABOUT_PAGE_FRAGMENT}
   query GetPage($urlPath: String!) {
     page(urlPath: $urlPath) {
-      ...Page
+      ...PageBase
       ... on AboutPage {
         ...AboutPage
       }
@@ -19,7 +19,7 @@ export const GET_PAGE_BY_TOKEN = /* GraphQL */ `
   ${ABOUT_PAGE_FRAGMENT}
   query GetPageByToken($token: String!) {
     page(token: $token) {
-      ...Page
+      ...PageBase
       ... on AboutPage {
         ...AboutPage
       }
