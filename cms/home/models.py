@@ -10,13 +10,14 @@ from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page
+from wagtail_headless_preview.models import HeadlessMixin
 
 
-class HomePage(Page):
+class HomePage(HeadlessMixin, Page):
     pass
 
 
-class AboutPage(Page):
+class AboutPage(HeadlessMixin, Page):
     """The single About page for the site — always lives directly under HomePage."""
 
     lead = models.TextField(
