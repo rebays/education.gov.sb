@@ -3,23 +3,16 @@ from django.db import models
 from grapple.models import (
     GraphQLImage,
     GraphQLRichText,
-    GraphQLStreamfield,
     GraphQLString,
 )
-from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
-from wagtail.fields import RichTextField, StreamField
+from wagtail.fields import RichTextField
 from wagtail.models import Page
 from wagtail_headless_preview.models import HeadlessMixin
 
 
 class HomePage(HeadlessMixin, Page):
     pass
-
-
-class PillarBlock(blocks.StructBlock):
-    title = blocks.CharBlock(max_length=100)
-    text = blocks.TextBlock()
 
 
 class AboutPage(HeadlessMixin, Page):
@@ -42,12 +35,12 @@ class AboutPage(HeadlessMixin, Page):
         related_name="+",
         help_text="Illustrative image for the purpose section.",
     )
-    pillars = StreamField(
-        [("pillar", PillarBlock())],
-        use_json_field=True,
-        blank=True,
-        help_text="'Built on three pillars' cards.",
-    )
+    pillar_one_title = models.CharField(max_length=100, blank=True)
+    pillar_one_text = models.TextField(blank=True)
+    pillar_two_title = models.CharField(max_length=100, blank=True)
+    pillar_two_text = models.TextField(blank=True)
+    pillar_three_title = models.CharField(max_length=100, blank=True)
+    pillar_three_text = models.TextField(blank=True)
     support_heading = models.CharField(max_length=200, blank=True)
     support_body = models.TextField(blank=True)
     support_email = models.EmailField(blank=True)
@@ -66,7 +59,17 @@ class AboutPage(HeadlessMixin, Page):
             ],
             heading="Our purpose",
         ),
-        FieldPanel("pillars"),
+        MultiFieldPanel(
+            [
+                FieldPanel("pillar_one_title"),
+                FieldPanel("pillar_one_text"),
+                FieldPanel("pillar_two_title"),
+                FieldPanel("pillar_two_text"),
+                FieldPanel("pillar_three_title"),
+                FieldPanel("pillar_three_text"),
+            ],
+            heading="Built on three pillars",
+        ),
         MultiFieldPanel(
             [
                 FieldPanel("support_heading"),
@@ -82,7 +85,12 @@ class AboutPage(HeadlessMixin, Page):
         GraphQLString("purpose_heading"),
         GraphQLRichText("purpose_body"),
         GraphQLImage("purpose_image"),
-        GraphQLStreamfield("pillars"),
+        GraphQLString("pillar_one_title"),
+        GraphQLString("pillar_one_text"),
+        GraphQLString("pillar_two_title"),
+        GraphQLString("pillar_two_text"),
+        GraphQLString("pillar_three_title"),
+        GraphQLString("pillar_three_text"),
         GraphQLString("support_heading"),
         GraphQLString("support_body"),
         GraphQLString("support_email"),
