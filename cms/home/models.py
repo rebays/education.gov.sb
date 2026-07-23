@@ -11,7 +11,13 @@ from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page
 from wagtail_headless_preview.models import HeadlessMixin
 
-from home.blocks import PillarBlock
+from home.blocks import (
+    DropdownFieldBlock,
+    EmailFieldBlock,
+    MultilineTextFieldBlock,
+    PillarBlock,
+    TextFieldBlock,
+)
 
 
 class HomePage(HeadlessMixin, Page):
@@ -48,6 +54,23 @@ class AboutPage(HeadlessMixin, Page):
     support_body = models.TextField(blank=True)
     support_email = models.EmailField(blank=True)
 
+    contact_form_heading = models.CharField(max_length=200, blank=True)
+    contact_form_intro = models.TextField(blank=True)
+    contact_form_fields = StreamField(
+        [
+            ("text", TextFieldBlock()),
+            ("email", EmailFieldBlock()),
+            ("multiline", MultilineTextFieldBlock()),
+            ("dropdown", DropdownFieldBlock()),
+        ],
+        use_json_field=True,
+        blank=True,
+        help_text="Input fields rendered inside the contact form.",
+    )
+    contact_form_submit_text = models.CharField(
+        max_length=100, blank=True, default="Send message"
+    )
+
     parent_page_types = ["home.HomePage"]
     subpage_types = []
     max_count = 1
@@ -71,6 +94,15 @@ class AboutPage(HeadlessMixin, Page):
             ],
             heading="Get in touch",
         ),
+        MultiFieldPanel(
+            [
+                FieldPanel("contact_form_heading"),
+                FieldPanel("contact_form_intro"),
+                FieldPanel("contact_form_fields"),
+                FieldPanel("contact_form_submit_text"),
+            ],
+            heading="Contact form",
+        ),
     ]
 
     graphql_fields = [
@@ -82,6 +114,10 @@ class AboutPage(HeadlessMixin, Page):
         GraphQLString("support_heading"),
         GraphQLString("support_body"),
         GraphQLString("support_email"),
+        GraphQLString("contact_form_heading"),
+        GraphQLString("contact_form_intro"),
+        GraphQLStreamfield("contact_form_fields"),
+        GraphQLString("contact_form_submit_text"),
     ]
 
     class Meta:

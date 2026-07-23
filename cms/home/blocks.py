@@ -1,5 +1,5 @@
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLString
+from grapple.models import GraphQLCollection, GraphQLString
 from wagtail import blocks
 
 
@@ -24,3 +24,66 @@ class PillarBlock(blocks.StructBlock):
 
     class Meta:
         icon = "list-ul"
+
+
+# ---- Contact form field blocks ----
+
+
+@register_streamfield_block
+class TextFieldBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(max_length=200)
+    placeholder = blocks.CharBlock(max_length=200, required=False)
+
+    graphql_fields = [
+        GraphQLString("field_label"),
+        GraphQLString("placeholder"),
+    ]
+
+    class Meta:
+        icon = "edit"
+        label = "Text input"
+
+
+@register_streamfield_block
+class EmailFieldBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(max_length=200)
+    placeholder = blocks.CharBlock(max_length=200, required=False)
+
+    graphql_fields = [
+        GraphQLString("field_label"),
+        GraphQLString("placeholder"),
+    ]
+
+    class Meta:
+        icon = "mail"
+        label = "Email input"
+
+
+@register_streamfield_block
+class MultilineTextFieldBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(max_length=200)
+    placeholder = blocks.CharBlock(max_length=200, required=False)
+
+    graphql_fields = [
+        GraphQLString("field_label"),
+        GraphQLString("placeholder"),
+    ]
+
+    class Meta:
+        icon = "form"
+        label = "Multi-line text"
+
+
+@register_streamfield_block
+class DropdownFieldBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(max_length=200)
+    options = blocks.ListBlock(blocks.CharBlock(max_length=200))
+
+    graphql_fields = [
+        GraphQLString("field_label"),
+        GraphQLCollection(GraphQLString, "options"),
+    ]
+
+    class Meta:
+        icon = "arrow-down"
+        label = "Dropdown"

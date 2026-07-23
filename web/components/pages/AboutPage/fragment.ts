@@ -22,5 +22,28 @@ export const ABOUT_PAGE_FRAGMENT = /* GraphQL */ `
     supportHeading
     supportBody
     supportEmail
+    contactFormHeading
+    contactFormIntro
+    contactFormFields {
+      id
+      blockType
+      ... on TextFieldBlock {
+        fieldLabel
+        placeholder
+      }
+      ... on EmailFieldBlock {
+        fieldLabel
+        placeholder
+      }
+      ... on MultilineTextFieldBlock {
+        fieldLabel
+        placeholder
+      }
+      ... on DropdownFieldBlock {
+        fieldLabel
+        options
+      }
+    }
+    contactFormSubmitText
   }
 `;
