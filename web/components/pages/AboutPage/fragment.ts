@@ -19,8 +19,50 @@ export const ABOUT_PAGE_FRAGMENT = /* GraphQL */ `
         icon
       }
     }
+    serviceHeading
+    serviceIntro
+    services {
+      id
+      blockType
+      ... on ServiceBlock {
+        heading
+        intro
+        image {
+          id
+          title
+          url
+          width
+          height
+        }
+        badge
+        text
+      }
+    }
     supportHeading
     supportBody
     supportEmail
+    contactFormHeading
+    contactFormIntro
+    contactFormFields {
+      id
+      blockType
+      ... on TextFieldBlock {
+        fieldLabel
+        placeholder
+      }
+      ... on EmailFieldBlock {
+        fieldLabel
+        placeholder
+      }
+      ... on MultilineTextFieldBlock {
+        fieldLabel
+        placeholder
+      }
+      ... on DropdownFieldBlock {
+        fieldLabel
+        options
+      }
+    }
+    contactFormSubmitText
   }
 `;

@@ -108,6 +108,8 @@ type MediaAccordionItem = AccordionItem & {
   imageAlt?: string
   /** Short audience label shown as a glass pill over the image. */
   tag?: string
+  /** Optional caption on the image; falls back to the row title. */
+  caption?: string
 }
 
 type MediaAccordionProps = {
@@ -137,7 +139,7 @@ function MediaAccordion({ items, headingLevel, className }: MediaAccordionProps)
         headingLevel={headingLevel}
       />
 
-      <div className="relative min-h-[320px] overflow-hidden rounded-2xl border border-border shadow-sm lg:min-h-full">
+      <div className="relative min-h-80 overflow-hidden rounded-2xl border border-border shadow-sm lg:min-h-full">
         {items.map((item, i) => (
           <Image
             key={item.title}
@@ -151,7 +153,7 @@ function MediaAccordion({ items, headingLevel, className }: MediaAccordionProps)
             )}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/65 via-black/10 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-6 text-white">
           {items[active].tag && (
             <span className="inline-block rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
@@ -159,7 +161,7 @@ function MediaAccordion({ items, headingLevel, className }: MediaAccordionProps)
             </span>
           )}
           <p className="mt-3 font-serif text-2xl leading-snug">
-            {items[active].title}
+            {items[active].caption ?? items[active].title}
           </p>
         </div>
       </div>

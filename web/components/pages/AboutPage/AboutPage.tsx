@@ -5,15 +5,10 @@ import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
 import TraditionalWatermark from "@/components/shared/traditional-watermark";
 import { MediaAccordion, type MediaAccordionItem } from "@/components/ui/accordion";
-import { TopicSelect } from "@/components/shared/topic-select";
-import type { AboutPage as AboutPageProps } from "./types";
-
-const topics = [
-  ["general", "General enquiry"],
-  ["resource", "A document or resource"],
-  ["contribute", "Contributing to education.gov.sb"],
-  ["hub", "Problem with the platform"],
-] as const;
+import type {
+  AboutPage as AboutPageProps,
+  ContactFormField as ContactFormFieldType,
+} from "./types";
 
 const stroke = {
   fill: "none",
@@ -47,31 +42,73 @@ const pillarIcons: Record<string, React.ReactNode> = {
   ),
 };
 
-const services: MediaAccordionItem[] = [
-  {
-    title: "School registration & approvals",
-    tag: "Schools",
-    description:
-      "Register a new school, renew approvals, and meet national operating requirements.",
-    image: "/svc-registration.jpg",
-  },
-  {
-    title: "Examinations & results",
-    tag: "Students & parents",
-    description:
-      "Find exam timetables, sit national assessments, and access your results online.",
-    image: "/svc-examinations.jpg",
-  },
-  {
-    title: "Teacher services & payroll",
-    tag: "Teachers",
-    description:
-      "Manage teacher registration, professional development, and payroll enquiries.",
-    image: "/svc-teachers.jpg",
-  },
-];
+const inputClass =
+  "h-11 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary";
+const textareaClass =
+  "rounded-lg border border-border bg-background px-3.5 py-3 text-sm leading-6 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary";
+
+function ContactFormField({ field }: { field: ContactFormFieldType }) {
+  const inputId = `contact-field-${field.id}`;
+  const name = inputId;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={inputId} className="text-sm font-semibold text-foreground">
+        {field.fieldLabel}
+      </label>
+      {field.blockType === "TextFieldBlock" && (
+        <input
+          id={inputId}
+          name={name}
+          type="text"
+          placeholder={field.placeholder}
+          className={inputClass}
+        />
+      )}
+      {field.blockType === "EmailFieldBlock" && (
+        <input
+          id={inputId}
+          name={name}
+          type="email"
+          placeholder={field.placeholder}
+          className={inputClass}
+        />
+      )}
+      {field.blockType === "MultilineTextFieldBlock" && (
+        <textarea
+          id={inputId}
+          name={name}
+          rows={5}
+          placeholder={field.placeholder}
+          className={textareaClass}
+        />
+      )}
+      {field.blockType === "DropdownFieldBlock" && (
+        <select id={inputId} name={name} className={inputClass} defaultValue="">
+          <option value="" disabled>
+            Select an option
+          </option>
+          {field.options.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
 
 export default function AboutPage(_: { page: AboutPageProps }) {
+  const services: MediaAccordionItem[] = _.page.services.map((s) => ({
+    title: s.heading,
+    description: s.intro,
+    image: s.image?.url ?? "",
+    imageAlt: s.image?.title,
+    tag: s.badge,
+    caption: s.text,
+  }));
+
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
@@ -130,19 +167,20 @@ export default function AboutPage(_: { page: AboutPageProps }) {
         </section>
 
         {/* services */}
-        <div className="mx-auto w-full max-w-8xl px-6 py-20 sm:py-24">
-          <div className="max-w-2xl">
-            <h2 className="font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
-              Services.
-            </h2>
-            <p className="mt-4 text-lg leading-8 text-muted">
-              Everyday services for students, schools, teachers, and the public —
-              select a service to learn more.
-            </p>
-          </div>
+        {services.length > 0 && (
+          <div className="mx-auto w-full max-w-8xl px-6 py-20 sm:py-24">
+            <div className="max-w-2xl">
+              <h2 className="font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
+                {_.page.serviceHeading}
+              </h2>
+              <p className="mt-4 text-lg leading-8 text-muted">
+                {_.page.serviceIntro}
+              </p>
+            </div>
 
-          <MediaAccordion items={services} className="mt-12" />
-        </div>
+            <MediaAccordion items={services} className="mt-12" />
+          </div>
+        )}
 
         {/* get in touch */}
         <section className="bg-surface">
@@ -199,83 +237,27 @@ export default function AboutPage(_: { page: AboutPageProps }) {
 
             <form className="rounded-3xl border border-border bg-background p-7 shadow-sm sm:p-8">
               <h3 className="font-serif text-2xl text-foreground">
-                Send a message
+                {_.page.contactFormHeading}
               </h3>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                We aim to respond within five working days.
-              </p>
+              {_.page.contactFormIntro && (
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {_.page.contactFormIntro}
+                </p>
+              )}
 
-              <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="about-contact-name"
-                    className="text-sm font-semibold text-foreground"
-                  >
-                    Full name
-                  </label>
-                  <input
-                    id="about-contact-name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    className="h-11 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Your name"
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="about-contact-email"
-                    className="text-sm font-semibold text-foreground"
-                  >
-                    Email
-                  </label>
-                  <input
-                    id="about-contact-email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    className="h-11 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="you@example.com"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-5 flex flex-col gap-1.5">
-                <label
-                  htmlFor="about-contact-topic"
-                  className="text-sm font-semibold text-foreground"
-                >
-                  Topic
-                </label>
-                <TopicSelect id="about-contact-topic" defaultValue="general" topics={topics} />
-              </div>
-
-              <div className="mt-5 flex flex-col gap-1.5">
-                <label
-                  htmlFor="about-contact-message"
-                  className="text-sm font-semibold text-foreground"
-                >
-                  Message
-                </label>
-                <textarea
-                  id="about-contact-message"
-                  name="message"
-                  rows={5}
-                  className="rounded-lg border border-border bg-background px-3.5 py-3 text-sm leading-6 text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="How can we help?"
-                />
+              <div className="mt-7 space-y-5">
+                {_.page.contactFormFields.map((field) => (
+                  <ContactFormField key={field.id} field={field} />
+                ))}
               </div>
 
               <button
                 type="submit"
                 className="mt-7 inline-flex h-12 items-center justify-center rounded-lg bg-primary px-7 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                Send message
+                {_.page.contactFormSubmitText}
               </button>
-              <p className="mt-4 text-xs leading-5 text-muted">
-                This form is not yet connected — submissions will be wired to
-                the CMS contact workflow.
-              </p>
+             
             </form>
           </div>
         </section>
