@@ -16,6 +16,16 @@ export type PillarBlock = {
   icon: string;
 };
 
+export type ServiceBlock = {
+  id: string;
+  blockType: 'ServiceBlock';
+  heading: string;
+  intro: string;
+  image: Image | null;
+  badge: string;
+  text: string;
+};
+
 type FieldBlockBase = {
   id: string;
   fieldLabel: string;
@@ -54,6 +64,9 @@ export type AboutPage = Page & {
   purposeBody: string;
   purposeImage: Image | null;
   pillars: PillarBlock[];
+  serviceHeading: string;
+  serviceIntro: string;
+  services: ServiceBlock[];
   supportHeading: string;
   supportBody: string;
   supportEmail: string;

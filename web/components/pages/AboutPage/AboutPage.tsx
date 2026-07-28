@@ -42,30 +42,6 @@ const pillarIcons: Record<string, React.ReactNode> = {
   ),
 };
 
-const services: MediaAccordionItem[] = [
-  {
-    title: "School registration & approvals",
-    tag: "Schools",
-    description:
-      "Register a new school, renew approvals, and meet national operating requirements.",
-    image: "/svc-registration.jpg",
-  },
-  {
-    title: "Examinations & results",
-    tag: "Students & parents",
-    description:
-      "Find exam timetables, sit national assessments, and access your results online.",
-    image: "/svc-examinations.jpg",
-  },
-  {
-    title: "Teacher services & payroll",
-    tag: "Teachers",
-    description:
-      "Manage teacher registration, professional development, and payroll enquiries.",
-    image: "/svc-teachers.jpg",
-  },
-];
-
 const inputClass =
   "h-11 rounded-lg border border-border bg-background px-3.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-primary";
 const textareaClass =
@@ -124,6 +100,15 @@ function ContactFormField({ field }: { field: ContactFormFieldType }) {
 }
 
 export default function AboutPage(_: { page: AboutPageProps }) {
+  const services: MediaAccordionItem[] = _.page.services.map((s) => ({
+    title: s.heading,
+    description: s.intro,
+    image: s.image?.url ?? "",
+    imageAlt: s.image?.title,
+    tag: s.badge,
+    caption: s.text,
+  }));
+
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
@@ -182,19 +167,20 @@ export default function AboutPage(_: { page: AboutPageProps }) {
         </section>
 
         {/* services */}
-        <div className="mx-auto w-full max-w-8xl px-6 py-20 sm:py-24">
-          <div className="max-w-2xl">
-            <h2 className="font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
-              Services.
-            </h2>
-            <p className="mt-4 text-lg leading-8 text-muted">
-              Everyday services for students, schools, teachers, and the public —
-              select a service to learn more.
-            </p>
-          </div>
+        {services.length > 0 && (
+          <div className="mx-auto w-full max-w-8xl px-6 py-20 sm:py-24">
+            <div className="max-w-2xl">
+              <h2 className="font-serif text-4xl leading-tight tracking-tight text-foreground sm:text-5xl">
+                {_.page.serviceHeading}
+              </h2>
+              <p className="mt-4 text-lg leading-8 text-muted">
+                {_.page.serviceIntro}
+              </p>
+            </div>
 
-          <MediaAccordion items={services} className="mt-12" />
-        </div>
+            <MediaAccordion items={services} className="mt-12" />
+          </div>
+        )}
 
         {/* get in touch */}
         <section className="bg-surface">

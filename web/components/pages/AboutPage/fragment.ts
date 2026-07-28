@@ -19,6 +19,25 @@ export const ABOUT_PAGE_FRAGMENT = /* GraphQL */ `
         icon
       }
     }
+    serviceHeading
+    serviceIntro
+    services {
+      id
+      blockType
+      ... on ServiceBlock {
+        heading
+        intro
+        image {
+          id
+          title
+          url
+          width
+          height
+        }
+        badge
+        text
+      }
+    }
     supportHeading
     supportBody
     supportEmail

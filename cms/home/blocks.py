@@ -1,6 +1,7 @@
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLCollection, GraphQLString
+from grapple.models import GraphQLCollection, GraphQLImage, GraphQLString
 from wagtail import blocks
+from wagtail.images.blocks import ImageChooserBlock
 
 
 PILLAR_ICON_CHOICES = [
@@ -87,3 +88,32 @@ class DropdownFieldBlock(blocks.StructBlock):
     class Meta:
         icon = "arrow-down"
         label = "Dropdown"
+
+
+@register_streamfield_block
+class ServiceBlock(blocks.StructBlock):
+    heading = blocks.CharBlock(max_length=200)
+    intro = blocks.TextBlock()
+    image = ImageChooserBlock()
+    badge = blocks.CharBlock(
+        max_length=100,
+        required=False,
+        help_text="Short audience label shown as a pill on the image.",
+    )
+    text = blocks.CharBlock(
+        max_length=200,
+        required=False,
+        help_text="Caption shown on the image (defaults to the heading).",
+    )
+
+    graphql_fields = [
+        GraphQLString("heading"),
+        GraphQLString("intro"),
+        GraphQLImage("image"),
+        GraphQLString("badge"),
+        GraphQLString("text"),
+    ]
+
+    class Meta:
+        icon = "cog"
+        label = "Service"

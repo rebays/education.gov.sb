@@ -16,6 +16,7 @@ from home.blocks import (
     EmailFieldBlock,
     MultilineTextFieldBlock,
     PillarBlock,
+    ServiceBlock,
     TextFieldBlock,
 )
 
@@ -49,6 +50,14 @@ class AboutPage(HeadlessMixin, Page):
         use_json_field=True,
         blank=True,
         help_text="'Built on three pillars' cards.",
+    )
+    service_heading = models.CharField(max_length=200, blank=True)
+    service_intro = models.TextField(blank=True)
+    services = StreamField(
+        [("service", ServiceBlock())],
+        use_json_field=True,
+        blank=True,
+        help_text="Services shown in the media accordion.",
     )
     support_heading = models.CharField(max_length=200, blank=True)
     support_body = models.TextField(blank=True)
@@ -88,6 +97,14 @@ class AboutPage(HeadlessMixin, Page):
         FieldPanel("pillars"),
         MultiFieldPanel(
             [
+                FieldPanel("service_heading"),
+                FieldPanel("service_intro"),
+                FieldPanel("services"),
+            ],
+            heading="Services",
+        ),
+        MultiFieldPanel(
+            [
                 FieldPanel("support_heading"),
                 FieldPanel("support_body"),
                 FieldPanel("support_email"),
@@ -111,6 +128,9 @@ class AboutPage(HeadlessMixin, Page):
         GraphQLRichText("purpose_body"),
         GraphQLImage("purpose_image"),
         GraphQLStreamfield("pillars"),
+        GraphQLString("service_heading"),
+        GraphQLString("service_intro"),
+        GraphQLStreamfield("services"),
         GraphQLString("support_heading"),
         GraphQLString("support_body"),
         GraphQLString("support_email"),
