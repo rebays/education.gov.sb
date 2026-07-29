@@ -2,7 +2,7 @@ import { cmsFetch } from "@/lib/cms";
 import { GET_PAGE, GET_PAGE_BY_TOKEN } from "@/lib/queries";
 import { draftMode } from "next/headers";
 import { notFound } from "next/navigation";
-import { pageRegistry, type CmsPage } from "@/components/pages/registry";
+import { renderCmsPage, type CmsPage } from "@/components/pages/registry";
 
 async function catchAllPage({
   params,
@@ -26,10 +26,7 @@ async function catchAllPage({
 
   if (!data.page) notFound();
 
-  const Component = pageRegistry[data.page.__typename];
-  if (!Component) notFound();
-
-  return <Component page={data.page} />;
+  return renderCmsPage(data.page);
 }
 
 export default catchAllPage;

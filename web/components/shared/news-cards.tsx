@@ -64,8 +64,8 @@ export function StoryCard({ story }: { story: NewsPost }) {
   return (
     <article>
       <Link
-        href={`/news/${story.slug}`}
-        className="group relative block aspect-[16/10] overflow-hidden rounded-2xl border border-border"
+        href={story.href ?? `/news/${story.slug}`}
+        className="group relative block aspect-16/10 overflow-hidden rounded-2xl border border-border"
         tabIndex={-1}
         aria-hidden
       >
@@ -79,7 +79,7 @@ export function StoryCard({ story }: { story: NewsPost }) {
       </div>
       <h3 className="mt-3 font-serif text-2xl leading-snug">
         <Link
-          href={`/news/${story.slug}`}
+          href={story.href ?? `/news/${story.slug}`}
           className="text-foreground hover:text-primary"
         >
           {story.title}
@@ -114,7 +114,7 @@ export function BriefsColumn({
             </p>
             <h4 className="mt-1.5 font-serif text-lg leading-snug">
               <Link
-                href={`/news/${b.slug}`}
+                href={b.href ?? `/news/${b.slug}`}
                 className="text-foreground hover:text-primary"
               >
                 {b.title}
@@ -137,7 +137,7 @@ export function HeadlineList({ posts }: { posts: NewsPost[] }) {
       {posts.map((n) => (
         <li key={n.slug}>
           <Link
-            href={`/news/${n.slug}`}
+            href={n.href ?? `/news/${n.slug}`}
             className="group flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3.5"
           >
             <h4 className="min-w-0 font-serif text-lg leading-snug text-foreground group-hover:text-primary">
