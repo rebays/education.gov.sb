@@ -11,24 +11,33 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-
-export type MobileNavItem = { label: string; href: string };
+import {
+  isNavDropdown,
+  isNavGroup,
+  isNavLink,
+  type NavItem,
+  type NavLink,
+} from "@/lib/nav";
 
 /**
  * Full-page nav takeover for narrow viewports — the header's own `<nav>` is
  * `hidden md:flex`, so this is the only way into primary nav (and search)
  * below the md breakpoint. Trigger color adapts to the header's overlay
  * (transparent-over-hero) vs solid variant, same as the desktop nav links.
+ *
+ * Nested items (dropdowns and groups) render as an inline sub-heading with
+ * their links listed underneath — no additional collapse layer.
  */
 export default function MobileNav({
   items,
   variant = "solid",
 }: {
-  items: MobileNavItem[];
+  items: NavItem[];
   variant?: "overlay" | "solid";
 }) {
   const [open, setOpen] = useState(false);
   const overlay = variant === "overlay";
+  const close = () => setOpen(false);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -39,7 +48,9 @@ export default function MobileNav({
             size="icon"
             className={cn(
               "md:hidden",
-              overlay ? "text-white hover:bg-white/10" : "text-muted hover:bg-surface-2 hover:text-foreground"
+              overlay
+                ? "text-white hover:bg-white/10"
+                : "text-muted hover:bg-surface-2 hover:text-foreground",
             )}
           />
         }
@@ -61,7 +72,7 @@ export default function MobileNav({
 
         {/* search first — top of the page so the keyboard never covers it */}
         <div className="px-6 pb-2 pt-20">
-          <form action="/search" role="search" onSubmit={() => setOpen(false)}>
+          <form action="/search" role="search" onSubmit={close}>
             <label htmlFor="mobile-nav-search" className="sr-only">
               Search the Education Resource Hub
             </label>
@@ -80,22 +91,123 @@ export default function MobileNav({
               />
             </div>
           </form>
-
         </div>
 
         <nav className="flex flex-col px-6 pt-4">
-          {items.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="border-b border-border py-4 text-lg font-medium text-foreground transition-colors last:border-0 hover:text-primary"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {items.map((item) => renderItem(item, close))}
         </nav>
       </SheetContent>
     </Sheet>
   );
+}
+
+function renderTopLink(link: NavLink, onNavigate: () => void) {
+  const commonCls =
+    "border-b border-border py-4 text-lg font-medium text-foreground transition-colors last:border-0 hover:text-primary";
+  return link.external ? (
+    <a
+      key={link.key}
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onNavigate}
+      className={commonCls}
+    >
+      {link.title}
+    </a>
+  ) : (
+    <Link
+      key={link.key}
+      href={link.href}
+      onClick={onNavigate}
+      className={commonCls}
+    >
+      {link.title}
+    </Link>
+  );
+}
+
+function renderSubLink(link: NavLink, onNavigate: () => void) {
+  const commonCls =
+    "block py-2 text-base text-foreground/90 transition-colors hover:text-primary";
+  return link.external ? (
+    <a
+      key={link.key}
+      href={link.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={onNavigate}
+      className={commonCls}
+    >
+      {link.title}
+    </a>
+  ) : (
+    <Link
+      key={link.key}
+      href={link.href}
+      onClick={onNavigate}
+      className={commonCls}
+    >
+      {link.title}
+    </Link>
+  );
+}
+
+function renderItem(item: NavItem, onNavigate: () => void) {
+  if (isNavLink(item)) return renderTopLink(item, onNavigate);
+
+  if (isNavGroup(item)) {
+    return (
+      <div
+        key={item.key}
+        className="border-b border-border py-4 last:border-0"
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+          {item.title}
+        </p>
+        <div className="mt-1">
+          {item.links.map((l) => renderSubLink(l, onNavigate))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isNavDropdown(item)) {
+    return (
+      <div
+        key={item.key}
+        className="border-b border-border py-4 last:border-0"
+      >
+        {item.href ? (
+          <Link
+            href={item.href}
+            onClick={onNavigate}
+            className="text-lg font-medium text-foreground hover:text-primary"
+          >
+            {item.title}
+          </Link>
+        ) : (
+          <p className="text-lg font-medium text-foreground">{item.title}</p>
+        )}
+        <div className="mt-1">
+          {item.items.map((sub) =>
+            isNavGroup(sub) ? (
+              <div key={sub.key} className="mt-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">
+                  {sub.title}
+                </p>
+                <div className="mt-1">
+                  {sub.links.map((l) => renderSubLink(l, onNavigate))}
+                </div>
+              </div>
+            ) : (
+              renderSubLink(sub, onNavigate)
+            ),
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return null;
 }
