@@ -13,9 +13,22 @@ from news.blocks import QuoteBlock
 class NewsIndexPage(Page):
     """Landing page for the news section — lists NewsPage children."""
 
+    lead = models.TextField(
+        blank=True,
+        help_text="Short lead paragraph shown in the page header.",
+    )
+
     parent_page_types = ["home.HomePage"]
     subpage_types = ["news.NewsPage"]
     max_count = 1
+
+    content_panels = Page.content_panels + [
+        FieldPanel("lead"),
+    ]
+
+    graphql_fields = [
+        GraphQLString("lead"),
+    ]
 
 
 class NewsPage(Page):
