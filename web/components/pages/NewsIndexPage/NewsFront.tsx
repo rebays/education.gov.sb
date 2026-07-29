@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { FilterChip } from "@/components/ui/filter-chip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { cmsClientFetch } from "@/lib/cms-client";
 import {
   BriefsColumn,
   categoryVariant,
@@ -13,28 +15,71 @@ import {
   StoryCard,
   StoryImage,
 } from "@/components/shared/news-cards";
-import { news, type NewsCategory, type NewsPost } from "@/app/lib/content";
+import type { NewsCategory, NewsPost } from "@/app/lib/content";
+import {
+  NEWS_PAGES_QUERY,
+  type NewsCategoryEnum,
+  type NewsPagesQueryResult,
+} from "./queries";
 
 /**
  * The newsroom front page — broadsheet composition derived from recency:
  * one lead story, one band of five (two story cards + a three-item briefs
  * column on the right), then everything older as a plain headline list.
- * The list loads progressively: one auto-load near the bottom, then a
- * button. The CMS will later add an editorial "featured" flag for the lead.
+ * News is fetched from the CMS via /api/cms with cursor pagination; the
+ * "More news" button appends the next page.
  */
 
 const BAND_SIZE = 5; // 2 cards + 3 briefs
 const BAND_COUNT = 1;
-const HEADLINES_INITIAL = 10;
-const HEADLINES_PER_LOAD = 10;
-const AUTO_LOADS = 1;
+const INITIAL_PAGE_SIZE = 16; // lead (1) + band (5) + first 10 headlines
+const LOAD_MORE_SIZE = 10;
 
-const filters: { label: string; value: "All" | NewsCategory }[] = [
+type FilterValue = "All" | NewsCategory;
+
+const filters: { label: string; value: FilterValue }[] = [
   { label: "All", value: "All" },
   { label: "Announcements", value: "Announcement" },
   { label: "Press releases", value: "Press release" },
   { label: "Events", value: "Event" },
 ];
+
+const filterToEnum: Record<Exclude<FilterValue, "All">, NewsCategoryEnum> = {
+  Announcement: "ANNOUNCEMENT",
+  "Press release": "PRESS_RELEASE",
+  Event: "EVENT",
+};
+
+const categoryFromCms: Record<
+  NewsPagesQueryResult["newsPages"]["edges"][number]["node"]["category"],
+  NewsCategory
+> = {
+  announcement: "Announcement",
+  press_release: "Press release",
+  event: "Event",
+};
+
+function formatDisplayDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function toNewsPost(
+  node: NewsPagesQueryResult["newsPages"]["edges"][number]["node"],
+): NewsPost {
+  return {
+    slug: node.slug,
+    title: node.title,
+    category: categoryFromCms[node.category],
+    date: formatDisplayDate(node.date),
+    excerpt: node.excerpt,
+    image: node.image?.url,
+    body: [],
+  };
+}
 
 type Band = { cards: NewsPost[]; briefs: NewsPost[] };
 
@@ -63,48 +108,90 @@ function NewsBand({ band }: { band: Band }) {
   );
 }
 
-export default function NewsFront() {
-  const [active, setActive] = useState<"All" | NewsCategory>("All");
-  const [visibleHeadlines, setVisibleHeadlines] = useState(HEADLINES_INITIAL);
-  const [autoLoadsUsed, setAutoLoadsUsed] = useState(0);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  const sorted = [...news].sort(
-    (a, b) => Date.parse(b.date) - Date.parse(a.date),
+function NewsFrontSkeleton() {
+  return (
+    <div className="mt-10 space-y-8">
+      <div className="grid gap-8 lg:grid-cols-5 lg:items-center">
+        <Skeleton className="aspect-16/10 lg:col-span-3" />
+        <div className="space-y-3 lg:col-span-2">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      </div>
+      <div className="grid gap-10 border-t border-border pt-10 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="space-y-3">
+            <Skeleton className="aspect-16/10 w-full" />
+            <Skeleton className="h-6 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
-  const filtered =
-    active === "All" ? sorted : sorted.filter((n) => n.category === active);
+}
 
-  const [lead, ...rest] = filtered;
-  const bands = toBands(rest.slice(0, BAND_SIZE * BAND_COUNT));
-  const headlines = rest.slice(BAND_SIZE * BAND_COUNT);
-  const shownHeadlines = headlines.slice(0, visibleHeadlines);
-  const hasMore = visibleHeadlines < headlines.length;
-  const autoLoading = hasMore && autoLoadsUsed < AUTO_LOADS;
+export default function NewsFront() {
+  const [active, setActive] = useState<FilterValue>("All");
+  const [items, setItems] = useState<NewsPost[]>([]);
+  const [endCursor, setEndCursor] = useState<string | null>(null);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  /* reset progressive loading whenever the composition changes */
-  function resetLoading() {
-    setVisibleHeadlines(HEADLINES_INITIAL);
-    setAutoLoadsUsed(0);
+  const fetchPage = useCallback(
+    async (opts: { after?: string; append: boolean }) => {
+      const category =
+        active === "All" ? undefined : filterToEnum[active];
+      const data = await cmsClientFetch<NewsPagesQueryResult>(NEWS_PAGES_QUERY, {
+        first: opts.after ? LOAD_MORE_SIZE : INITIAL_PAGE_SIZE,
+        after: opts.after ?? null,
+        category: category ?? null,
+      });
+      const nextItems = data.newsPages.edges.map((e) => toNewsPost(e.node));
+      setItems((prev) => (opts.append ? [...prev, ...nextItems] : nextItems));
+      setEndCursor(data.newsPages.pageInfo.endCursor);
+      setHasNextPage(data.newsPages.pageInfo.hasNextPage);
+    },
+    [active],
+  );
+
+  /* reset and fetch first page whenever the active filter changes */
+  useEffect(() => {
+    let cancelled = false;
+    setInitialLoading(true);
+    setError(null);
+    fetchPage({ append: false })
+      .catch((err) => {
+        if (!cancelled) setError(err.message ?? "Failed to load news");
+      })
+      .finally(() => {
+        if (!cancelled) setInitialLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchPage]);
+
+  async function loadMore() {
+    if (!endCursor || loadingMore) return;
+    setLoadingMore(true);
+    setError(null);
+    try {
+      await fetchPage({ after: endCursor, append: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load more news");
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
-  /* auto-load more headlines as the sentinel approaches the viewport */
-  useEffect(() => {
-    if (!autoLoading) return;
-    const el = sentinelRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setVisibleHeadlines((v) => v + HEADLINES_PER_LOAD);
-          setAutoLoadsUsed((n) => n + 1);
-        }
-      },
-      { rootMargin: "600px 0px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [autoLoading]);
+  const [lead, ...rest] = items;
+  const bands = toBands(rest.slice(0, BAND_SIZE * BAND_COUNT));
+  const headlines = rest.slice(BAND_SIZE * BAND_COUNT);
 
   return (
     <div>
@@ -114,18 +201,22 @@ export default function NewsFront() {
           <FilterChip
             key={f.value}
             active={active === f.value}
-            onClick={() => {
-              setActive(f.value);
-              resetLoading();
-            }}
+            onClick={() => setActive(f.value)}
           >
             {f.label}
           </FilterChip>
         ))}
-
       </div>
 
-      {filtered.length === 0 && (
+      {initialLoading && <NewsFrontSkeleton />}
+
+      {!initialLoading && error && items.length === 0 && (
+        <p className="py-16 text-center text-sm text-muted">
+          Couldn&apos;t load news right now. {error}
+        </p>
+      )}
+
+      {!initialLoading && !error && items.length === 0 && (
         <p className="py-16 text-center text-sm text-muted">
           No stories in this category yet.
         </p>
@@ -193,29 +284,31 @@ export default function NewsFront() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
             More news
           </p>
-          <HeadlineList posts={shownHeadlines} />
-
-          {/* progressive loading: sentinel for auto-load, then a button */}
-          {autoLoading && (
-            <div ref={sentinelRef} aria-hidden className="h-px" />
-          )}
-          {hasMore && !autoLoading && (
-            <div className="mt-8 flex justify-center">
-              <button
-                type="button"
-                onClick={() =>
-                  setVisibleHeadlines((v) => v + HEADLINES_PER_LOAD)
-                }
-                className={cn(
-                  buttonVariants({ variant: "secondary" }),
-                  "text-sm",
-                )}
-              >
-                More news
-              </button>
-            </div>
-          )}
+          <HeadlineList posts={headlines} />
         </section>
+      )}
+
+      {/* load more */}
+      {!initialLoading && hasNextPage && (
+        <div className="mt-8 flex justify-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={loadingMore}
+            className={cn(
+              buttonVariants({ variant: "secondary" }),
+              "text-sm disabled:opacity-60",
+            )}
+          >
+            {loadingMore ? "Loading…" : "More news"}
+          </button>
+        </div>
+      )}
+
+      {error && items.length > 0 && (
+        <p className="mt-4 text-center text-sm text-muted">
+          Couldn&apos;t load more news. {error}
+        </p>
       )}
     </div>
   );

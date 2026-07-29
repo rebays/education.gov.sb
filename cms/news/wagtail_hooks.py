@@ -10,7 +10,10 @@ from .models import NewsPage
 
 MAX_PAGE_SIZE = 25
 
-NewsCategoryEnum = graphene.Enum.from_enum(NewsPage.Category)
+NewsCategoryEnum = graphene.Enum(
+    "NewsCategory",
+    [(c.name, c.value) for c in NewsPage.Category],
+)
 
 
 def _encode_cursor(page):

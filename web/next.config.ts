@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     viewTransition: true,
   },
   images: {
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     remotePatterns: [
       {
         protocol: "https",
@@ -12,6 +13,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
         search: "",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "8000",
+        pathname: "/media/**",
       },
     ],
   },
