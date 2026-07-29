@@ -1,8 +1,8 @@
 import PageHeader from "@/components/shared/page-header";
 import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
-import NewsFrontPage from "@/app/news/front-page";
 import type { NewsIndexPage as NewsIndexPageProps } from "./types";
+import NewsFront from "./NewsFront";
 
 export default function NewsIndexPage(_: { page: NewsIndexPageProps }) {
   const dateline = new Date().toLocaleDateString("en-GB", {
@@ -31,7 +31,7 @@ export default function NewsIndexPage(_: { page: NewsIndexPageProps }) {
 
       <main className="flex-1 bg-background">
         <div className="mx-auto w-full max-w-8xl px-6 py-16">
-          <NewsFrontPage />
+          <NewsFront />
         </div>
       </main>
 
