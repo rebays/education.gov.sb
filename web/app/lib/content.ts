@@ -514,6 +514,12 @@ export type NewsPost = {
    * pull quote, with an optional attribution after a "|" separator.
    */
   body: string[];
+  /**
+   * Explicit href for the news card link. When set, overrides the default
+   * `/news/{slug}` path so CMS-driven listings can point to the CMS route
+   * (e.g. `/news-live/{slug}`).
+   */
+  href?: string;
 };
 
 export const news: NewsPost[] = [

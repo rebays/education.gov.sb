@@ -5,6 +5,7 @@ export const NEWS_PAGES_QUERY = /* GraphQL */ `
         cursor
         node {
           slug
+          url
           urlPath
           title
           date
@@ -30,6 +31,7 @@ export type NewsPagesQueryResult = {
       cursor: string;
       node: {
         slug: string;
+        url: string | null;
         urlPath: string;
         title: string;
         date: string;

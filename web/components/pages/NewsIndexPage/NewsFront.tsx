@@ -78,6 +78,7 @@ function toNewsPost(
     excerpt: node.excerpt,
     image: node.image?.url,
     body: [],
+    href: node.url ?? `/news-live/${node.slug}`,
   };
 }
 
@@ -226,7 +227,7 @@ export default function NewsFront() {
       {lead && (
         <article className="mt-10 grid gap-8 pb-12 lg:grid-cols-5 lg:items-center">
           <Link
-            href={`/news/${lead.slug}`}
+            href={lead.href ?? `/news/${lead.slug}`}
             className="group relative block aspect-16/10 overflow-hidden rounded-2xl border border-border lg:col-span-3"
             tabIndex={-1}
             aria-hidden
@@ -246,7 +247,7 @@ export default function NewsFront() {
             </div>
             <h2 className="mt-4 font-serif text-3xl leading-[1.12] tracking-tight sm:text-4xl xl:text-5xl">
               <Link
-                href={`/news/${lead.slug}`}
+                href={lead.href ?? `/news/${lead.slug}`}
                 className="text-foreground hover:text-primary"
               >
                 {lead.title}
@@ -256,7 +257,7 @@ export default function NewsFront() {
               {lead.excerpt}
             </p>
             <Link
-              href={`/news/${lead.slug}`}
+              href={lead.href ?? `/news/${lead.slug}`}
               className="group mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
               Read the story
