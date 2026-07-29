@@ -8,7 +8,7 @@ from wagtail import hooks
 from .models import NewsPage
 
 
-MAX_PAGE_SIZE = 100
+MAX_PAGE_SIZE = 50
 
 NewsCategoryEnum = graphene.Enum.from_enum(NewsPage.Category)
 
