@@ -2,6 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import MobileNav from "./mobile-nav";
 import HeaderSearch from "./header-search";
+import NavDropdown from "./nav-dropdown";
+import { getMenu } from "@/lib/menu";
+import {
+  FALLBACK_MAIN_NAV,
+  isNavDropdown,
+  isNavGroup,
+  isNavLink,
+  type NavItem,
+} from "@/lib/nav";
 
 /**
  * Shared site header.
@@ -10,21 +19,19 @@ import HeaderSearch from "./header-search";
  * hero behind the header (the landing page).
  * `variant="solid"` — opaque background with a hairline border; sticky, for
  * all inner pages.
+ *
+ * Nav items come from the CMS (`main-nav` menu). If the fetch fails, the
+ * FALLBACK_MAIN_NAV keeps the site navigable. A top-level LinksGroupBlock is
+ * rendered as a dropdown whose title is non-clickable (a group has no page).
  */
 
-const primaryNav = [
-  { label: "Resources", href: "/resources" },
-  { label: "Publications", href: "/publications" },
-  { label: "News", href: "/news" },
-  { label: "About", href: "/about" },
-];
-
-export default function SiteHeader({
+export default async function SiteHeader({
   variant = "solid",
 }: {
   variant?: "overlay" | "solid";
 }) {
   const overlay = variant === "overlay";
+  const items = (await getMenu("main-nav")) ?? FALLBACK_MAIN_NAV;
 
   const linkCls = overlay
     ? "text-white hover:text-accent"
@@ -59,15 +66,57 @@ export default function SiteHeader({
         {!overlay && <HeaderSearch />}
 
         <nav className="hidden items-center gap-7 text-base font-medium md:flex">
-          {primaryNav.map((item) => (
-            <Link key={item.href} href={item.href} className={linkCls}>
-              {item.label}
-            </Link>
-          ))}
+          {items.map((item) => renderTopLevel(item, linkCls))}
         </nav>
 
-        <MobileNav items={primaryNav} variant={variant} />
+        <MobileNav items={items} variant={variant} />
       </div>
     </header>
   );
+}
+
+function renderTopLevel(item: NavItem, linkCls: string) {
+  if (isNavLink(item)) {
+    return item.external ? (
+      <a
+        key={item.key}
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={linkCls}
+      >
+        {item.title}
+      </a>
+    ) : (
+      <Link key={item.key} href={item.href} className={linkCls}>
+        {item.title}
+      </Link>
+    );
+  }
+
+  if (isNavGroup(item)) {
+    /* Groups at top level render as a non-clickable dropdown of their links. */
+    return (
+      <NavDropdown
+        key={item.key}
+        title={item.title}
+        items={item.links}
+        triggerClassName={linkCls}
+      />
+    );
+  }
+
+  if (isNavDropdown(item)) {
+    return (
+      <NavDropdown
+        key={item.key}
+        title={item.title}
+        href={item.href}
+        items={item.items}
+        triggerClassName={linkCls}
+      />
+    );
+  }
+
+  return null;
 }

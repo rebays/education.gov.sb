@@ -54,3 +54,92 @@ export const GET_PAGE_META_BY_TOKEN = /* GraphQL */ `
     }
   }
 `;
+
+export const GET_MENU = /* GraphQL */ `
+  query GetMenu($slug: String!) {
+    menu(slug: $slug) {
+      id
+      name
+      slug
+      menuItems {
+        id
+        blockType
+        ... on PageLinkBlock {
+          title
+          page {
+            url
+            urlPath
+            pageType
+          }
+        }
+        ... on ExternalLinkBlock {
+          title
+          url
+        }
+        ... on LinksGroupBlock {
+          title
+          links {
+            id
+            blockType
+            ... on PageLinkBlock {
+              title
+              page {
+                url
+                urlPath
+                pageType
+              }
+            }
+            ... on ExternalLinkBlock {
+              title
+              url
+            }
+          }
+        }
+        ... on DropdownBlock {
+          title
+          showDropdownIcon
+          page {
+            url
+            urlPath
+            pageType
+          }
+          items {
+            id
+            blockType
+            ... on PageLinkBlock {
+              title
+              page {
+                url
+                urlPath
+                pageType
+              }
+            }
+            ... on ExternalLinkBlock {
+              title
+              url
+            }
+            ... on LinksGroupBlock {
+              title
+              links {
+                id
+                blockType
+                ... on PageLinkBlock {
+                  title
+                  page {
+                    url
+                    urlPath
+                    pageType
+                  }
+                }
+                ... on ExternalLinkBlock {
+                  title
+                  url
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
