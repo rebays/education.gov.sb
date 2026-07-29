@@ -57,7 +57,10 @@ class NewsPagesQuery(graphene.ObjectType):
 
         queryset = NewsPage.objects.live().order_by("-date", "-pk")
         if category:
-            queryset = queryset.filter(category=category)
+            # graphene passes the enum member (e.g. NewsCategory.PRESS_RELEASE);
+            # Django's ORM binds it as its str() form, so unwrap to the raw
+            # value ("press_release") that matches the CharField column.
+            queryset = queryset.filter(category=getattr(category, "value", category))
 
         if after:
             cursor_date, cursor_pk = _decode_cursor(after)
