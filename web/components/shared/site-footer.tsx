@@ -2,6 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { Icon } from "@/components/ui/icon";
+import { getMenu } from "@/lib/menu";
+import { FALLBACK_FOOTER_NAV, isNavGroup, type NavGroup, type NavLink } from "@/lib/nav";
 
 /** External-link marker: an SVG so mobile emoji fonts never claim it (a raw ↗ renders as an emoji on iOS/Android). */
 function ExternalMark() {
@@ -13,122 +15,75 @@ function ExternalMark() {
   );
 }
 
-export default function SiteFooter() {
+function FooterLink({ link }: { link: NavLink }) {
+  const label = (
+    <>
+      {link.title}
+      {link.external && <ExternalMark />}
+    </>
+  );
+  return link.external ? (
+    <a href={link.href} className="hover:text-accent" target="_blank" rel="noopener noreferrer">
+      {label}
+    </a>
+  ) : (
+    <Link href={link.href} className="hover:text-accent">
+      {label}
+    </Link>
+  );
+}
+
+function FooterGroup({ group }: { group: NavGroup }) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-white">{group.title}</p>
+      <ul className="mt-3 space-y-2 text-sm text-white/70">
+        {group.links.map((link) => (
+          <li key={link.key}>
+            <FooterLink link={link} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default async function SiteFooter() {
+  const items = (await getMenu("footer-nav")) ?? FALLBACK_FOOTER_NAV;
+  const groups = items.filter(isNavGroup);
+
   return (
     <footer className="bg-deep-2 text-white">
       <div>
         <div className="mx-auto flex w-full max-w-8xl flex-col gap-12 px-6 pb-32 pt-36 lg:flex-row lg:items-start lg:justify-between lg:gap-24">
           <div className="lg:max-w-md">
-          <div className="flex items-center gap-4">
-            <Image
-              src="/coat-of-arms.png"
-              alt="Solomon Islands coat of arms"
-              width={56}
-              height={56}
-              className="h-14 w-auto shrink-0"
-            />
-            <span className="flex flex-col leading-tight">
-              <span className="font-serif text-3xl text-white">Education Resource Hub</span>
-              <span className="mt-1 text-sm text-white/60">
-                Ministry of Education &amp; Human Resources Development
+            <div className="flex items-center gap-4">
+              <Image
+                src="/coat-of-arms.png"
+                alt="Solomon Islands coat of arms"
+                width={56}
+                height={56}
+                className="h-14 w-auto shrink-0"
+              />
+              <span className="flex flex-col leading-tight">
+                <span className="font-serif text-3xl text-white">Education Resource Hub</span>
+                <span className="mt-1 text-sm text-white/60">
+                  Ministry of Education &amp; Human Resources Development
+                </span>
               </span>
-            </span>
+            </div>
+            <p className="mt-6 max-w-sm text-sm leading-6 text-white/60">
+              Empowering Solomon Islands classrooms with centralized access to
+              the national curriculum and essential teaching tools for
+              inclusive, quality learning.
+            </p>
           </div>
-          <p className="mt-6 max-w-sm text-sm leading-6 text-white/60">
-            Empowering Solomon Islands classrooms with centralized access to
-            the national curriculum and essential teaching tools for
-            inclusive, quality learning.
-          </p>
-        </div>
 
-        <div className="grid gap-8 sm:grid-cols-2 lg:flex lg:flex-1 lg:justify-between lg:gap-12">
-          <div>
-            <p className="text-sm font-semibold text-white">Browse</p>
-            <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li>
-                <Link href="/resources" className="hover:text-accent">
-                  Resource library
-                </Link>
-              </li>
-              <li>
-                <Link href="/publications" className="hover:text-accent">
-                  Policies &amp; publications
-                </Link>
-              </li>
-              <li>
-                <Link href="/news" className="hover:text-accent">
-                  News
-                </Link>
-              </li>
-              <li>
-                <Link href="/search" className="hover:text-accent">
-                  Search
-                </Link>
-              </li>
-            </ul>
+          <div className="grid gap-8 sm:grid-cols-2 lg:flex lg:flex-1 lg:justify-between lg:gap-12">
+            {groups.map((group) => (
+              <FooterGroup key={group.key} group={group} />
+            ))}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-white">Ministry</p>
-            <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li>
-                <a href="https://mehrd.gov.sb" className="hover:text-accent">
-                  Main website
-                  <ExternalMark />
-                </a>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-accent">
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="/about/contact" className="hover:text-accent">
-                  Contact
-                </Link>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">Government</p>
-            <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li>
-                <a href="https://solomons.gov.sb" className="hover:text-accent">
-                  Solomon Islands Government
-                  <ExternalMark />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://scholarships.education.gov.sb"
-                  className="hover:text-accent"
-                >
-                  Scholarships portal
-                  <ExternalMark />
-                </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-white">Legal</p>
-            <ul className="mt-3 space-y-2 text-sm text-white/70">
-              <li>
-                <Link href="/privacy" className="hover:text-accent">
-                  Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="hover:text-accent">
-                  Terms of use
-                </Link>
-              </li>
-              <li>
-                <Link href="/accessibility" className="hover:text-accent">
-                  Accessibility
-                </Link>
-              </li>
-            </ul>
-          </div>
-        </div>
         </div>
       </div>
 

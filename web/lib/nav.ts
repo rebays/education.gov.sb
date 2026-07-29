@@ -37,3 +37,57 @@ export const FALLBACK_MAIN_NAV: NavItem[] = [
   { key: 'fallback-news', title: 'News', href: '/news' },
   { key: 'fallback-about', title: 'About', href: '/about' },
 ];
+
+export const FALLBACK_FOOTER_NAV: NavItem[] = [
+  {
+    key: 'fallback-browse',
+    title: 'Browse',
+    links: [
+      { key: 'fallback-resources', title: 'Resource library', href: '/resources' },
+      { key: 'fallback-publications', title: 'Policies & publications', href: '/publications' },
+      { key: 'fallback-news', title: 'News', href: '/news' },
+      { key: 'fallback-search', title: 'Search', href: '/search' },
+    ],
+  },
+  {
+    key: 'fallback-ministry',
+    title: 'Ministry',
+    links: [
+      {
+        key: 'fallback-main-site',
+        title: 'Main website',
+        href: 'https://mehrd.gov.sb',
+        external: true,
+      },
+      { key: 'fallback-about', title: 'About', href: '/about' },
+      { key: 'fallback-contact', title: 'Contact', href: '/about/contact' },
+    ],
+  },
+  {
+    key: 'fallback-gov',
+    title: 'Government',
+    links: [
+      {
+        key: 'fallback-sig',
+        title: 'Solomon Islands Government',
+        href: 'https://solomons.gov.sb',
+        external: true,
+      },
+      {
+        key: 'fallback-scholarships',
+        title: 'Scholarships portal',
+        href: 'https://sitesa.gov.sb',
+        external: true,
+      },
+    ],
+  },
+  {
+    key: 'fallback-legal',
+    title: 'Legal',
+    links: [
+      { key: 'fallback-privacy', title: 'Privacy', href: '/privacy' },
+      { key: 'fallback-terms', title: 'Terms of use', href: '/terms' },
+      { key: 'fallback-accessibility', title: 'Accessibility', href: '/accessibility' },
+    ],
+  },
+];
