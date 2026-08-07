@@ -80,6 +80,24 @@ def resource_pages_queryset():
     ).filter(direct_file_count__gt=0)
 
 
+def resolve_folder_by_path(path_parts):
+    """
+    Resolve a folder by its path from the library root.
+    path_parts: list of slugs like ['primary', 'year-1', 'english']
+    Returns the folder at that path, or None if not found.
+    """
+    if not path_parts:
+        return ResourceFolder.get_library_root()
+
+    current = ResourceFolder.get_library_root()
+    for slug in path_parts:
+        try:
+            current = current.get_children().get(slug=slug)
+        except ResourceFolder.DoesNotExist:
+            return None
+    return current
+
+
 class ResourcePagesQuery(graphene.ObjectType):
     resource_pages = graphene.List(
         lambda: registry.models[ResourceFolder],
@@ -88,6 +106,15 @@ class ResourcePagesQuery(graphene.ObjectType):
     resource_page = graphene.Field(
         lambda: registry.models[ResourceFolder],
         slug=graphene.String(required=True),
+    )
+    resource_folder = graphene.Field(
+        lambda: registry.models[ResourceFolder],
+        path=graphene.String(required=True),
+        description="Fetch folder by slash-separated path (e.g. 'primary/year-1/english')",
+    )
+    resource_library_root = graphene.Field(
+        lambda: registry.models[ResourceFolder],
+        description="Fetch the resource library root folder with all top-level folders",
     )
 
     def resolve_resource_pages(self, info, resource_type=None, **kwargs):
@@ -98,6 +125,20 @@ class ResourcePagesQuery(graphene.ObjectType):
 
     def resolve_resource_page(self, info, slug, **kwargs):
         return resource_pages_queryset().filter(slug=slug).first()
+
+    def resolve_resource_folder(self, info, path, **kwargs):
+        """
+        Resolve folder by slash-separated path from library root.
+        E.g. 'primary/year-1/english' or 'policies'
+        """
+        if not path:
+            return None
+        path_parts = [p.strip() for p in path.split('/') if p.strip()]
+        return resolve_folder_by_path(path_parts)
+
+    def resolve_resource_library_root(self, info, **kwargs):
+        """Return the resource library root folder."""
+        return ResourceFolder.get_library_root()
 
 
 @hooks.register("register_schema_query")

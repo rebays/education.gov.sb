@@ -66,6 +66,10 @@ class ResourceFolder(index.Indexed, MP_Node):
         blank=True,
         help_text="Date of the current revision of this resource",
     )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Sort order within parent folder (0 = no custom sort)",
+    )
 
     search_fields = [
         index.SearchField("name"),
@@ -80,8 +84,10 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLString("description"),
         GraphQLString("resource_type"),
         GraphQLString("revision_date"),
+        GraphQLInt("order"),
         GraphQLInt("file_count"),
         GraphQLCollection(GraphQLForeignKey, "resources", "resources.Resource"),
+        GraphQLCollection(GraphQLForeignKey, "children", "resources.ResourceFolder"),
     ]
 
     class Meta:
@@ -119,6 +125,11 @@ class ResourceFolder(index.Indexed, MP_Node):
         """Frontend convention: a folder with files is a resource page."""
         return self.resources.exists()
 
+    @property
+    def children(self):
+        """Return immediate child folders."""
+        return self.get_children().order_by("order", "name")
+
 
 class Resource(index.Indexed, models.Model):
     """
@@ -144,6 +155,21 @@ class Resource(index.Indexed, models.Model):
         help_text="ISO language code, e.g. en, fr, de",
     )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    published_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Publication date (optional, defaults to upload date)",
+    )
+    office = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Publishing office/organization (e.g., 'Ministry of Education')",
+    )
+    pages = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of pages (for documents)",
+    )
     uploaded_by_user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -169,8 +195,11 @@ class Resource(index.Indexed, models.Model):
         GraphQLString("url"),
         GraphQLString("filename"),
         GraphQLString("file_extension"),
+        GraphQLString("office"),
+        GraphQLString("published_date"),
         GraphQLBoolean("is_video"),
         GraphQLInt("file_size"),
+        GraphQLInt("pages"),
     ]
 
     class Meta:

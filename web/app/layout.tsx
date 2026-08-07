@@ -8,7 +8,6 @@ import { ShortcutsProvider } from "@/components/shared/shortcuts-provider";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
-
 /* Classic theme faces */
 const baskervville = Baskervville({
   variable: "--font-baskervville",
@@ -43,9 +42,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ShortcutsProvider>
+          {/* Disabled: causes re-render loops on pages with async data fetching
           <ViewTransition enter="page-morph-in" exit="page-morph-out">
             {children}
           </ViewTransition>
+          */}
+          {children}
           <AccessibilityMenu />
         </ShortcutsProvider>
       </body>
