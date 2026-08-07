@@ -6,7 +6,8 @@ from grapple.models import (
     GraphQLStreamfield,
     GraphQLString,
 )
-from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from wagtail import blocks
+from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page
 from wagtail_headless_preview.models import HeadlessMixin
@@ -142,3 +143,64 @@ class AboutPage(HeadlessMixin, Page):
 
     class Meta:
         verbose_name = "About page"
+
+
+class AccessibilityPage(HeadlessMixin, Page):
+    """The single Accessibility statement page — always lives directly under HomePage."""
+
+    lead = models.TextField(
+        blank=True,
+        help_text="Short lead paragraph shown in the page header.",
+    )
+    at_a_glance = StreamField(
+        [("point", blocks.CharBlock(max_length=200))],
+        use_json_field=True,
+        blank=True,
+        help_text="Skimmable bullets shown above the body.",
+    )
+    body = RichTextField(
+        blank=True,
+        help_text="Main body content. Use H2 headings for section titles.",
+    )
+    conformance_target = models.CharField(
+        max_length=100, blank=True, default="WCAG 2.1 AA"
+    )
+    effective_date = models.DateField(null=True, blank=True)
+    last_reviewed = models.DateField(null=True, blank=True)
+    contact_email = models.EmailField(blank=True)
+
+    parent_page_types = ["home.HomePage"]
+    subpage_types = []
+    max_count = 1
+
+    content_panels = Page.content_panels + [
+        FieldPanel("lead"),
+        FieldPanel("at_a_glance"),
+        FieldPanel("body"),
+        MultiFieldPanel(
+            [
+                FieldPanel("conformance_target"),
+                FieldRowPanel(
+                    [
+                        FieldPanel("effective_date"),
+                        FieldPanel("last_reviewed"),
+                    ]
+                ),
+                FieldPanel("contact_email"),
+            ],
+            heading="Conformance",
+        ),
+    ]
+
+    graphql_fields = [
+        GraphQLString("lead"),
+        GraphQLStreamfield("at_a_glance"),
+        GraphQLRichText("body"),
+        GraphQLString("conformance_target"),
+        GraphQLString("effective_date"),
+        GraphQLString("last_reviewed"),
+        GraphQLString("contact_email"),
+    ]
+
+    class Meta:
+        verbose_name = "Accessibility page"

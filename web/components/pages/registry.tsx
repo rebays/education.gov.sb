@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import AboutPage from '@/components/pages/AboutPage/AboutPage';
 import type { AboutPage as AboutPageType } from '@/components/pages/AboutPage/types';
+import AccessibilityPage from '@/components/pages/AccessibilityPage/AccessibilityPage';
+import type { AccessibilityPage as AccessibilityPageType } from '@/components/pages/AccessibilityPage/types';
 import NewsIndexPage from '@/components/pages/NewsIndexPage/NewsIndexPage';
 import type { NewsIndexPage as NewsIndexPageType } from '@/components/pages/NewsIndexPage/types';
 import NewsPage from '@/components/pages/NewsPage/NewsPage';
@@ -10,6 +12,7 @@ import type { PublicationIndexPage as PublicationIndexPageType } from '@/compone
 
 export type CmsPage =
   | AboutPageType
+  | AccessibilityPageType
   | NewsIndexPageType
   | NewsPageType
   | PublicationIndexPageType;
@@ -25,6 +28,8 @@ export function renderCmsPage(page: CmsPage) {
   switch (page.__typename) {
     case 'AboutPage':
       return <AboutPage page={page} />;
+    case 'AccessibilityPage':
+      return <AccessibilityPage page={page} />;
     case 'NewsIndexPage':
       return <NewsIndexPage page={page} />;
     case 'NewsPage':
