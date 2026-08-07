@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils import timezone
-
 from grapple.models import GraphQLImage, GraphQLStreamfield, GraphQLString
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel
 from wagtail.blocks import RichTextBlock

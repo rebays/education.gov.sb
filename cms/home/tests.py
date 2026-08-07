@@ -1,8 +1,8 @@
-from home.models import HomePage
-
 from django.core.cache import cache
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
+
+from home.models import HomePage
 
 
 class HomeSetUpTests(WagtailPageTestCase):
