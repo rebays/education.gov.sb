@@ -1,9 +1,14 @@
+import os.path
+
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 
 from grapple.models import (
+    GraphQLCollection,
     GraphQLForeignKey,
+    GraphQLInt,
     GraphQLRichText,
     GraphQLStreamfield,
     GraphQLString,
@@ -27,9 +32,22 @@ from .panels import FilePreviewPanel
 class PublicationIndexPage(Page):
     """Landing page for the publications section — front-end lists Publication snippets."""
 
+    lead = models.TextField(
+        blank=True,
+        help_text="Short lead paragraph shown in the page header.",
+    )
+
     parent_page_types = ["home.HomePage"]
     subpage_types = []
     max_count = 1
+
+    content_panels = Page.content_panels + [
+        FieldPanel("lead"),
+    ]
+
+    graphql_fields = [
+        GraphQLString("lead"),
+    ]
 
 
 class Publication(index.Indexed, ClusterableModel):
@@ -145,7 +163,9 @@ class Publication(index.Indexed, ClusterableModel):
     graphql_fields = [
         GraphQLString("title"),
         GraphQLString("slug"),
-        GraphQLString("file"),
+        GraphQLString("url"),
+        GraphQLString("file_extension"),
+        GraphQLInt("file_size"),
         GraphQLString("date"),
         GraphQLString("publication_type"),
         GraphQLString("office"),
@@ -156,7 +176,32 @@ class Publication(index.Indexed, ClusterableModel):
         GraphQLString("summary"),
         GraphQLStreamfield("key_points"),
         GraphQLRichText("body"),
+        GraphQLCollection(
+            GraphQLForeignKey, "related_publication_items", "publication.Publication"
+        ),
     ]
+
+    @property
+    def related_publication_items(self):
+        return [rp.related for rp in self.related_publications.all()]
+
+    @property
+    def url(self):
+        # Mirrors grapple.utils.get_media_item_url, without going through it
+        # directly: that helper does hasattr(cls, "url") to detect a url
+        # attribute, which would re-enter this same property and recurse.
+        file_url = self.file.url
+        if file_url.startswith("/"):
+            return settings.WAGTAILADMIN_BASE_URL + file_url
+        return file_url
+
+    @property
+    def file_extension(self):
+        return os.path.splitext(self.file.name)[1][1:].upper()
+
+    @property
+    def file_size(self):
+        return self.file.size
 
     def save(self, *args, **kwargs):
         if not self.slug:

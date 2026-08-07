@@ -3,11 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
-import {
-  publicationRef,
-  type Publication,
-  type PublicationType,
-} from "@/app/lib/content";
+import type { Publication, PublicationType } from "@/app/lib/content";
 
 export const typeVariant: Record<PublicationType, "primary" | "success" | "warning"> =
   {
@@ -22,16 +18,18 @@ export const typeVariant: Record<PublicationType, "primary" | "success" | "warni
  */
 export default function PublicationRow({
   publication: p,
+  reference,
   isLatest = false,
 }: {
   publication: Publication;
+  reference: string;
   isLatest?: boolean;
 }) {
   return (
     <div className="grid gap-4 sm:grid-cols-[160px_1fr] lg:grid-cols-[160px_1fr_auto] lg:gap-8">
       {/* registry code + type */}
       <div>
-        <p className="font-mono text-xs text-muted">{publicationRef(p)}</p>
+        <p className="font-mono text-xs text-muted">{reference}</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Badge variant={typeVariant[p.type]}>{p.type}</Badge>
           {isLatest && <Badge variant="accent">Latest</Badge>}

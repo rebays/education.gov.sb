@@ -79,7 +79,11 @@ export default function Publications() {
             aria-label={p.title}
             className={`relative w-44 shrink-0 transition-all duration-300 hover:z-20 hover:-translate-y-4 hover:rotate-0 sm:w-56 lg:w-64 ${fanStyle[i]}`}
           >
-            <PublicationCover publication={p} className="w-full" />
+            <PublicationCover
+              publication={p}
+              reference={publicationRef(p)}
+              className="w-full"
+            />
           </Link>
         ))}
       </div>

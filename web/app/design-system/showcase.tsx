@@ -12,7 +12,13 @@ import PublicationCover from "@/components/shared/publication-cover";
 import PublicationRow from "@/components/shared/publication-row";
 import SiteHeader from "@/components/shared/site-header";
 import TraditionalWatermark from "@/components/shared/traditional-watermark";
-import { categories, categoryHref, news, publications } from "../lib/content";
+import {
+  categories,
+  categoryHref,
+  news,
+  publications,
+  publicationRef,
+} from "../lib/content";
 import CategoryTabs from "./category-tabs";
 import {
   Accordion,
@@ -994,7 +1000,11 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
             serif year markers.
           </p>
           <div className="rounded-2xl border border-border bg-background px-6 py-6">
-            <PublicationRow publication={publications[0]} isLatest />
+            <PublicationRow
+              publication={publications[0]}
+              reference={publicationRef(publications[0])}
+              isLatest
+            />
           </div>
         </div>
 
@@ -1010,6 +1020,7 @@ export default function SystemShowcase({ config }: { config: ShowcaseConfig }) {
           <div className="flex flex-wrap items-start gap-8">
             <PublicationCover
               publication={publications[0]}
+              reference={publicationRef(publications[0])}
               className="w-[240px]"
             />
           </div>

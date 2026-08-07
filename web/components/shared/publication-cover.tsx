@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { publicationRef, type Publication } from "@/app/lib/content";
+import type { Publication } from "@/app/lib/content";
 
 /**
  * Designed stand-in for a publication's cover — deep-blue panel, gold rule,
@@ -10,9 +10,11 @@ import { publicationRef, type Publication } from "@/app/lib/content";
  */
 export default function PublicationCover({
   publication,
+  reference,
   className,
 }: {
   publication: Publication;
+  reference: string;
   className?: string;
 }) {
   return (
@@ -34,7 +36,7 @@ export default function PublicationCover({
         {publication.title}
       </p>
       <p className="mt-4 border-t border-white/15 pt-4 font-mono text-[10px] uppercase tracking-wider text-white/50">
-        {publicationRef(publication)}
+        {reference}
         <br />
         Solomon Islands Government
       </p>

@@ -10,14 +10,27 @@ import { AtAGlance } from "@/components/ui/at-a-glance";
 import { FactSheet } from "@/components/ui/fact-sheet";
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
+import { cmsFetch } from "@/lib/cms";
 import {
-  getPublication,
-  publicationRef,
-  publications,
-} from "../../lib/content";
+  officeDisplay,
+  publicationRefFor,
+  publicationTypeDisplay,
+  toPublicationSummary,
+} from "@/components/pages/Publication/adapters";
+import {
+  PUBLICATIONS_QUERY,
+  PUBLICATION_QUERY,
+  type PublicationListItem,
+  type PublicationQueryResult,
+  type PublicationsQueryResult,
+} from "@/components/pages/Publication/queries";
 
-export function generateStaticParams() {
-  return publications.map((p) => ({ slug: p.slug }));
+async function loadPublication(slug: string) {
+  const [detail, list] = await Promise.all([
+    cmsFetch<PublicationQueryResult>(PUBLICATION_QUERY, { slug }),
+    cmsFetch<PublicationsQueryResult>(PUBLICATIONS_QUERY, {}),
+  ]);
+  return { pub: detail.publication, allItems: list.publications };
 }
 
 export async function generateMetadata({
@@ -26,7 +39,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const pub = getPublication(slug);
+  const data = await cmsFetch<PublicationQueryResult>(PUBLICATION_QUERY, { slug });
+  const pub = data.publication;
   if (!pub) return {};
   return { title: pub.title, description: pub.summary };
 }
@@ -37,19 +51,15 @@ export default async function PublicationPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const pub = getPublication(slug);
+  const { pub, allItems } = await loadPublication(slug);
   if (!pub) notFound();
 
-  const ref = publicationRef(pub);
-
-  /* next chronological entry in the register */
-  const ordered = [...publications].sort(
-    (a, b) => Date.parse(b.date) - Date.parse(a.date),
-  );
-  const idx = ordered.findIndex((p) => p.slug === pub.slug);
-  const newer = idx > 0 ? ordered[idx - 1] : undefined;
-
-  const related = publications.filter((p) => p.slug !== pub.slug).slice(0, 3);
+  const summary = toPublicationSummary(pub);
+  const ref = publicationRefFor(pub, allItems);
+  const newer = pub.newerEntry
+    ? allItems.find((p) => p.slug === pub.newerEntry?.slug)
+    : undefined;
+  const related = pub.relatedPublicationItems;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -63,9 +73,9 @@ export default async function PublicationPage({
         <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
           <span className="font-mono">{ref}</span>
           <span aria-hidden>·</span>
-          <span>{pub.date}</span>
+          <span>{summary.date}</span>
           <span aria-hidden>·</span>
-          <span>{pub.office}</span>
+          <span>{summary.office}</span>
         </p>
       </PageHeader>
 
@@ -78,26 +88,17 @@ export default async function PublicationPage({
             </p>
 
             {/* at a glance */}
-            {pub.keyPoints && pub.keyPoints.length > 0 && (
-              <AtAGlance className="mt-8" points={pub.keyPoints} />
+            {pub.keyPoints.length > 0 && (
+              <AtAGlance
+                className="mt-8"
+                points={pub.keyPoints.map((kp) => kp.value)}
+              />
             )}
 
-            <div className="mt-8 max-w-2xl space-y-6">
-              {pub.body.map((block, i) =>
-                block.startsWith("## ") ? (
-                  <h2
-                    key={i}
-                    className="pt-4 font-serif text-2xl tracking-tight text-foreground"
-                  >
-                    {block.slice(3)}
-                  </h2>
-                ) : (
-                  <p key={i} className="text-base leading-8 text-foreground/90">
-                    {block}
-                  </p>
-                ),
-              )}
-            </div>
+            <div
+              className="prose prose-slate mt-8 max-w-2xl text-base leading-8 text-foreground/90"
+              dangerouslySetInnerHTML={{ __html: pub.body }}
+            />
 
             {/* next chronological entry */}
             {newer && (
@@ -116,7 +117,7 @@ export default async function PublicationPage({
                     {newer.title}
                   </p>
                   <p className="mt-2 font-mono text-xs text-muted">
-                    {publicationRef(newer)}
+                    {publicationRefFor(newer, allItems)}
                   </p>
                 </Link>
               </nav>
@@ -126,30 +127,34 @@ export default async function PublicationPage({
           {/* record sidebar */}
           <aside className="lg:pt-1">
             <div className="rounded-2xl border border-border bg-surface p-6">
-              <PublicationCover publication={pub} className="w-full" />
+              <PublicationCover
+                publication={summary}
+                reference={ref}
+                className="w-full"
+              />
 
               <a
-                href="#"
-                title="Download will be available once the CMS is connected"
+                href={pub.url}
+                download
                 className={cn(
                   buttonVariants({ variant: "primary" }),
                   "mt-6 w-full text-sm",
                 )}
               >
                 <Icon name="download" className="size-4" />
-                Download {pub.format}
+                Download {summary.format}
                 <span className="font-mono text-xs font-normal opacity-75">
-                  {pub.size}
+                  {summary.size}
                 </span>
               </a>
               <FactSheet
                 className="mt-6"
                 facts={[
                   ["Reference", ref],
-                  ["Type", pub.type],
-                  ["Published", pub.date],
-                  ["Format", `${pub.format} · ${pub.size}`],
-                  ["Source office", pub.office],
+                  ["Type", summary.type],
+                  ["Published", summary.date],
+                  ["Format", `${summary.format} · ${summary.size}`],
+                  ["Source office", summary.office],
                 ]}
               />
             </div>
@@ -157,36 +162,49 @@ export default async function PublicationPage({
         </div>
 
         {/* related publications */}
-        <section className="bg-surface">
-          <div className="mx-auto w-full max-w-8xl px-6 py-14">
-            <h2 className="font-serif text-3xl leading-tight tracking-tight text-foreground">
-              Related publications.
-            </h2>
-            <div className="mt-8 grid gap-6 md:grid-cols-3">
-              {related.map((p) => (
-                <Link
-                  key={p.slug}
-                  href={`/publications/${p.slug}`}
-                  className="group flex flex-col rounded-2xl border border-border bg-background p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-lg"
-                >
-                  <span className="text-xs font-semibold uppercase tracking-wide text-primary">
-                    {p.type}
-                  </span>
-                  <h3 className="mt-3 flex-1 font-serif text-lg leading-snug text-foreground group-hover:text-primary">
-                    {p.title}
-                  </h3>
-                  <p className="mt-4 text-xs text-muted">
-                    <span className="font-mono">{publicationRef(p)}</span> ·{" "}
-                    {p.date} · {p.format}
-                  </p>
-                </Link>
-              ))}
+        {related.length > 0 && (
+          <section className="bg-surface">
+            <div className="mx-auto w-full max-w-8xl px-6 py-14">
+              <h2 className="font-serif text-3xl leading-tight tracking-tight text-foreground">
+                Related publications.
+              </h2>
+              <div className="mt-8 grid gap-6 md:grid-cols-3">
+                {related.map((p) => (
+                  <RelatedPublicationCard key={p.slug} item={p} allItems={allItems} />
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
       </main>
 
       <SiteFooter />
     </div>
+  );
+}
+
+function RelatedPublicationCard({
+  item,
+  allItems,
+}: {
+  item: PublicationListItem;
+  allItems: PublicationListItem[];
+}) {
+  return (
+    <Link
+      href={`/publications/${item.slug}`}
+      className="group flex flex-col rounded-2xl border border-border bg-background p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary hover:shadow-lg"
+    >
+      <span className="text-xs font-semibold uppercase tracking-wide text-primary">
+        {publicationTypeDisplay[item.publicationType]}
+      </span>
+      <h3 className="mt-3 flex-1 font-serif text-lg leading-snug text-foreground group-hover:text-primary">
+        {item.title}
+      </h3>
+      <p className="mt-4 text-xs text-muted">
+        <span className="font-mono">{publicationRefFor(item, allItems)}</span> ·{" "}
+        {officeDisplay[item.office] ?? item.office} · {item.fileExtension}
+      </p>
+    </Link>
   );
 }

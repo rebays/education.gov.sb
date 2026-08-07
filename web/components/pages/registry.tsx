@@ -5,8 +5,14 @@ import NewsIndexPage from '@/components/pages/NewsIndexPage/NewsIndexPage';
 import type { NewsIndexPage as NewsIndexPageType } from '@/components/pages/NewsIndexPage/types';
 import NewsPage from '@/components/pages/NewsPage/NewsPage';
 import type { NewsPage as NewsPageType } from '@/components/pages/NewsPage/types';
+import PublicationIndexPage from '@/components/pages/PublicationIndexPage/PublicationIndexPage';
+import type { PublicationIndexPage as PublicationIndexPageType } from '@/components/pages/PublicationIndexPage/types';
 
-export type CmsPage = AboutPageType | NewsIndexPageType | NewsPageType;
+export type CmsPage =
+  | AboutPageType
+  | NewsIndexPageType
+  | NewsPageType
+  | PublicationIndexPageType;
 
 /**
  * Renders a CMS page by dispatching on __typename. Uses a switch (not an
@@ -23,6 +29,8 @@ export function renderCmsPage(page: CmsPage) {
       return <NewsIndexPage page={page} />;
     case 'NewsPage':
       return <NewsPage page={page} />;
+    case 'PublicationIndexPage':
+      return <PublicationIndexPage page={page} />;
     default:
       notFound();
   }
