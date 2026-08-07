@@ -3,7 +3,6 @@ from grapple.models import GraphQLCollection, GraphQLImage, GraphQLString
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 
-
 PILLAR_ICON_CHOICES = [
     ("shield", "Shield (verified / trust)"),
     ("people", "People (community / inclusion)"),

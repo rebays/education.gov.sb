@@ -33,6 +33,7 @@ psycopg-binary==3.3.4
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 requests==2.34.2
+ruff==0.16.2
 six==1.17.0
 soupsieve==2.8.4
 sqlparse==0.5.5

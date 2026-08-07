@@ -3,8 +3,6 @@ from grapple.registry import registry
 from wagtail import hooks
 
 from .models import Publication
-from .viewsets import PublicationViewSet
-
 
 # --- Frontend GraphQL queries ---
 # Publication is a plain model (a registered admin snippet, but not exposed

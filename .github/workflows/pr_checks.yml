@@ -1,0 +1,41 @@
+# Job name "PR checks" is referenced by ruleset "main-protection".
+# Renaming it will break the required status check.
+
+name: PR checks
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: PR checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------- cms ----------
+      - name: Lint cms
+        uses: astral-sh/ruff-action@v3
+        with:
+          src: ./cms
+
+      # ---------- builds ----------
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build cms image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./cms
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

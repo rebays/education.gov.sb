@@ -1,5 +1,4 @@
 from django.db import models
-
 from grapple.models import (
     GraphQLImage,
     GraphQLRichText,

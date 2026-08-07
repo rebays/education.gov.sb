@@ -1,4 +1,3 @@
-from wagtail import blocks
 from grapple.helpers import register_streamfield_block
 from grapple.models import (
     GraphQLBoolean,
@@ -6,6 +5,7 @@ from grapple.models import (
     GraphQLStreamfield,
     GraphQLString,
 )
+from wagtail import blocks
 
 
 @register_streamfield_block
@@ -54,8 +54,14 @@ class LinksGroupBlock(blocks.StructBlock):
 @register_streamfield_block
 class DropdownBlock(blocks.StructBlock):
     title = blocks.CharBlock()
-    page = blocks.PageChooserBlock(required=False, help_text="Optional — makes the dropdown title a clickable link.")
-    show_dropdown_icon = blocks.BooleanBlock(required=False, help_text="Display a dropdown indicator icon.")
+    page = blocks.PageChooserBlock(
+        required=False,
+        help_text="Optional — makes the dropdown title a clickable link.",
+    )
+    show_dropdown_icon = blocks.BooleanBlock(
+        required=False,
+        help_text="Display a dropdown indicator icon.",
+    )
     items = blocks.StreamBlock([
         ('page_link', PageLinkBlock()),
         ('external_link', ExternalLinkBlock()),

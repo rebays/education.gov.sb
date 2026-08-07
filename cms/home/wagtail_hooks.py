@@ -1,6 +1,7 @@
 # your_app/wagtail_hooks.py
-from .mutations import Mutation
 from wagtail import hooks
+
+from .mutations import Mutation
 
 
 @hooks.register("register_schema_mutation")

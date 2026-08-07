@@ -229,7 +229,7 @@ WAGTAIL_HEADLESS_PREVIEW = {
     "CLIENT_URLS": {
         "default": "{SITE_ROOT_URL}/api/preview",
     },
-    "SERVE_BASE_URL": os.environ["SERVE_BASE_URL"],
+    "SERVE_BASE_URL": os.environ.get("SERVE_BASE_URL", "http://localhost:3000"),
     "REDIRECT_ON_PREVIEW": True, 
     "ENFORCE_TRAILING_SLASH": True, 
 }
