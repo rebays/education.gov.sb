@@ -1,0 +1,4 @@
+{
+  "//": "TEMPORARY: silences Vercel preview-deploy failures on PRs that don't touch web/. Remove this file once the Vercel GitHub integration is disconnected (project is migrating off Vercel).",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ./web"
+}
