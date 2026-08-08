@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+.gitignore
+.vercel
+.env*.local
+Dockerfile
+.dockerignore
+README.md
+AGENTS.md
+CLAUDE.md
