@@ -18,7 +18,7 @@ type AccessibilityPageContent = Pick<
   | "title"
   | "lead"
   | "atAGlance"
-  | "body"
+  | "bodyHtml"
   | "conformanceTarget"
   | "effectiveDate"
   | "lastReviewed"
@@ -46,7 +46,7 @@ export default function AccessibilityPage(_: { page: AccessibilityPageContent })
 
             <div
               className="prose prose-slate mt-8 max-w-2xl text-base leading-8 text-foreground/90"
-              dangerouslySetInnerHTML={{ __html: page.body }}
+              dangerouslySetInnerHTML={{ __html: page.bodyHtml }}
             />
           </article>
 

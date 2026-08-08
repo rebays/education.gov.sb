@@ -8,7 +8,7 @@ export const ACCESSIBILITY_PAGE_FRAGMENT = /* GraphQL */ `
         value
       }
     }
-    body
+    bodyHtml: body
     conformanceTarget
     effectiveDate
     lastReviewed
