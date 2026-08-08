@@ -9,7 +9,6 @@ export type Crumb = { label: string; href?: string };
  * on its right side only, fading out toward the left where the text sits.
  */
 export default function PageHeader({
-  id,
   title,
   lead,
   crumbs,
@@ -26,7 +25,7 @@ export default function PageHeader({
     <section className="relative isolate flex min-h-[40vh] overflow-hidden bg-deep text-white sm:min-h-[45vh]">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[url('/traditional-column-horizontal.jpeg')] bg-cover bg-right bg-no-repeat opacity-[0.14] [filter:invert(1)] [mask-image:linear-gradient(to_right,transparent_0%,transparent_35%,#000_75%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,transparent_35%,#000_75%)]"
+        className="pointer-events-none absolute inset-0 -z-10 bg-[url('/traditional-column-horizontal.jpeg')] bg-cover bg-right bg-no-repeat opacity-[0.14] filter-[invert(1)] mask-[linear-gradient(to_right,transparent_0%,transparent_35%,#000_75%)] [-webkit-mask-image:linear-gradient(to_right,transparent_0%,transparent_35%,#000_75%)]"
       />
 
       <div className="relative z-10 mx-auto flex w-full max-w-8xl flex-1">

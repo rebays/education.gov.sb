@@ -1,5 +1,3 @@
-import { cmsClientFetch } from "@/lib/cms-client";
-
 const GET_RESOURCE_FOLDER = `
   query GetResourceFolder($path: String!) {
     resourceFolder(path: $path) {

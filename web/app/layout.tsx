@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ViewTransition } from "react";
 import { Baskervville, Source_Sans_3, Figtree } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";

@@ -102,16 +102,22 @@ export default function HeroSearch({
   }, []);
   useKeyShortcut("m", handleOpenFilter);
 
-  useEffect(() => {
+  // Reset highlight when the query changes — track previous value in state
+  // instead of setState-in-effect.
+  const [prevQuery, setPrevQuery] = useState(query);
+  if (query !== prevQuery) {
+    setPrevQuery(query);
     setActiveIndex(-1);
-  }, [query]);
+  }
 
   // Keep the field in sync when a new `defaultQuery` arrives without this
   // component remounting (e.g. client-side nav to a different `?q=` on the
   // search results page).
-  useEffect(() => {
+  const [prevDefaultQuery, setPrevDefaultQuery] = useState(defaultQuery);
+  if (defaultQuery !== prevDefaultQuery) {
+    setPrevDefaultQuery(defaultQuery);
     setQuery(defaultQuery);
-  }, [defaultQuery]);
+  }
 
   useEffect(() => {
     if (!showPanel) return;

@@ -23,7 +23,6 @@ function formatFileSize(bytes?: number): string {
 const ResourceFolderPreview = React.memo(function ResourceFolderPreview({
   files,
   folderDescription,
-  folderName,
 }: ResourceFolderPreviewProps) {
   const [selectedFileIdx, setSelectedFileIdx] = useState(0);
   const selectedFile = files[selectedFileIdx];
@@ -99,7 +98,6 @@ const ResourceFolderPreview = React.memo(function ResourceFolderPreview({
           <CMSResourcePreviewer
             filename={selectedFile.filename}
             fileExtension={selectedFile.fileExtension}
-            pages={selectedFile.pages}
             downloadUrl={selectedFile.url}
           />
 
@@ -127,17 +125,8 @@ const ResourceFolderPreview = React.memo(function ResourceFolderPreview({
           {/* Download Actions */}
           <DownloadActions
             resource={{
-              ...selectedFile,
-              id: selectedFile.id,
-              title: selectedFile.displayLabel,
-              summary: folderDescription || "",
-              type: "Document",
               format: selectedFile.fileExtension.toUpperCase(),
               size: formatFileSize(selectedFile.fileSize),
-              updated: selectedFile.publishedDate || "",
-              duration: undefined,
-              url: selectedFile.url,
-              filename: selectedFile.filename,
             }}
           />
         </aside>

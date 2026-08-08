@@ -144,7 +144,7 @@ export default function NewsFront() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPage = useCallback(
-    async (opts: { after?: string; append: boolean }) => {
+    async (opts: { after?: string }) => {
       const category =
         active === "All" ? undefined : filterToEnum[active];
       const data = await cmsClientFetch<NewsPagesQueryResult>(NEWS_PAGES_QUERY, {
@@ -152,20 +152,30 @@ export default function NewsFront() {
         after: opts.after ?? null,
         category: category ?? null,
       });
-      const nextItems = data.newsPages.edges.map((e) => toNewsPost(e.node));
-      setItems((prev) => (opts.append ? [...prev, ...nextItems] : nextItems));
-      setEndCursor(data.newsPages.pageInfo.endCursor);
-      setHasNextPage(data.newsPages.pageInfo.hasNextPage);
+      return data.newsPages;
     },
     [active],
   );
 
-  /* reset and fetch first page whenever the active filter changes */
-  useEffect(() => {
-    let cancelled = false;
+  /* Reset skeleton/error immediately on filter change — using the
+   * store-previous-in-state pattern so we don't setState in an effect. */
+  const [prevActive, setPrevActive] = useState(active);
+  if (active !== prevActive) {
+    setPrevActive(active);
     setInitialLoading(true);
     setError(null);
-    fetchPage({ append: false })
+  }
+
+  /* fetch first page whenever the active filter changes */
+  useEffect(() => {
+    let cancelled = false;
+    fetchPage({})
+      .then((page) => {
+        if (cancelled) return;
+        setItems(page.edges.map((e) => toNewsPost(e.node)));
+        setEndCursor(page.pageInfo.endCursor);
+        setHasNextPage(page.pageInfo.hasNextPage);
+      })
       .catch((err) => {
         if (!cancelled) setError(err.message ?? "Failed to load news");
       })
@@ -182,7 +192,10 @@ export default function NewsFront() {
     setLoadingMore(true);
     setError(null);
     try {
-      await fetchPage({ after: endCursor, append: true });
+      const page = await fetchPage({ after: endCursor });
+      setItems((prev) => [...prev, ...page.edges.map((e) => toNewsPost(e.node))]);
+      setEndCursor(page.pageInfo.endCursor);
+      setHasNextPage(page.pageInfo.hasNextPage);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load more news");
     } finally {
