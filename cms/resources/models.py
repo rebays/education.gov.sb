@@ -214,7 +214,10 @@ class Resource(index.Indexed, models.Model):
 
     @property
     def url(self):
-        return self.file.url
+        file_url = self.file.url
+        if file_url.startswith("/"):
+            return settings.WAGTAILADMIN_BASE_URL + file_url
+        return file_url
 
     @property
     def filename(self):
