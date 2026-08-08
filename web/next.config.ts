@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Emit .next/standalone with a minimal server for the Docker image.
+  output: "standalone",
   experimental: {
     viewTransition: true,
   },

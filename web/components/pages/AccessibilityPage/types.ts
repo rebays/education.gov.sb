@@ -10,7 +10,7 @@ export type AccessibilityPage = Page & {
   __typename: 'AccessibilityPage';
   lead: string;
   atAGlance: AccessibilityAtAGlancePoint[];
-  body: string;
+  bodyHtml: string;
   conformanceTarget: string;
   effectiveDate: string | null;
   lastReviewed: string | null;

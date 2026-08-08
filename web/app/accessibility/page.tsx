@@ -48,7 +48,7 @@ const fallback = {
         "Designed for low-bandwidth connections, with lightweight pages and offline-friendly assets.",
     },
   ],
-  body: `
+  bodyHtml: `
     <h2>Our commitment</h2>
     <p>The Ministry of Education and Human Resources Development (MEHRD) is committed to ensuring education.gov.sb is accessible to the widest possible audience, including teachers, students, parents, and members of the public with visual, auditory, motor, or cognitive disabilities.</p>
     <p>Accessibility is treated as an ongoing responsibility rather than a one-time fix. We test new features against these standards before they are published, and we welcome reports of anything we've missed.</p>
