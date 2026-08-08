@@ -1,13 +1,13 @@
 import 'server-only';
 
-const CMS_GRAPHQL_URL = process.env.CMS_GRAPHQL_URL;
-if (!CMS_GRAPHQL_URL) throw new Error('CMS_GRAPHQL_URL is not set');
-
 export async function cmsFetch<T>(
   query: string,
   variables: Record<string, unknown> = {},
 ): Promise<T> {
-  const res = await fetch(CMS_GRAPHQL_URL!, {
+  const cmsUrl = process.env.CMS_GRAPHQL_URL;
+  if (!cmsUrl) throw new Error('CMS_GRAPHQL_URL is not set');
+
+  const res = await fetch(cmsUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, variables }),
