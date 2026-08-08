@@ -20,13 +20,6 @@ function getFileIcon(ext: string): string {
   return "📎";
 }
 
-function getProxyUrl(url: string): string {
-  if (url.startsWith("http://") || url.startsWith("https://")) {
-    const urlObj = new URL(url);
-    return `/api/proxy${urlObj.pathname}`;
-  }
-  return `/api/proxy${url}`;
-}
 
 type PreviewStage = "loading" | "embed-fallback" | "failed" | "ready";
 
@@ -47,7 +40,6 @@ export function CMSResourcePreviewer({
 }: CMSResourcePreviewerProps) {
   const isVideo = ["mp4", "webm", "m4v"].includes(fileExtension.toLowerCase());
   const isPdf = fileExtension.toLowerCase() === "pdf";
-  const proxyUrl = getProxyUrl(downloadUrl);
   const [stage, setStage] = useState<PreviewStage>("loading");
 
   return (
@@ -58,7 +50,7 @@ export function CMSResourcePreviewer({
             {stage === "loading" && <Skeleton label="Loading PDF preview…" />}
             {stage === "embed-fallback" ? (
               <embed
-                src={proxyUrl}
+                src={downloadUrl}
                 type="application/pdf"
                 className="w-full h-full"
                 onLoad={() => setStage("ready")}
@@ -66,7 +58,7 @@ export function CMSResourcePreviewer({
               />
             ) : (
               <iframe
-                src={proxyUrl}
+                src={downloadUrl}
                 title={`Preview of ${filename}`}
                 className="w-full h-full"
                 onLoad={() => setStage((s) => (s === "loading" ? "ready" : s))}
@@ -86,7 +78,7 @@ export function CMSResourcePreviewer({
             className="w-full h-full bg-deep"
             controlsList="nodownload"
           >
-            <source src={proxyUrl} type={`video/${fileExtension.toLowerCase()}`} />
+            <source src={downloadUrl} type={`video/${fileExtension.toLowerCase()}`} />
             Your browser does not support the video tag.
           </video>
         ) : (
