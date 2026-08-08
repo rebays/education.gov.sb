@@ -1,6 +1,17 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState, useSyncExternalStore } from "react";
+
+function subscribeHash(cb: () => void) {
+  window.addEventListener("hashchange", cb);
+  return () => window.removeEventListener("hashchange", cb);
+}
+function getHashSnapshot() {
+  return window.location.hash.slice(1);
+}
+function getHashServerSnapshot() {
+  return "";
+}
 
 /**
  * Category panel layout for the design-system page: a sticky left rail of
@@ -18,18 +29,24 @@ export default function CategoryTabs({
   tabs: ReadonlyArray<readonly [string, string, string]>;
   children: React.ReactNode;
 }) {
-  const [active, setActive] = useState<string>(tabs[0]?.[0] ?? "");
   const panels = React.Children.toArray(children);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  /* honour a deep link like /design-system#components */
-  useEffect(() => {
-    const hash = window.location.hash.slice(1);
-    if (hash && tabs.some(([id]) => id === hash)) setActive(hash);
-  }, [tabs]);
+  /* honour a deep link like /design-system#components; user clicks (which
+   * only call history.replaceState) don't fire hashchange, so `chosen`
+   * tracks post-mount clicks separately. */
+  const hash = useSyncExternalStore(
+    subscribeHash,
+    getHashSnapshot,
+    getHashServerSnapshot,
+  );
+  const [chosen, setChosen] = useState<string | null>(null);
+  const active =
+    chosen ??
+    (hash && tabs.some(([id]) => id === hash) ? hash : tabs[0]?.[0] ?? "");
 
   function choose(id: string) {
-    setActive(id);
+    setChosen(id);
     history.replaceState(null, "", `#${id}`);
     /* land at the start of the content, not the top of the page */
     rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });

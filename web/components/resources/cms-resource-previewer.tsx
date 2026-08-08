@@ -6,7 +6,6 @@ import { Icon } from "@/components/ui/icon";
 interface CMSResourcePreviewerProps {
   filename: string;
   fileExtension: string;
-  pages?: number;
   downloadUrl: string;
 }
 
@@ -44,7 +43,6 @@ function Skeleton({ label }: { label: string }) {
 export function CMSResourcePreviewer({
   filename,
   fileExtension,
-  pages,
   downloadUrl,
 }: CMSResourcePreviewerProps) {
   const isVideo = ["mp4", "webm", "m4v"].includes(fileExtension.toLowerCase());
@@ -54,7 +52,7 @@ export function CMSResourcePreviewer({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-sm">
-      <div className={isPdf ? "aspect-[3/4] lg:aspect-[5/4]" : "aspect-video lg:aspect-[16/7]"}>
+      <div className={isPdf ? "aspect-3/4 lg:aspect-5/4" : "aspect-video lg:aspect-16/7"}>
         {isPdf ? (
           <>
             {stage === "loading" && <Skeleton label="Loading PDF preview…" />}
@@ -78,7 +76,7 @@ export function CMSResourcePreviewer({
             {stage === "failed" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface px-6 text-center">
                 <Icon name="document" className="h-10 w-10 text-muted" />
-                <p className="text-sm text-muted">This preview couldn't load — the file may still be downloaded below.</p>
+                <p className="text-sm text-muted">This preview couldn&apos;t load — the file may still be downloaded below.</p>
               </div>
             )}
           </>

@@ -46,7 +46,7 @@ function FeaturedSkeleton() {
         <Skeleton className="h-10 w-full" />
         <Skeleton className="h-4 w-3/4" />
       </div>
-      <Skeleton className="hidden aspect-[3/4] w-[260px] justify-self-center lg:block" />
+      <Skeleton className="hidden aspect-3/4 w-65 justify-self-center lg:block" />
     </div>
   );
 }
@@ -79,18 +79,21 @@ export default function PublicationsRegister() {
       PUBLICATIONS_QUERY,
       {},
     );
-    setItems(data.publications);
+    return data.publications;
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    setError(null);
-    fetchPublications().catch((err) => {
-      if (!cancelled) {
-        setError(err instanceof Error ? err.message : "Failed to load publications");
-        setItems([]);
-      }
-    });
+    fetchPublications()
+      .then((publications) => {
+        if (!cancelled) setItems(publications);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load publications");
+          setItems([]);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -219,7 +222,7 @@ export default function PublicationsRegister() {
               <PublicationCover
                 publication={toPublicationSummary(featured)}
                 reference={publicationRefFor(featured, items)}
-                className="w-[260px]"
+                className="w-65"
               />
             </div>
           </article>
