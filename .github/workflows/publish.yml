@@ -41,11 +41,21 @@ jobs:
           context: ./cms
           push: true
           tags: ghcr.io/${{ github.repository }}/cms:${{ github.sha }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=cms
+          cache-to: type=gha,mode=max,scope=cms
+
+      - name: Build and push web
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          push: true
+          tags: ghcr.io/${{ github.repository }}/web:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
 
       - name: Summary
         run: |
           echo "### Published" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- \`ghcr.io/${{ github.repository }}/cms:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/${{ github.repository }}/web:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
