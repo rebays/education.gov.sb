@@ -14,6 +14,8 @@ from grapple.models import (
     GraphQLString,
 )
 from treebeard.mp_tree import MP_Node
+from wagtail.admin.panels import FieldPanel
+from wagtail.models import Page
 from wagtail.search import index
 
 LIBRARY_ROOT_NAME = "Resource Library"
@@ -26,6 +28,27 @@ VIDEO_EXTENSIONS = ["mp4", "webm", "m4v"]
 
 def is_video_filename(filename):
     return os.path.splitext(filename)[1][1:].lower() in VIDEO_EXTENSIONS
+
+
+class ResourceIndexPage(Page):
+    """Landing page for the resources section."""
+
+    lead = models.TextField(
+        blank=True,
+        help_text="Short lead paragraph shown in the page header.",
+    )
+
+    parent_page_types = ["home.HomePage"]
+    subpage_types = []
+    max_count = 1
+
+    content_panels = Page.content_panels + [
+        FieldPanel("lead"),
+    ]
+
+    graphql_fields = [
+        GraphQLString("lead"),
+    ]
 
 
 class ResourceFolder(index.Indexed, MP_Node):
@@ -70,6 +93,14 @@ class ResourceFolder(index.Indexed, MP_Node):
         default=0,
         help_text="Sort order within parent folder (0 = no custom sort)",
     )
+    resource_index_page = models.ForeignKey(
+        ResourceIndexPage,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="resource_folders",
+        help_text="The ResourceIndexPage this folder belongs to",
+    )
 
     search_fields = [
         index.SearchField("name"),
@@ -86,6 +117,7 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLString("revision_date"),
         GraphQLInt("order"),
         GraphQLInt("file_count"),
+        GraphQLString("resource_index_page_slug"),
         GraphQLCollection(GraphQLForeignKey, "resources", "resources.Resource"),
         GraphQLCollection(GraphQLForeignKey, "children", "resources.ResourceFolder"),
     ]
@@ -129,6 +161,13 @@ class ResourceFolder(index.Indexed, MP_Node):
     def children(self):
         """Return immediate child folders."""
         return self.get_children().order_by("order", "name")
+
+    @property
+    def resource_index_page_slug(self):
+        """Return the slug of the associated ResourceIndexPage."""
+        if self.resource_index_page:
+            return self.resource_index_page.slug
+        return None
 
 
 class Resource(index.Indexed, models.Model):

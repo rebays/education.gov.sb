@@ -9,6 +9,7 @@ const GET_RESOURCE_FOLDER = `
       revisionDate
       order
       fileCount
+      resourceIndexPageSlug
       children {
         id
         name
@@ -68,6 +69,7 @@ export interface ResourceFolderData {
   revisionDate?: string;
   order: number;
   fileCount: number;
+  resourceIndexPageSlug?: string;
   children: ResourceSubfolder[];
   resources: ResourceFile[];
 }

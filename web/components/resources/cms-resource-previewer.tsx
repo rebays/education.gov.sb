@@ -47,24 +47,12 @@ export function CMSResourcePreviewer({
       <div className={isPdf ? "aspect-3/4 lg:aspect-5/4" : "aspect-video lg:aspect-16/7"}>
         {isPdf ? (
           <>
-            {stage === "loading" && <Skeleton label="Loading PDF preview…" />}
-            {stage === "embed-fallback" ? (
-              <embed
-                src={downloadUrl}
-                type="application/pdf"
-                className="w-full h-full"
-                onLoad={() => setStage("ready")}
-                onError={() => setStage("failed")}
-              />
-            ) : (
-              <iframe
-                src={downloadUrl}
-                title={`Preview of ${filename}`}
-                className="w-full h-full"
-                onLoad={() => setStage((s) => (s === "loading" ? "ready" : s))}
-                onError={() => setStage("embed-fallback")}
-              />
-            )}
+            <iframe
+              src={downloadUrl}
+              title={`Preview of ${filename}`}
+              className="w-full h-full bg-surface"
+              onError={() => setStage("failed")}
+            />
             {stage === "failed" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-surface px-6 text-center">
                 <Icon name="document" className="h-10 w-10 text-muted" />
