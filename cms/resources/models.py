@@ -78,6 +78,23 @@ class ResourceFolder(index.Indexed, MP_Node):
         help_text="Used in the resource page's public URL; generated from the name if left blank",
     )
     description = models.TextField(blank=True)
+    meta_description = models.CharField(
+        max_length=160,
+        blank=True,
+        help_text="SEO meta description (160 chars max). Leave blank to use the folder description.",
+    )
+    og_image = models.ForeignKey(
+        "wagtailimages.Image",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        help_text="Image for social media sharing (OG image).",
+    )
+    canonical_url = models.URLField(
+        blank=True,
+        help_text="Custom canonical URL. Leave blank to use the folder's public URL.",
+    )
     resource_type = models.CharField(
         max_length=20,
         choices=ResourceType.choices,
@@ -113,6 +130,8 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLString("name"),
         GraphQLString("slug"),
         GraphQLString("description"),
+        GraphQLString("meta_description"),
+        GraphQLString("canonical_url"),
         GraphQLString("resource_type"),
         GraphQLString("revision_date"),
         GraphQLInt("order"),
