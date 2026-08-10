@@ -17,7 +17,14 @@ class FolderForm(forms.ModelForm):
 
     class Meta:
         model = ResourceFolder
-        fields = ["name", "description", "resource_type", "revision_date", "meta_description", "canonical_url"]
+        fields = [
+            "name",
+            "description",
+            "resource_type",
+            "revision_date",
+            "meta_description",
+            "canonical_url",
+        ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
             "revision_date": AdminDateInput,

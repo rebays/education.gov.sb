@@ -7,7 +7,6 @@ const GET_RESOURCE_FOLDER = `
       description
       metaDescription
       canonicalUrl
-      noindex
       resourceType
       revisionDate
       order

@@ -81,7 +81,10 @@ class ResourceFolder(index.Indexed, MP_Node):
     meta_description = models.CharField(
         max_length=160,
         blank=True,
-        help_text="SEO meta description (160 chars max). Leave blank to use the folder description.",
+        help_text=(
+            "SEO meta description (160 chars max). "
+            "Leave blank to use the folder description."
+        ),
     )
     og_image = models.ForeignKey(
         "wagtailimages.Image",
