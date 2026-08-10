@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Baskervville, Source_Sans_3, Figtree } from "next/font/google";
+import { ViewTransition } from "@/components/view-transition";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AccessibilityMenu } from "@/components/shared/accessibility-menu";
@@ -41,12 +42,9 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ShortcutsProvider>
-          {/* Disabled: causes re-render loops on pages with async data fetching
           <ViewTransition enter="page-morph-in" exit="page-morph-out">
             {children}
           </ViewTransition>
-          */}
-          {children}
           <AccessibilityMenu />
         </ShortcutsProvider>
       </body>

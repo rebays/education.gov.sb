@@ -11,6 +11,9 @@ ALLOWED_HOSTS = ["*"]
 
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# Allow embedding in iframes from other origins (for frontend previews in dev)
+X_FRAME_OPTIONS = "ALLOW"
+
 
 try:
     from .local import *

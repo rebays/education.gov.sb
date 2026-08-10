@@ -9,13 +9,16 @@ import NewsPage from '@/components/pages/NewsPage/NewsPage';
 import type { NewsPage as NewsPageType } from '@/components/pages/NewsPage/types';
 import PublicationIndexPage from '@/components/pages/PublicationIndexPage/PublicationIndexPage';
 import type { PublicationIndexPage as PublicationIndexPageType } from '@/components/pages/PublicationIndexPage/types';
+import ResourceIndexPage from '@/components/pages/ResourceIndexPage/ResourceIndexPage';
+import type { ResourceIndexPage as ResourceIndexPageType } from '@/components/pages/ResourceIndexPage/types';
 
 export type CmsPage =
   | AboutPageType
   | AccessibilityPageType
   | NewsIndexPageType
   | NewsPageType
-  | PublicationIndexPageType;
+  | PublicationIndexPageType
+  | ResourceIndexPageType;
 
 /**
  * Renders a CMS page by dispatching on __typename. Uses a switch (not an
@@ -36,6 +39,8 @@ export function renderCmsPage(page: CmsPage) {
       return <NewsPage page={page} />;
     case 'PublicationIndexPage':
       return <PublicationIndexPage page={page} />;
+    case 'ResourceIndexPage':
+      return <ResourceIndexPage page={page} />;
     default:
       notFound();
   }
