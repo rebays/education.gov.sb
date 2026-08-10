@@ -5,6 +5,8 @@ const GET_RESOURCE_FOLDER = `
       name
       slug
       description
+      metaDescription
+      canonicalUrl
       resourceType
       revisionDate
       order
@@ -65,6 +67,8 @@ export interface ResourceFolderData {
   name: string;
   slug: string;
   description: string;
+  metaDescription?: string;
+  canonicalUrl?: string;
   resourceType: string;
   revisionDate?: string;
   order: number;

@@ -17,14 +17,24 @@ class FolderForm(forms.ModelForm):
 
     class Meta:
         model = ResourceFolder
-        fields = ["name", "description", "resource_type", "revision_date"]
+        fields = [
+            "name",
+            "description",
+            "resource_type",
+            "revision_date",
+            "meta_description",
+            "canonical_url",
+        ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
             "revision_date": AdminDateInput,
+            "meta_description": forms.Textarea(attrs={"rows": 2}),
+            "canonical_url": forms.URLInput(attrs={"placeholder": "https://example.com/resources/page/"}),
         }
         help_texts = {
             "description": "Shown on the resource page once this folder has files.",
         }
+
 
 
 class ResourceFileField(forms.FileField):

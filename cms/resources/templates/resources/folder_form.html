@@ -3,6 +3,42 @@
 
 {% block titletag %}{{ page_title }} | Resource Library{% endblock %}
 
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+        .folder-form-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--w-color-border-furniture);
+        }
+        .folder-form-tab-button {
+            padding: 12px 16px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            color: var(--w-color-text-meta);
+            transition: all 150ms ease;
+        }
+        .folder-form-tab-button:hover {
+            color: var(--w-color-text-label);
+        }
+        .folder-form-tab-button.active {
+            border-bottom-color: var(--w-color-secondary);
+            color: var(--w-color-secondary);
+        }
+        .folder-form-tab-pane {
+            display: none;
+        }
+        .folder-form-tab-pane.active {
+            display: block;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
     {% include "wagtailadmin/shared/header.html" with title=page_title subtitle=folder.name icon="folder-open-inverse" %}
 
@@ -14,15 +50,74 @@
             {% endfor %}
         </nav>
 
-        <form method="post" novalidate>
+        <form method="post" novalidate id="folder-form">
             {% csrf_token %}
-            {% for field in form %}
-                {% formattedfield field=field %}
-            {% endfor %}
+
+            {# Tabs #}
+            <div class="folder-form-tabs" role="tablist">
+                <button type="button" class="folder-form-tab-button active" data-tab="content" role="tab" aria-selected="true" aria-controls="content-pane">
+                    Content
+                </button>
+                <button type="button" class="folder-form-tab-button" data-tab="promote" role="tab" aria-selected="false" aria-controls="promote-pane">
+                    Promote
+                </button>
+            </div>
+
+            {# Content Tab #}
+            <div id="content-pane" class="folder-form-tab-pane active" role="tabpanel" aria-labelledby="content-tab">
+                {% formattedfield field=form.name %}
+                {% formattedfield field=form.description %}
+                {% formattedfield field=form.resource_type %}
+                {% formattedfield field=form.revision_date %}
+            </div>
+
+            {# Promote Tab #}
+            <div id="promote-pane" class="folder-form-tab-pane" role="tabpanel" aria-labelledby="promote-tab">
+                {# Slug - Display only #}
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: 500; font-size: 13px; margin-bottom: 4px;">Slug</label>
+                    <p style="margin-bottom: 8px; font-size: 13px; color: var(--w-color-text-meta);">Auto-generated from the folder name and used in public URLs. Cannot be changed.</p>
+                    <div style="font-family: monospace; padding: 8px 0; font-size: 18px; border-bottom: 2px solid var(--w-color-secondary); display: inline-block;">{{ folder.slug }}</div>
+                </div>
+
+                {# Meta Description #}
+                {% formattedfield field=form.meta_description %}
+
+                {# Canonical URL #}
+                {% formattedfield field=form.canonical_url %}
+            </div>
+
             <div style="margin-top: 20px;">
                 <button type="submit" class="button">Save</button>
                 <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Cancel</a>
             </div>
         </form>
     </div>
+
+    <script>
+        document.querySelectorAll('.folder-form-tab-button').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const tab = button.dataset.tab;
+
+                // Hide all panes
+                document.querySelectorAll('.folder-form-tab-pane').forEach(pane => {
+                    pane.classList.remove('active');
+                });
+
+                // Deactivate all buttons
+                document.querySelectorAll('.folder-form-tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
+                });
+
+                // Show selected pane
+                document.getElementById(tab + '-pane').classList.add('active');
+
+                // Activate selected button
+                button.classList.add('active');
+                button.setAttribute('aria-selected', 'true');
+            });
+        });
+    </script>
 {% endblock %}

@@ -121,6 +121,47 @@
             gap: 2px;
             margin-left: auto;
         }
+        .rl-card {
+            position: relative;
+        }
+        .rl-card__actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 200ms ease;
+        }
+        .rl-card:hover .rl-card__actions {
+            opacity: 1;
+        }
+        .rl-card__action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 3px;
+            background: var(--w-color-secondary);
+            color: var(--w-color-text-button);
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 150ms ease;
+        }
+        .rl-card__action-btn:hover {
+            opacity: 0.9;
+        }
+        .rl-card__action-btn svg.icon {
+            width: 14px;
+            height: 14px;
+        }
+        .rl-card__action-btn.delete {
+            background: var(--w-color-critical-200);
+            color: var(--w-color-critical);
+        }
     </style>
 {% endblock %}
 
@@ -229,20 +270,34 @@
                         </a>
                     {% endfor %}
                     {% for doc in page_obj %}
-                        {% if can_edit_documents %}
-                            <a class="rl-card" href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this file">
-                        {% else %}
-                            <a class="rl-card" href="{{ doc.url }}" title="Download">
-                        {% endif %}
-                            <span class="rl-card__thumb">
-                                {% if doc.is_video %}{% icon name="media" %}{% else %}{% icon name="doc-full" %}{% endif %}
-                                {% if doc.file_extension %}<span class="rl-card__ext">{{ doc.file_extension|upper }}</span>{% endif %}
-                            </span>
-                            <span class="rl-card__title">{{ doc.display_label }}</span>
-                            <span class="rl-card__meta">
-                                {{ doc.language|upper }}{% if search_query %} · {{ doc.folder.name }}{% endif %}
-                            </span>
-                        </a>
+                        <div class="rl-card">
+                            {% if can_edit_documents %}
+                                <a href="{% url 'resource_library:edit_resource' doc.pk %}" title="Edit this file" style="display: contents;">
+                            {% else %}
+                                <a href="{{ doc.url }}" title="Download" style="display: contents;">
+                            {% endif %}
+                                <span class="rl-card__thumb">
+                                    {% if doc.is_video %}{% icon name="media" %}{% else %}{% icon name="doc-full" %}{% endif %}
+                                    {% if doc.file_extension %}<span class="rl-card__ext">{{ doc.file_extension|upper }}</span>{% endif %}
+                                </span>
+                                <span class="rl-card__title">{{ doc.display_label }}</span>
+                                <span class="rl-card__meta">
+                                    {{ doc.language|upper }}{% if search_query %} · {{ doc.folder.name }}{% endif %}
+                                </span>
+                            </a>
+                            {% if can_delete_documents %}
+                                <div class="rl-card__actions">
+                                    {% if can_edit_documents %}
+                                        <a href="{% url 'resource_library:edit_resource' doc.pk %}" class="rl-card__action-btn" title="Edit this file" aria-label="Edit">
+                                            {% icon name="edit" %}
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="rl-card__action-btn delete" title="Delete this file" aria-label="Delete">
+                                        {% icon name="bin" %}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
                     {% endfor %}
                 </div>
             {% else %}
@@ -289,10 +344,19 @@
                                 {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
                                 <td>{{ doc.language|default:"—" }}</td>
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
-                                <td>
-                                    <a href="{{ doc.url }}" title="Download">Download</a>
+                                <td style="display: flex; gap: 8px; align-items: center;">
+                                    <a href="{{ doc.url }}" class="button button-secondary rl-icon-btn" title="Download this file" aria-label="Download">
+                                        {% icon name="download" %}
+                                    </a>
+                                    {% if can_edit_documents %}
+                                        <a href="{% url 'resource_library:edit_resource' doc.pk %}" class="button button-secondary rl-icon-btn" title="Edit this file" aria-label="Edit">
+                                            {% icon name="edit" %}
+                                        </a>
+                                    {% endif %}
                                     {% if can_delete_documents %}
-                                        · <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="no" title="Delete this file">Delete</a>
+                                        <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="button button-secondary rl-icon-btn no" title="Delete this file" aria-label="Delete">
+                                            {% icon name="bin" %}
+                                        </a>
                                     {% endif %}
                                 </td>
                             </tr>
