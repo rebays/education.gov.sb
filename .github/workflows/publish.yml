@@ -1,5 +1,5 @@
 # Publishes images to ghcr.io on every merge to main,
-# then bumps the uat overlays in the manifests repo.
+# then bumps the dev overlays in the manifests repo.
 #
 # Not a required status check — this runs after the merge.
 # Prod overlays are intentionally NOT bumped: they pin a released semver tag.
@@ -63,7 +63,7 @@ jobs:
           echo "- \`ghcr.io/${{ github.repository }}/web:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
 
   bump-manifests:
-    name: Bump uat manifests
+    name: Bump dev manifests
     needs: publish
     runs-on: ubuntu-latest
     steps:
@@ -83,13 +83,13 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
           path: manifests
 
-      - name: Bump uat image tags
+      - name: Bump dev image tags
         working-directory: manifests
         env:
           IMAGE_PREFIX: ghcr.io/${{ github.repository }}
         run: |
           for component in web cms; do
-            (cd "workloads/$component/overlays/uat" && \
+            (cd "workloads/$component/overlays/dev" && \
              kustomize edit set image "$IMAGE_PREFIX/$component=$IMAGE_PREFIX/$component:${{ github.sha }}")
           done
 
@@ -103,7 +103,7 @@ jobs:
             exit 0
           fi
           git add -A
-          git commit -m "chore(uat): bump web and cms to ${GITHUB_SHA::7}
+          git commit -m "chore(dev): bump web and cms to ${GITHUB_SHA::7}
 
           Source: ${{ github.repository }}@${{ github.sha }}"
           git push
