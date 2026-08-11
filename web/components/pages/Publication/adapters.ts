@@ -23,7 +23,8 @@ export function formatDisplayDate(iso: string): string {
   });
 }
 
-export function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number | null): string {
+  if (bytes == null) return "Unknown size";
   if (bytes < 1024) return `${bytes} B`;
   const units = ["KB", "MB", "GB"];
   let value = bytes / 1024;
