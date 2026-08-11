@@ -75,6 +75,7 @@ class FolderForm(forms.ModelForm):
 
 
 
+
 class ResourceFileField(forms.FileField):
     """
     FileField enforcing the resource library's upload rules from settings:
