@@ -127,6 +127,8 @@ const ResourceFolderPreview = React.memo(function ResourceFolderPreview({
             resource={{
               format: selectedFile.fileExtension.toUpperCase(),
               size: formatFileSize(selectedFile.fileSize),
+              url: selectedFile.url,
+              filename: selectedFile.displayLabel || selectedFile.filename,
             }}
           />
         </aside>

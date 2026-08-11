@@ -5,42 +5,37 @@ import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
-  getCurriculumResources,
-  getGrades,
+  countCoverage,
+  emptyFilters,
+  filterResources,
+  firstPopulatedLevel,
   getSubjects,
-  resourceTypes,
-  type Level,
-} from "@/app/lib/curriculum";
+  getYearLevels,
+  type CurriculumFilters,
+  type CurriculumResource,
+  type CurriculumVocabulary,
+} from "@/lib/curriculum";
 import { CoverageMap } from "./coverage-map";
 import { CurriculumResourceList } from "./curriculum-resource-list";
-import { CurriculumSidebar, type CurriculumFilters } from "./curriculum-sidebar";
+import { CurriculumSidebar } from "./curriculum-sidebar";
 import { MobileFilterIsland } from "./mobile-filter-island";
 
 type ViewMode = "map" | "list";
 
-const emptyFilters: CurriculumFilters = { type: null, subjectId: null, gradeId: null, query: "" };
-
-const levelTabs: { value: Level; label: string }[] = [
-  { value: "primary", label: "Primary" },
-  { value: "secondary", label: "Secondary" },
-];
-
 /**
- * Owns all filtering state for the Curriculum Index (level, view mode,
+ * Owns all filtering state for the Curriculum Index (view mode, map level,
  * active filters, filter-pane visibility) and wires the sidebar, tab bar,
- * search box, coverage map, and resource list together. `resources/page.tsx`
- * renders this as the sole stateful piece of the page — it stays a server
- * component (so it can still export `metadata`) and delegates interactivity
- * here.
+ * search box, coverage map, and resource list together.
+ *
+ * All data arrives as props from `ResourceIndexPage`, which fetches it from
+ * the CMS. Filtering runs in the browser over the full published set — see
+ * `lib/curriculum-data.ts` for why.
  *
  * The default landing state shows filter instructions rather than an
  * unfiltered list — resources only render once at least one filter
- * (search, type, subject, or grade) is applied. The Coverage Map is opt-in
- * via the sidebar button and via drilling into a specific subject/grade
- * cell.
- *
- * `initialLevel`/`initialFilters` seed the state from URL params
- * (/resources?level=…&subject=…), already validated by the page.
+ * (search, type, subject, or year level) is applied. The Coverage Map is
+ * opt-in via the sidebar button and via drilling into a specific
+ * subject/year cell.
  */
 const filterInstructionSteps: { icon: IconName; title: string; description: string }[] = [
   { icon: "search", title: "Search", description: "Type a keyword to search resource titles." },
@@ -75,33 +70,60 @@ function FilterInstructions() {
     </div>
   );
 }
+
+function EmptyLibrary() {
+  return (
+    <div className="flex min-h-128 flex-col justify-center rounded-2xl border border-dashed border-border bg-surface p-16 text-center">
+      <Icon name="book" className="mx-auto h-10 w-10 text-muted" />
+      <h2 className="mt-6 font-serif text-2xl text-foreground">No resources published yet</h2>
+      <p className="mx-auto mt-3 max-w-md text-[15px] text-muted">
+        Curriculum materials will appear here once they have been added to the
+        resource library.
+      </p>
+    </div>
+  );
+}
+
 export function CurriculumExplorer({
-  initialLevel = "primary",
-  initialFilters = emptyFilters,
+  vocabulary,
+  resources,
 }: {
-  initialLevel?: Level;
-  initialFilters?: CurriculumFilters;
+  vocabulary: CurriculumVocabulary;
+  resources: CurriculumResource[];
 }) {
-  const [level, setLevel] = useState<Level>(initialLevel);
+  // Education level scopes the Coverage Map only — that grid plots subjects
+  // against year levels and can show one level at a time. The resource list
+  // is driven purely by the four sidebar filters, so it is never constrained
+  // by level; that would silently hide other levels' material and anything
+  // an editor left unclassified.
+  const [mapLevel, setMapLevel] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [filters, setFilters] = useState<CurriculumFilters>(initialFilters);
+  const [filters, setFilters] = useState<CurriculumFilters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(true);
 
-  const subjects = useMemo(() => getSubjects(level), [level]);
-  const grades = useMemo(() => getGrades(level), [level]);
+  // Sidebar options span every level; the map's axes are scoped to its own.
+  const subjects = useMemo(() => getSubjects(vocabulary, null), [vocabulary]);
+  const yearLevels = useMemo(() => getYearLevels(vocabulary, null), [vocabulary]);
+  const mapSubjects = useMemo(
+    () => getSubjects(vocabulary, mapLevel),
+    [vocabulary, mapLevel],
+  );
+  const mapYearLevels = useMemo(
+    () => getYearLevels(vocabulary, mapLevel),
+    [vocabulary, mapLevel],
+  );
 
   const filteredResources = useMemo(
-    () => getCurriculumResources({ level, ...filters }),
-    [level, filters]
+    () => filterResources(resources, null, filters),
+    [resources, filters],
   );
 
   const hasActiveFilters = Boolean(
-    filters.type || filters.subjectId || filters.gradeId || filters.query
+    filters.type || filters.subjectSlug || filters.yearLevelSlug || filters.query
   );
 
-  function handleLevelChange(next: Level) {
-    setLevel(next);
-    setFilters(emptyFilters);
+  function handleLevelChange(next: string) {
+    setMapLevel(next);
   }
 
   function handleFilterChange(patch: Partial<CurriculumFilters>) {
@@ -109,12 +131,15 @@ export function CurriculumExplorer({
     setViewMode("list");
   }
 
-  function handleCellClick(subjectId: string, gradeId: string) {
-    setFilters({ type: null, subjectId, gradeId, query: "" });
+  function handleCellClick(subjectSlug: string, yearLevelSlug: string) {
+    setFilters({ type: null, subjectSlug, yearLevelSlug, query: "" });
     setViewMode("list");
   }
 
   function handleShowMap() {
+    // The map needs a concrete level; land on one that has material rather
+    // than an empty grid.
+    if (!mapLevel) setMapLevel(firstPopulatedLevel(vocabulary, resources));
     setViewMode("map");
   }
 
@@ -122,15 +147,24 @@ export function CurriculumExplorer({
     setViewMode("list");
   }
 
-  const activeSubject = subjects.find((s) => s.id === filters.subjectId);
-  const activeGrade = grades.find((g) => g.id === filters.gradeId);
+  const activeSubject = subjects.find((s) => s.slug === filters.subjectSlug);
+  const activeYearLevel = yearLevels.find((y) => y.slug === filters.yearLevelSlug);
+  const activeType = vocabulary.resourceTypes.find((t) => t.value === filters.type);
+
+  if (resources.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-8xl px-6 py-12">
+        <EmptyLibrary />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto flex w-full max-w-8xl flex-col gap-8 px-6 py-12 lg:flex-row">
       <MobileFilterIsland
-        resourceTypes={resourceTypes}
+        resourceTypes={vocabulary.resourceTypes}
         subjects={subjects}
-        grades={grades}
+        yearLevels={yearLevels}
         filters={filters}
         onFilterChange={handleFilterChange}
         onShowMap={handleShowMap}
@@ -138,9 +172,9 @@ export function CurriculumExplorer({
 
       {showFilters && (
         <CurriculumSidebar
-          resourceTypes={resourceTypes}
+          resourceTypes={vocabulary.resourceTypes}
           subjects={subjects}
-          grades={grades}
+          yearLevels={yearLevels}
           filters={filters}
           onFilterChange={handleFilterChange}
           onReset={() => setFilters(emptyFilters)}
@@ -155,21 +189,21 @@ export function CurriculumExplorer({
         <div className="flex flex-wrap items-center gap-4 border-b border-border py-2">
           {viewMode === "map" && (
             <div role="tablist" aria-label="Curriculum level" className="flex gap-1">
-              {levelTabs.map((tab) => (
+              {vocabulary.levels.map((tab) => (
                 <button
-                  key={tab.value}
+                  key={tab.slug}
                   type="button"
                   role="tab"
-                  aria-selected={level === tab.value}
-                  onClick={() => handleLevelChange(tab.value)}
+                  aria-selected={mapLevel === tab.slug}
+                  onClick={() => handleLevelChange(tab.slug)}
                   className={cn(
                     "-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-                    level === tab.value
+                    mapLevel === tab.slug
                       ? "border-primary text-primary"
                       : "border-transparent text-muted hover:text-foreground"
                   )}
                 >
-                  {tab.label}
+                  {tab.name}
                 </button>
               ))}
             </div>
@@ -205,13 +239,13 @@ export function CurriculumExplorer({
                 Back to resource list
               </Button>
               <p className="text-sm text-muted">
-                Coverage across every subject and {level === "primary" ? "year" : "form"} level.
-                Select a number to see the resources published for that subject and grade.
+                Coverage across every subject and year level. Select a number to
+                see the resources published for that subject and year.
               </p>
             </div>
           ) : (
             <p
-              key={`${level}-${filters.type ?? ""}-${filters.subjectId ?? ""}-${filters.gradeId ?? ""}-${filters.query}`}
+              key={`${filters.type ?? ""}-${filters.subjectSlug ?? ""}-${filters.yearLevelSlug ?? ""}-${filters.query}`}
               className="animate-in fade-in-0 slide-in-from-top-1 ml-auto text-sm text-muted duration-300"
               aria-live="polite"
             >
@@ -219,8 +253,8 @@ export function CurriculumExplorer({
                 <>
                   {filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}
                   {activeSubject && <> · {activeSubject.name}</>}
-                  {activeGrade && <> · {activeGrade.label}</>}
-                  {filters.type && <> · {filters.type}</>}
+                  {activeYearLevel && <> · {activeYearLevel.label}</>}
+                  {activeType && <> · {activeType.label}</>}
                   {filters.query && <> · &ldquo;{filters.query}&rdquo;</>}
                 </>
               ) : (
@@ -233,18 +267,18 @@ export function CurriculumExplorer({
         <div className="mt-6 pb-24 lg:pb-0">
           {viewMode === "map" ? (
             <CoverageMap
-              subjects={subjects}
-              grades={grades}
-              countFor={(subjectId, gradeId) =>
-                getCurriculumResources({ level, subjectId, gradeId }).length
+              subjects={mapSubjects}
+              yearLevels={mapYearLevels}
+              countFor={(subjectSlug, yearLevelSlug) =>
+                countCoverage(resources, mapLevel ?? "", subjectSlug, yearLevelSlug)
               }
               onCellClick={handleCellClick}
             />
           ) : hasActiveFilters ? (
             <CurriculumResourceList
-              key={`${level}-${filters.type ?? ""}-${filters.subjectId ?? ""}-${filters.gradeId ?? ""}-${filters.query}`}
+              key={`${filters.type ?? ""}-${filters.subjectSlug ?? ""}-${filters.yearLevelSlug ?? ""}-${filters.query}`}
               resources={filteredResources}
-              grades={grades}
+              yearLevels={yearLevels}
             />
           ) : (
             <FilterInstructions />

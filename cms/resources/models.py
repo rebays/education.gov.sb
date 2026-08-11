@@ -10,9 +10,12 @@ from grapple.models import (
     GraphQLBoolean,
     GraphQLCollection,
     GraphQLForeignKey,
+    GraphQLImage,
     GraphQLInt,
     GraphQLString,
+    GraphQLTag,
 )
+from taggit.managers import TaggableManager
 from treebeard.mp_tree import MP_Node
 from wagtail.admin.panels import FieldPanel
 from wagtail.models import Page
@@ -51,6 +54,92 @@ class ResourceIndexPage(Page):
     ]
 
 
+class EducationLevel(models.Model):
+    """
+    A stage of the education system (Early Childhood, Primary, Junior
+    Secondary, Senior Secondary). Kept as data rather than choices so the
+    ministry can add stages — TVET, for instance — without a migration.
+    """
+
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, unique=True)
+    order = models.PositiveIntegerField(default=0)
+
+    graphql_fields = [
+        GraphQLString("name"),
+        GraphQLString("slug"),
+        GraphQLInt("order"),
+    ]
+
+    class Meta:
+        ordering = ["order", "name"]
+        verbose_name = "education level"
+
+    def __str__(self):
+        return self.name
+
+
+class YearLevel(models.Model):
+    """A year/form within a level — 'Year 1', 'Form 3'."""
+
+    label = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, unique=True)
+    level = models.ForeignKey(
+        EducationLevel, on_delete=models.CASCADE, related_name="year_levels"
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    graphql_fields = [
+        GraphQLString("label"),
+        GraphQLString("slug"),
+        GraphQLString("level_slug"),
+        GraphQLInt("order"),
+    ]
+
+    class Meta:
+        ordering = ["level__order", "order", "label"]
+        verbose_name = "year level"
+
+    def __str__(self):
+        return self.label
+
+    @property
+    def level_slug(self):
+        return self.level.slug
+
+
+class Subject(models.Model):
+    """
+    A curriculum subject. `levels` scopes which stages it's taught at, so the
+    explorer's subject filter and coverage map can show the right rows per
+    level — including subjects with nothing published yet, which is the whole
+    point of the map.
+    """
+
+    name = models.CharField(max_length=150)
+    slug = models.SlugField(max_length=150, unique=True)
+    levels = models.ManyToManyField(
+        EducationLevel, related_name="subjects", blank=True
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    graphql_fields = [
+        GraphQLString("name"),
+        GraphQLString("slug"),
+        GraphQLInt("order"),
+        GraphQLCollection(
+            GraphQLForeignKey, "levels", "resources.EducationLevel"
+        ),
+    ]
+
+    class Meta:
+        ordering = ["order", "name"]
+        verbose_name = "subject"
+
+    def __str__(self):
+        return self.name
+
+
 class ResourceFolder(index.Indexed, MP_Node):
     """
     Folder tree for the resource library, and — by convention — the resource
@@ -62,11 +151,14 @@ class ResourceFolder(index.Indexed, MP_Node):
     """
 
     class ResourceType(models.TextChoices):
-        POLICY = "policy", "Policy"
-        FORM = "form", "Form"
-        REPORT = "report", "Report"
-        CIRCULAR = "circular", "Circular"
-        CURRICULUM = "curriculum", "Curriculum Material"
+        # Curriculum-materials vocabulary. Policies, reports and guidelines
+        # are the Publications app's job (see publication.models.Publication)
+        # — deliberately not duplicated here.
+        SYLLABUS = "syllabus", "Syllabus"
+        TEACHER_GUIDE = "teacher_guide", "Teacher Guide"
+        WORKBOOK = "workbook", "Workbook"
+        ASSESSMENT = "assessment", "Assessment"
+        PRINT_PACK = "print_pack", "Print Pack"
         VIDEO = "video", "Video"
         OTHER = "other", "Other"
 
@@ -113,6 +205,41 @@ class ResourceFolder(index.Indexed, MP_Node):
         default=0,
         help_text="Sort order within parent folder (0 = no custom sort)",
     )
+    # --- Curriculum facets ---
+    # All optional: the explorer treats an unset facet as "unclassified"
+    # rather than hiding the resource. `level` is stored rather than derived
+    # from `year_levels` so material aimed at a whole stage (with no specific
+    # year) can still be filtered.
+    level = models.ForeignKey(
+        EducationLevel,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="resource_folders",
+        help_text="Education stage this resource is for.",
+    )
+    subject = models.ForeignKey(
+        Subject,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="resource_folders",
+        help_text="Curriculum subject. Leave blank for cross-subject material.",
+    )
+    year_levels = models.ManyToManyField(
+        YearLevel,
+        blank=True,
+        related_name="resource_folders",
+        help_text=(
+            "Years/forms this resource covers. Choose several for material "
+            "spanning a range; leave blank if it applies to the whole level."
+        ),
+    )
+    topics = TaggableManager(
+        blank=True,
+        help_text="Free-form keywords, e.g. literacy, inclusive education.",
+    )
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
     resource_index_page = models.ForeignKey(
         ResourceIndexPage,
         null=True,
@@ -127,6 +254,9 @@ class ResourceFolder(index.Indexed, MP_Node):
         index.AutocompleteField("name"),
         index.SearchField("description"),
         index.FilterField("path"),
+        index.FilterField("resource_type"),
+        index.FilterField("level_id"),
+        index.FilterField("subject_id"),
     ]
 
     graphql_fields = [
@@ -136,12 +266,23 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLString("meta_description"),
         GraphQLString("canonical_url"),
         GraphQLString("resource_type"),
+        GraphQLString("resource_type_display"),
+        GraphQLString("url_path"),
+        GraphQLImage("og_image"),
         GraphQLString("revision_date"),
         GraphQLInt("order"),
         GraphQLInt("file_count"),
         GraphQLString("resource_index_page_slug"),
+        GraphQLForeignKey("level", "resources.EducationLevel"),
+        GraphQLForeignKey("subject", "resources.Subject"),
+        GraphQLCollection(GraphQLForeignKey, "year_levels", "resources.YearLevel"),
+        GraphQLTag("topics"),
+        GraphQLString("last_updated"),
         GraphQLCollection(GraphQLForeignKey, "resources", "resources.Resource"),
         GraphQLCollection(GraphQLForeignKey, "children", "resources.ResourceFolder"),
+        GraphQLCollection(
+            GraphQLForeignKey, "ancestor_folders", "resources.ResourceFolder"
+        ),
     ]
 
     class Meta:
@@ -190,6 +331,40 @@ class ResourceFolder(index.Indexed, MP_Node):
         if self.resource_index_page:
             return self.resource_index_page.slug
         return None
+
+    @property
+    def ancestor_folders(self):
+        """
+        Folders between the library root and this one, outermost first. The
+        root is excluded — it's the library itself, not a location. Used to
+        label breadcrumbs with real folder names instead of URL slugs.
+        """
+        return [a for a in self.get_ancestors() if a.depth > 1]
+
+    @property
+    def url_path(self):
+        """
+        Public path of this resource page, e.g. `/resources/primary/year-1/`.
+        The frontend's catch-all route resolves a folder by its whole path
+        from the library root, so a bare slug isn't enough to link to one.
+        """
+        ancestors = [a.slug for a in self.get_ancestors() if a.depth > 1]
+        prefix = self.resource_index_page_slug or "resources"
+        return "/" + "/".join([prefix, *ancestors, self.slug]) + "/"
+
+    @property
+    def resource_type_display(self):
+        """Human label for `resource_type` — keeps the vocabulary single-sourced."""
+        return self.get_resource_type_display() if self.resource_type else ""
+
+    @property
+    def last_updated(self):
+        """
+        Date the explorer sorts and labels by. The editor's `revision_date`
+        wins when set — it describes the material, not the CMS record —
+        otherwise fall back to when the folder was last touched.
+        """
+        return self.revision_date or self.updated_at.date()
 
 
 class Resource(index.Indexed, models.Model):

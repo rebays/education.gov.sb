@@ -1,6 +1,6 @@
 import graphene
 from django.contrib.auth.models import Permission
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.urls import include, path, reverse
 from grapple.registry import registry
 from wagtail import hooks
@@ -8,7 +8,12 @@ from wagtail.admin.menu import MenuItem
 from wagtail.admin.viewsets.chooser import ChooserViewSet
 from wagtail.documents.wagtail_hooks import DocumentsSummaryItem
 
-from .models import ResourceFolder
+# `viewsets` is imported for its side effect: registering the curriculum
+# vocabulary snippets. Only `wagtail_hooks` is autodiscovered by Wagtail, so
+# a `viewsets` module that nothing imports never runs — as is currently the
+# case for publication/viewsets.py, whose snippet is silently unregistered.
+from . import viewsets  # noqa: F401
+from .models import EducationLevel, ResourceFolder, Subject, YearLevel
 from .views import user_has_library_access
 
 
@@ -98,10 +103,40 @@ def resolve_folder_by_path(path_parts):
     return current
 
 
+class ResourceTypeChoice(graphene.ObjectType):
+    """A `ResourceFolder.ResourceType` choice, for building filter controls."""
+
+    value = graphene.String(required=True)
+    label = graphene.String(required=True)
+
+
 class ResourcePagesQuery(graphene.ObjectType):
     resource_pages = graphene.List(
         lambda: registry.models[ResourceFolder],
         resource_type=graphene.String(),
+        level=graphene.String(description="EducationLevel slug"),
+        subject=graphene.String(description="Subject slug"),
+        year_level=graphene.String(description="YearLevel slug"),
+        topic=graphene.String(description="Topic tag name"),
+        search=graphene.String(description="Case-insensitive name/description match"),
+    )
+    education_levels = graphene.List(
+        lambda: registry.models[EducationLevel],
+        description="Education stages, in display order",
+    )
+    year_levels = graphene.List(
+        lambda: registry.models[YearLevel],
+        level=graphene.String(description="Restrict to one EducationLevel slug"),
+        description="Years/forms, in display order",
+    )
+    subjects = graphene.List(
+        lambda: registry.models[Subject],
+        level=graphene.String(description="Restrict to subjects taught at this level"),
+        description="Curriculum subjects, in display order",
+    )
+    resource_types = graphene.List(
+        ResourceTypeChoice,
+        description="Available resource type values and their display labels",
     )
     resource_page = graphene.Field(
         lambda: registry.models[ResourceFolder],
@@ -117,11 +152,60 @@ class ResourcePagesQuery(graphene.ObjectType):
         description="Fetch the resource library root folder with all top-level folders",
     )
 
-    def resolve_resource_pages(self, info, resource_type=None, **kwargs):
-        queryset = resource_pages_queryset().order_by("name")
+    def resolve_resource_pages(
+        self,
+        info,
+        resource_type=None,
+        level=None,
+        subject=None,
+        year_level=None,
+        topic=None,
+        search=None,
+        **kwargs,
+    ):
+        queryset = (
+            resource_pages_queryset()
+            .select_related("level", "subject")
+            .prefetch_related("year_levels", "topics", "resources")
+            .order_by("name")
+        )
         if resource_type:
             queryset = queryset.filter(resource_type=resource_type)
+        if level:
+            queryset = queryset.filter(level__slug=level)
+        if subject:
+            queryset = queryset.filter(subject__slug=subject)
+        if year_level:
+            queryset = queryset.filter(year_levels__slug=year_level)
+        if topic:
+            queryset = queryset.filter(topics__name__iexact=topic)
+        if search:
+            queryset = queryset.filter(
+                Q(name__icontains=search) | Q(description__icontains=search)
+            )
+        # year_levels/topics are many-to-many, so their filters can duplicate rows
+        return queryset.distinct()
+
+    def resolve_education_levels(self, info, **kwargs):
+        return EducationLevel.objects.all()
+
+    def resolve_year_levels(self, info, level=None, **kwargs):
+        queryset = YearLevel.objects.select_related("level")
+        if level:
+            queryset = queryset.filter(level__slug=level)
         return queryset
+
+    def resolve_resource_types(self, info, **kwargs):
+        return [
+            ResourceTypeChoice(value=value, label=label)
+            for value, label in ResourceFolder.ResourceType.choices
+        ]
+
+    def resolve_subjects(self, info, level=None, **kwargs):
+        queryset = Subject.objects.prefetch_related("levels")
+        if level:
+            queryset = queryset.filter(levels__slug=level)
+        return queryset.distinct()
 
     def resolve_resource_page(self, info, slug, **kwargs):
         return resource_pages_queryset().filter(slug=slug).first()

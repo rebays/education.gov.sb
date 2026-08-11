@@ -12,6 +12,10 @@ const GET_RESOURCE_FOLDER = `
       order
       fileCount
       resourceIndexPageSlug
+      ancestorFolders {
+        id
+        name
+      }
       children {
         id
         name
@@ -62,6 +66,16 @@ export interface ResourceSubfolder {
   fileCount: number;
 }
 
+/**
+ * A folder between the library root and this one, outermost first. Used to
+ * label breadcrumbs with real folder names — a folder's slug is often an
+ * internal working name that shouldn't be shown to the public.
+ */
+export interface ResourceAncestor {
+  id: string;
+  name: string;
+}
+
 export interface ResourceFolderData {
   id: string;
   name: string;
@@ -74,6 +88,7 @@ export interface ResourceFolderData {
   order: number;
   fileCount: number;
   resourceIndexPageSlug?: string;
+  ancestorFolders: ResourceAncestor[];
   children: ResourceSubfolder[];
   resources: ResourceFile[];
 }
