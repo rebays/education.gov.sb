@@ -5,7 +5,7 @@ export type PublicationListItem = {
   slug: string;
   url: string;
   fileExtension: string;
-  fileSize: number;
+  fileSize: number | null;
   date: string;
   publicationType: PublicationTypeValue;
   office: string;
