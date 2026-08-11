@@ -252,8 +252,14 @@ def upload(request, folder_id):
                             description=form.cleaned_data["description"],
                             resource_type=form.cleaned_data["resource_type"],
                             revision_date=form.cleaned_data["revision_date"],
+                            level=form.cleaned_data["level"],
+                            subject=form.cleaned_data["subject"],
                         )
                     )
+                    # M2M and tags need the row to exist first
+                    target.year_levels.set(form.cleaned_data["year_levels"])
+                    if form.cleaned_data["topics"]:
+                        target.topics.add(*form.cleaned_data["topics"])
                 else:
                     target = folder
                 resource = Resource(

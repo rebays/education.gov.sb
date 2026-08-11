@@ -2,14 +2,21 @@ import PageHeader from "@/components/shared/page-header";
 import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
 import { ResourceFolderPreview } from "@/components/resources/resource-folder-preview";
+import type { ResourceAncestor } from "@/lib/hooks/use-resource-folder";
 import type { ResourcePage as ResourcePageProps } from "./types";
 
 interface ResourcePageComponentProps {
   page: ResourcePageProps;
-  pathSegments: Array<{ label: string; href: string }>;
+  /** Path of the ResourceIndexPage this resource belongs to. */
+  indexPath: string;
+  ancestors: ResourceAncestor[];
 }
 
-export default function ResourcePage({ page, pathSegments }: ResourcePageComponentProps) {
+export default function ResourcePage({
+  page,
+  indexPath,
+  ancestors,
+}: ResourcePageComponentProps) {
   return (
     <div className="flex flex-1 flex-col">
       <SiteHeader />
@@ -19,8 +26,12 @@ export default function ResourcePage({ page, pathSegments }: ResourcePageCompone
         title={page.name}
         lead={page.description || ""}
         crumbs={[
-          { label: "Resources", href: "/" },
-          ...pathSegments.slice(0, -1),
+          { label: "Resources", href: indexPath },
+          // Ancestors are CMS-side organisation, not public pages — their
+          // URLs just redirect back to the index, so they're shown as
+          // context rather than links. Labelled by name, since a folder's
+          // slug is often an internal working name.
+          ...ancestors.map((ancestor) => ({ label: ancestor.name })),
         ]}
       />
 

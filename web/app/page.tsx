@@ -8,21 +8,28 @@ import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
 import TraditionalWatermark from "@/components/shared/traditional-watermark";
 import { categories, categoryHref } from "./lib/content";
-import { subjects } from "./lib/curriculum";
+import { getCurriculumSubjects } from "@/lib/curriculum-data";
 
-/* subject suggestion pills under the hero search bar */
-const heroSubjectIds = [
+// The hero's subject pills come from the CMS vocabulary. Rendered per
+// request, like the other CMS-backed pages — prerendering would bake in
+// whatever the CMS returned at build time, and CI builds without one.
+export const dynamic = "force-dynamic";
+
+/* subject suggestion pills under the hero search bar, in this order */
+const heroSubjectSlugs = [
   "english",
   "mathematics",
   "science",
   "social-studies",
   "agriculture",
 ];
-const heroSubjects = heroSubjectIds
-  .map((id) => subjects.find((s) => s.id === id))
-  .filter((s) => s !== undefined);
 
-export default function Home() {
+export default async function Home() {
+  const subjects = await getCurriculumSubjects();
+  const heroSubjects = heroSubjectSlugs
+    .map((slug) => subjects.find((s) => s.slug === slug))
+    .filter((s) => s !== undefined);
+
   return (
     <div className="flex flex-1 flex-col">
       {/* ---------- HERO (full screen) ---------- */}
@@ -67,7 +74,7 @@ export default function Home() {
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
               {heroSubjects.map((s) => (
                 <GlassPill
-                  key={s.id}
+                  key={s.slug}
                   href={`/search?q=${encodeURIComponent(s.name)}`}
                 >
                   {s.name}

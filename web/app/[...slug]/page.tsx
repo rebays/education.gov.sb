@@ -2,7 +2,7 @@ import { cmsFetch } from "@/lib/cms";
 import { GET_PAGE, GET_PAGE_BY_TOKEN } from "@/lib/queries";
 import { getResourceFolder } from "@/lib/hooks/use-resource-folder";
 import { draftMode } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { renderCmsPage, type CmsPage } from "@/components/pages/registry";
 import ResourcePage from "@/components/pages/ResourcePage/ResourcePage";
 
@@ -35,18 +35,20 @@ async function catchAllPage({
     const folderPath = slug.slice(1).join("/");
     const folder = await getResourceFolder(folderPath);
 
-    // Validate: folder must have files and match the resource index page slug
-    // (if resourceIndexPageSlug is null, allow it as a fallback during setup)
-    const isValidResourcePath =
+    // The folder must sit under the resource index page named by the first
+    // segment. A null resourceIndexPageSlug is allowed as a fallback during
+    // setup, before folders have been associated with an index page.
+    const isUnderThisIndex =
       folder &&
-      folder.resources.length > 0 &&
       (!folder.resourceIndexPageSlug || folder.resourceIndexPageSlug === slug[0]);
 
-    if (isValidResourcePath) {
-      const pathSegments = slug.slice(1).map((s, i) => ({
-        label: s,
-        href: `/${slug.slice(0, i + 2).join("/")}`,
-      }));
+    if (isUnderThisIndex) {
+      // Only folders that directly contain files are public pages. The rest
+      // of the tree is CMS-side organisation, so rather than 404 on a
+      // truncated URL, send the visitor to the section index.
+      if (folder.resources.length === 0) {
+        redirect(`/${folder.resourceIndexPageSlug ?? slug[0]}/`);
+      }
 
       return (
         <ResourcePage
@@ -63,7 +65,8 @@ async function catchAllPage({
             children: folder.children,
             resources: folder.resources,
           }}
-          pathSegments={pathSegments}
+          indexPath={`/${folder.resourceIndexPageSlug ?? slug[0]}/`}
+          ancestors={folder.ancestorFolders}
         />
       );
     }

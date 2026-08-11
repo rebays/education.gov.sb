@@ -5,10 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import type { Grade, ResourceType, Subject } from "@/app/lib/curriculum";
-import type { CurriculumFilters } from "./curriculum-sidebar";
+import type {
+  CurriculumFilters,
+  ResourceTypeChoice,
+  Subject,
+  YearLevel,
+} from "@/lib/curriculum";
 
-type PickerKey = "search" | "type" | "subject" | "grade";
+type PickerKey = "search" | "type" | "subject" | "yearLevel";
 
 /**
  * Mobile replacement for `CurriculumSidebar` — a floating bottom dock with
@@ -21,14 +25,14 @@ type PickerKey = "search" | "type" | "subject" | "grade";
 export function MobileFilterIsland({
   resourceTypes,
   subjects,
-  grades,
+  yearLevels,
   filters,
   onFilterChange,
   onShowMap,
 }: {
-  resourceTypes: ResourceType[];
+  resourceTypes: ResourceTypeChoice[];
   subjects: Subject[];
-  grades: Grade[];
+  yearLevels: YearLevel[];
   filters: CurriculumFilters;
   onFilterChange: (patch: Partial<CurriculumFilters>) => void;
   onShowMap: () => void;
@@ -37,14 +41,15 @@ export function MobileFilterIsland({
   const [searchDraft, setSearchDraft] = useState(filters.query);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const activeSubject = subjects.find((s) => s.id === filters.subjectId);
-  const activeGrade = grades.find((g) => g.id === filters.gradeId);
+  const activeSubject = subjects.find((s) => s.slug === filters.subjectSlug);
+  const activeYearLevel = yearLevels.find((y) => y.slug === filters.yearLevelSlug);
+  const activeType = resourceTypes.find((t) => t.value === filters.type);
 
   const items: { key: PickerKey; category: string; value: string | null; icon: IconName }[] = [
     { key: "search", category: "Search", value: filters.query || null, icon: "search" },
-    { key: "type", category: "Type", value: filters.type, icon: "tag" },
+    { key: "type", category: "Type", value: activeType?.label ?? null, icon: "tag" },
     { key: "subject", category: "Subject", value: activeSubject?.name ?? null, icon: "book" },
-    { key: "grade", category: "Grade", value: activeGrade?.label ?? null, icon: "graduation" },
+    { key: "yearLevel", category: "Year", value: activeYearLevel?.label ?? null, icon: "graduation" },
   ];
 
   function openSheet(key: PickerKey) {
@@ -108,9 +113,11 @@ export function MobileFilterIsland({
         open={openPicker === "type"}
         onOpenChange={(open) => setOpenPicker(open ? "type" : null)}
         title="Resource type"
-        options={resourceTypes}
+        options={resourceTypes.map((t) => t.value)}
         active={filters.type}
-        optionLabel={(t) => t}
+        optionLabel={(value) =>
+          resourceTypes.find((t) => t.value === value)?.label ?? value
+        }
         onSelect={(value) => {
           onFilterChange({ type: value });
           setOpenPicker(null);
@@ -121,24 +128,24 @@ export function MobileFilterIsland({
         open={openPicker === "subject"}
         onOpenChange={(open) => setOpenPicker(open ? "subject" : null)}
         title="Subject"
-        options={subjects.map((s) => s.id)}
-        active={filters.subjectId}
-        optionLabel={(id) => subjects.find((s) => s.id === id)?.name ?? id}
+        options={subjects.map((s) => s.slug)}
+        active={filters.subjectSlug}
+        optionLabel={(slug) => subjects.find((s) => s.slug === slug)?.name ?? slug}
         onSelect={(value) => {
-          onFilterChange({ subjectId: value });
+          onFilterChange({ subjectSlug: value });
           setOpenPicker(null);
         }}
       />
 
       <OptionSheet
-        open={openPicker === "grade"}
-        onOpenChange={(open) => setOpenPicker(open ? "grade" : null)}
+        open={openPicker === "yearLevel"}
+        onOpenChange={(open) => setOpenPicker(open ? "yearLevel" : null)}
         title="Grade / year level"
-        options={grades.map((g) => g.id)}
-        active={filters.gradeId}
-        optionLabel={(id) => grades.find((g) => g.id === id)?.label ?? id}
+        options={yearLevels.map((y) => y.slug)}
+        active={filters.yearLevelSlug}
+        optionLabel={(slug) => yearLevels.find((y) => y.slug === slug)?.label ?? slug}
         onSelect={(value) => {
-          onFilterChange({ gradeId: value });
+          onFilterChange({ yearLevelSlug: value });
           setOpenPicker(null);
         }}
       />

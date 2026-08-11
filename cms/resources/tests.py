@@ -1,10 +1,19 @@
+from datetime import date
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
-from .models import LIBRARY_ROOT_NAME, Resource, ResourceFolder
+from .models import (
+    LIBRARY_ROOT_NAME,
+    EducationLevel,
+    Resource,
+    ResourceFolder,
+    Subject,
+    YearLevel,
+)
 
 
 def add_file(folder, filename="doc.txt", content=b"contents", label="", language="en"):
@@ -54,20 +63,20 @@ class ResourceLibraryTests(TestCase):
         response = self.client.post(
             reverse("resource_library:add_folder", args=[root.pk]),
             {
-                "name": "Annual Report 2025",
-                "description": "The ministry's annual report",
-                "resource_type": "report",
+                "name": "Year 3 Mathematics Syllabus",
+                "description": "The Year 3 mathematics syllabus",
+                "resource_type": "syllabus",
                 "revision_date": "2025-06-30",
             },
         )
-        folder = ResourceFolder.objects.get(name="Annual Report 2025")
+        folder = ResourceFolder.objects.get(name="Year 3 Mathematics Syllabus")
         self.assertRedirects(
             response, reverse("resource_library:folder", args=[folder.pk])
         )
         self.assertTrue(folder.is_descendant_of(root))
-        self.assertEqual(folder.slug, "annual-report-2025")
-        self.assertEqual(folder.description, "The ministry's annual report")
-        self.assertEqual(folder.resource_type, "report")
+        self.assertEqual(folder.slug, "year-3-mathematics-syllabus")
+        self.assertEqual(folder.description, "The Year 3 mathematics syllabus")
+        self.assertEqual(folder.resource_type, "syllabus")
 
         # Details are optional: a bare category folder is fine too
         self.client.post(
@@ -96,14 +105,14 @@ class ResourceLibraryTests(TestCase):
 
     def test_edit_folder_details(self):
         root = ResourceFolder.get_library_root()
-        folder = root.add_child(instance=ResourceFolder(name="Circular 12"))
+        folder = root.add_child(instance=ResourceFolder(name="Science Guide"))
 
         response = self.client.post(
             reverse("resource_library:edit_folder", args=[folder.pk]),
             {
-                "name": "Circular 12/2026",
-                "description": "School fee guidance",
-                "resource_type": "circular",
+                "name": "Primary Science Teacher Guide",
+                "description": "Hands-on activities for the primary science kit",
+                "resource_type": "teacher_guide",
                 "revision_date": "2026-01-15",
             },
         )
@@ -111,13 +120,13 @@ class ResourceLibraryTests(TestCase):
             response, reverse("resource_library:folder", args=[folder.pk])
         )
         folder.refresh_from_db()
-        self.assertEqual(folder.name, "Circular 12/2026")
-        self.assertEqual(folder.resource_type, "circular")
+        self.assertEqual(folder.name, "Primary Science Teacher Guide")
+        self.assertEqual(folder.resource_type, "teacher_guide")
         self.assertEqual(str(folder.revision_date), "2026-01-15")
 
     def test_upload_separate_creates_resource_per_file(self):
         root = ResourceFolder.get_library_root()
-        category = root.add_child(instance=ResourceFolder(name="Circulars 2026"))
+        category = root.add_child(instance=ResourceFolder(name="Workbooks 2026"))
 
         response = self.client.post(
             reverse("resource_library:upload", args=[category.pk]),
@@ -128,8 +137,8 @@ class ResourceLibraryTests(TestCase):
                 ],
                 "mode": "separate",
                 "language": "en",
-                "description": "Official circular",
-                "resource_type": "circular",
+                "description": "Practice workbook",
+                "resource_type": "workbook",
             },
         )
         self.assertRedirects(
@@ -143,8 +152,8 @@ class ResourceLibraryTests(TestCase):
         for name in ("Fee guidance", "Term dates"):
             folder = ResourceFolder.objects.get(name=name)
             self.assertEqual(folder.get_parent().pk, category.pk)
-            self.assertEqual(folder.description, "Official circular")
-            self.assertEqual(folder.resource_type, "circular")
+            self.assertEqual(folder.description, "Practice workbook")
+            self.assertEqual(folder.resource_type, "workbook")
             resource = folder.resources.get()
             self.assertEqual(resource.label, name)
             self.assertEqual(resource.language, "en")
@@ -163,7 +172,7 @@ class ResourceLibraryTests(TestCase):
     def test_upload_add_to_resource_folder(self):
         root = ResourceFolder.get_library_root()
         folder = root.add_child(
-            instance=ResourceFolder(name="Annual Report", resource_type="report")
+            instance=ResourceFolder(name="Annual Report", resource_type="workbook")
         )
         add_file(folder, "report.txt")
 
@@ -444,7 +453,7 @@ class ResourceLibraryTests(TestCase):
             instance=ResourceFolder(
                 name="Annual Report 2025",
                 description="Yearly report",
-                resource_type="report",
+                resource_type="assessment",
             )
         )
         add_file(page, "report.txt", label="Full report")
@@ -475,7 +484,7 @@ class ResourceLibraryTests(TestCase):
 
         page_data = result.data["resourcePage"]
         self.assertEqual(page_data["name"], "Annual Report 2025")
-        self.assertEqual(page_data["resourceType"], "report")
+        self.assertEqual(page_data["resourceType"], "assessment")
         self.assertEqual(page_data["fileCount"], 2)
         labels = [f["displayLabel"] for f in page_data["resources"]]
         self.assertIn("Full report", labels)
@@ -568,3 +577,295 @@ class ResourceLibraryPermissionTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)  # denied -> admin redirect
         self.assertFalse(ResourceFolder.objects.filter(name="Reports").exists())
+
+
+class CurriculumFacetTests(TestCase):
+    """
+    The curriculum facets (level, subject, year levels, topics) are what the
+    public explorer filters on, so they have to survive both the folder form
+    and a bulk upload — the two places editors actually set them.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        # Seeded by migration 0016
+        self.primary = EducationLevel.objects.get(slug="primary")
+        self.junior = EducationLevel.objects.get(slug="junior-secondary")
+        self.maths = Subject.objects.get(slug="mathematics")
+        self.y1 = YearLevel.objects.get(slug="y1")
+        self.y2 = YearLevel.objects.get(slug="y2")
+        self.f1 = YearLevel.objects.get(slug="f1")
+
+    def test_vocabulary_seeded(self):
+        self.assertEqual(EducationLevel.objects.count(), 4)
+        self.assertEqual(YearLevel.objects.count(), 12)
+        self.assertEqual(Subject.objects.count(), 10)
+        # Early childhood is classified by level only — no years
+        self.assertFalse(
+            YearLevel.objects.filter(level__slug="early-childhood").exists()
+        )
+        # Subjects are scoped to the levels they're taught at
+        self.assertNotIn(
+            self.primary, Subject.objects.get(slug="business-studies").levels.all()
+        )
+
+    def test_folder_form_saves_facets(self):
+        root = ResourceFolder.get_library_root()
+        folder = root.add_child(instance=ResourceFolder(name="Numeracy Workbook"))
+
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            {
+                "name": "Numeracy Workbook",
+                "resource_type": "workbook",
+                "level": self.primary.pk,
+                "subject": self.maths.pk,
+                "year_levels": [self.y1.pk, self.y2.pk],
+                "topics": "numeracy, early grade",
+            },
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[folder.pk])
+        )
+        folder.refresh_from_db()
+        self.assertEqual(folder.level, self.primary)
+        self.assertEqual(folder.subject, self.maths)
+        self.assertEqual(
+            sorted(folder.year_levels.values_list("slug", flat=True)), ["y1", "y2"]
+        )
+        self.assertEqual(
+            sorted(folder.topics.names()), ["early grade", "numeracy"]
+        )
+
+    def test_year_levels_must_belong_to_level(self):
+        root = ResourceFolder.get_library_root()
+        folder = root.add_child(instance=ResourceFolder(name="Mismatched"))
+
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            {
+                "name": "Mismatched",
+                "level": self.primary.pk,
+                "year_levels": [self.f1.pk],  # Form 1 is junior secondary
+            },
+        )
+        self.assertEqual(response.status_code, 200)  # re-rendered with errors
+        self.assertFormError(
+            response.context["form"],
+            "year_levels",
+            "Form 1 does not belong to Primary.",
+        )
+        folder.refresh_from_db()
+        self.assertIsNone(folder.level)
+
+    def test_upload_applies_facets_to_each_resource(self):
+        root = ResourceFolder.get_library_root()
+        category = root.add_child(instance=ResourceFolder(name="Year 1 Maths"))
+
+        response = self.client.post(
+            reverse("resource_library:upload", args=[category.pk]),
+            {
+                "files": [
+                    SimpleUploadedFile("Counting.txt", b"one"),
+                    SimpleUploadedFile("Shapes.txt", b"two"),
+                ],
+                "mode": "separate",
+                "language": "en",
+                "resource_type": "workbook",
+                "level": self.primary.pk,
+                "subject": self.maths.pk,
+                "year_levels": [self.y1.pk],
+                "topics": "numeracy",
+            },
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[category.pk])
+        )
+
+        for name in ("Counting", "Shapes"):
+            folder = ResourceFolder.objects.get(name=name)
+            self.assertEqual(folder.level, self.primary)
+            self.assertEqual(folder.subject, self.maths)
+            self.assertEqual(list(folder.year_levels.all()), [self.y1])
+            self.assertEqual(list(folder.topics.names()), ["numeracy"])
+
+    def test_last_updated_prefers_revision_date(self):
+        root = ResourceFolder.get_library_root()
+        folder = root.add_child(instance=ResourceFolder(name="Dated"))
+        # Falls back to the CMS timestamp while revision_date is unset
+        self.assertEqual(folder.last_updated, folder.updated_at.date())
+
+        folder.revision_date = date(2026, 3, 10)
+        folder.save()
+        self.assertEqual(folder.last_updated, date(2026, 3, 10))
+
+
+class CurriculumGraphQLTests(TestCase):
+    def setUp(self):
+        self.primary = EducationLevel.objects.get(slug="primary")
+        self.maths = Subject.objects.get(slug="mathematics")
+        self.english = Subject.objects.get(slug="english")
+        self.y1 = YearLevel.objects.get(slug="y1")
+        self.y3 = YearLevel.objects.get(slug="y3")
+
+        root = ResourceFolder.get_library_root()
+        self.maths_page = root.add_child(
+            instance=ResourceFolder(
+                name="Numeracy Workbook",
+                resource_type="workbook",
+                level=self.primary,
+                subject=self.maths,
+            )
+        )
+        self.maths_page.year_levels.set([self.y1])
+        self.maths_page.topics.add("numeracy")
+        add_file(self.maths_page, "workbook.txt")
+
+        self.english_page = root.add_child(
+            instance=ResourceFolder(
+                name="Literacy Teacher Guide",
+                resource_type="teacher_guide",
+                level=self.primary,
+                subject=self.english,
+            )
+        )
+        self.english_page.year_levels.set([self.y1, self.y3])
+        add_file(self.english_page, "guide.txt")
+
+    def execute(self, query, **variables):
+        from grapple.schema import schema
+
+        result = schema.execute(query, variables=variables or None)
+        self.assertIsNone(result.errors)
+        return result.data
+
+    def test_vocabulary_queries(self):
+        data = self.execute(
+            """
+            {
+                educationLevels { slug name }
+                yearLevels(level: "primary") { slug label levelSlug }
+                subjects(level: "senior-secondary") { slug }
+            }
+            """
+        )
+        # Ordered by the `order` field, not alphabetically
+        self.assertEqual(
+            [lvl["slug"] for lvl in data["educationLevels"]],
+            ["early-childhood", "primary", "junior-secondary", "senior-secondary"],
+        )
+        self.assertEqual(
+            [y["slug"] for y in data["yearLevels"]],
+            ["y1", "y2", "y3", "y4", "y5", "y6"],
+        )
+        self.assertEqual(data["yearLevels"][0]["levelSlug"], "primary")
+        subject_slugs = [s["slug"] for s in data["subjects"]]
+        self.assertIn("business-studies", subject_slugs)
+        self.assertNotIn("arts-crafts", subject_slugs)
+
+    def test_resource_page_exposes_facets(self):
+        data = self.execute(
+            """
+            {
+                resourcePage(slug: "numeracy-workbook") {
+                    level { slug name }
+                    subject { slug }
+                    yearLevels { slug }
+                    topics { name }
+                    lastUpdated
+                }
+            }
+            """
+        )
+        page = data["resourcePage"]
+        self.assertEqual(page["level"]["slug"], "primary")
+        self.assertEqual(page["subject"]["slug"], "mathematics")
+        self.assertEqual([y["slug"] for y in page["yearLevels"]], ["y1"])
+        self.assertEqual([t["name"] for t in page["topics"]], ["numeracy"])
+        self.assertTrue(page["lastUpdated"])
+
+    def test_resource_pages_filters(self):
+        def slugs(**args):
+            arg_str = ", ".join(f'{k}: "{v}"' for k, v in args.items())
+            selector = f"resourcePages({arg_str})" if arg_str else "resourcePages"
+            data = self.execute("{ %s { slug } }" % selector)
+            return sorted(p["slug"] for p in data["resourcePages"])
+
+        self.assertEqual(
+            slugs(), ["literacy-teacher-guide", "numeracy-workbook"]
+        )
+        self.assertEqual(slugs(subject="mathematics"), ["numeracy-workbook"])
+        self.assertEqual(slugs(resourceType="teacher_guide"), ["literacy-teacher-guide"])
+        self.assertEqual(slugs(topic="numeracy"), ["numeracy-workbook"])
+        self.assertEqual(slugs(yearLevel="y3"), ["literacy-teacher-guide"])
+        self.assertEqual(slugs(level="junior-secondary"), [])
+        # A resource spanning several years matches each of them, once
+        self.assertEqual(slugs(yearLevel="y1"), ["literacy-teacher-guide", "numeracy-workbook"])
+        # Search covers name and description
+        self.assertEqual(slugs(search="numeracy"), ["numeracy-workbook"])
+        # Filters compose
+        self.assertEqual(slugs(level="primary", subject="english"), ["literacy-teacher-guide"])
+
+    def test_url_path_and_type_labels(self):
+        data = self.execute(
+            """
+            {
+                resourcePage(slug: "numeracy-workbook") {
+                    urlPath
+                    resourceTypeDisplay
+                }
+                resourceTypes { value label }
+            }
+            """
+        )
+        # Links have to carry the whole path from the library root — the
+        # frontend catch-all resolves folders by path, not by slug
+        self.assertEqual(data["resourcePage"]["urlPath"], "/resources/numeracy-workbook/")
+        self.assertEqual(data["resourcePage"]["resourceTypeDisplay"], "Workbook")
+        types = {t["value"]: t["label"] for t in data["resourceTypes"]}
+        self.assertEqual(types["teacher_guide"], "Teacher Guide")
+        self.assertNotIn("policy", types)
+
+    def test_url_path_includes_ancestors(self):
+        root = ResourceFolder.get_library_root()
+        category = root.add_child(instance=ResourceFolder(name="Primary"))
+        nested = category.add_child(instance=ResourceFolder(name="Year 1 English"))
+        add_file(nested, "unit.txt")
+
+        data = self.execute(
+            '{ resourcePage(slug: "year-1-english") { urlPath } }'
+        )
+        self.assertEqual(
+            data["resourcePage"]["urlPath"], "/resources/primary/year-1-english/"
+        )
+
+    def test_ancestor_folders_exclude_the_library_root(self):
+        root = ResourceFolder.get_library_root()
+        category = root.add_child(instance=ResourceFolder(name="Primary"))
+        year = category.add_child(instance=ResourceFolder(name="Year 1"))
+        page = year.add_child(instance=ResourceFolder(name="Counting Unit"))
+        add_file(page, "unit.txt")
+
+        data = self.execute(
+            '{ resourcePage(slug: "counting-unit") { ancestorFolders { name } } }'
+        )
+        # Outermost first, and the library root is a container rather than a
+        # location — breadcrumbs shouldn't show it
+        self.assertEqual(
+            [a["name"] for a in data["resourcePage"]["ancestorFolders"]],
+            ["Primary", "Year 1"],
+        )
+
+    def test_top_level_resource_page_has_no_ancestors(self):
+        root = ResourceFolder.get_library_root()
+        page = root.add_child(instance=ResourceFolder(name="Standalone"))
+        add_file(page, "doc.txt")
+
+        data = self.execute(
+            '{ resourcePage(slug: "standalone") { ancestorFolders { name } urlPath } }'
+        )
+        self.assertEqual(data["resourcePage"]["ancestorFolders"], [])
+        self.assertEqual(data["resourcePage"]["urlPath"], "/resources/standalone/")

@@ -1,6 +1,6 @@
 import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
-import type { Grade, Subject } from "@/app/lib/curriculum";
+import type { Subject, YearLevel } from "@/lib/curriculum";
 
 function intensityClass(count: number): string {
   if (count === 0) return "";
@@ -11,14 +11,14 @@ function intensityClass(count: number): string {
 
 export function CoverageMap({
   subjects,
-  grades,
+  yearLevels,
   countFor,
   onCellClick,
 }: {
   subjects: Subject[];
-  grades: Grade[];
-  countFor: (subjectId: string, gradeId: string) => number;
-  onCellClick: (subjectId: string, gradeId: string) => void;
+  yearLevels: YearLevel[];
+  countFor: (subjectSlug: string, yearLevelSlug: string) => number;
+  onCellClick: (subjectSlug: string, yearLevelSlug: string) => void;
 }) {
   return (
     <div className="relative">
@@ -26,7 +26,7 @@ export function CoverageMap({
           screen, so call out that it scrolls sideways */}
       <p className="mb-2 flex items-center gap-1.5 text-xs text-muted sm:hidden">
         <Icon name="arrow" className="h-3.5 w-3.5" />
-        Swipe to see more subjects and grades
+        Swipe to see more subjects and year levels
       </p>
 
       <div className="relative overflow-hidden rounded-2xl border border-border">
@@ -37,9 +37,9 @@ export function CoverageMap({
                 <th className="sticky left-0 z-10 min-w-28 bg-surface px-3 py-3 font-semibold text-foreground sm:min-w-50 sm:px-5">
                   Subject
                 </th>
-                {grades.map((g) => (
+                {yearLevels.map((g) => (
                   <th
-                    key={g.id}
+                    key={g.slug}
                     scope="col"
                     className="px-2 py-3 text-center font-semibold text-foreground sm:px-3"
                   >
@@ -50,21 +50,21 @@ export function CoverageMap({
             </thead>
             <tbody className="divide-y divide-border">
               {subjects.map((s) => (
-                <tr key={s.id} className="bg-background">
+                <tr key={s.slug} className="bg-background">
                   <th
                     scope="row"
                     className="sticky left-0 z-10 bg-background px-3 py-3 text-left font-medium text-foreground sm:px-5"
                   >
                     {s.name}
                   </th>
-                  {grades.map((g) => {
-                    const count = countFor(s.id, g.id);
+                  {yearLevels.map((g) => {
+                    const count = countFor(s.slug, g.slug);
                     return (
-                      <td key={g.id} className="px-2 py-2 text-center sm:px-3">
+                      <td key={g.slug} className="px-2 py-2 text-center sm:px-3">
                         {count > 0 ? (
                           <button
                             type="button"
-                            onClick={() => onCellClick(s.id, g.id)}
+                            onClick={() => onCellClick(s.slug, g.slug)}
                             className={cn(
                               "inline-flex h-8 w-8 items-center justify-center rounded-lg font-mono text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:h-9 sm:w-9",
                               intensityClass(count)

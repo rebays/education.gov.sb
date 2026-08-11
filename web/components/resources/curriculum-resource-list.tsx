@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { ResourceCard, type ResourceCardProps } from "@/components/ui/resource-card";
-import type { CurriculumResource, Grade, ResourceType } from "@/app/lib/curriculum";
+import {
+  formatUpdated,
+  type CurriculumResource,
+  type YearLevel,
+} from "@/lib/curriculum";
 import { cn } from "@/lib/utils";
 
-/** Deterministic portrait cover sourced from picsum.photos so a resource's cover stays put across re-renders. */
-function coverImageFor(id: string): string {
-  return `https://picsum.photos/seed/${encodeURIComponent(id)}/500/750`;
-}
+const FALLBACK_COVER = "/cat-resources.jpg";
 
 /** Dewey-flavoured base number per subject, used to build a catalog-style call number. */
 const deweyBySubject: Record<string, number> = {
@@ -24,60 +25,95 @@ const deweyBySubject: Record<string, number> = {
   agriculture: 630,
 };
 
-const typeCode: Record<ResourceType, string> = {
-  Syllabus: "SYL",
-  "Teacher Guide": "TCH",
-  Workbook: "WBK",
-  Assessment: "ASM",
-  Video: "VID",
-  "Print Pack": "PRT",
+const typeCodes: Record<string, string> = {
+  syllabus: "SYL",
+  teacher_guide: "TCH",
+  workbook: "WBK",
+  assessment: "ASM",
+  video: "VID",
+  print_pack: "PRT",
+  other: "GEN",
 };
 
-/** `530.076 TCH F4` — subject Dewey number, ".076" (curricula), resource type, grade. */
+/**
+ * `530.076 TCH Y4` — subject Dewey number, ".076" (curricula), resource type,
+ * year level. Falls back gracefully when a resource isn't fully classified,
+ * since every curriculum facet in the CMS is optional.
+ */
 function callNumberFor(resource: CurriculumResource): string {
-  const base = deweyBySubject[resource.subjectId] ?? 0;
-  return `${base}.076 ${typeCode[resource.type]} ${resource.gradeId.toUpperCase()}`;
+  const base = resource.subjectSlug ? (deweyBySubject[resource.subjectSlug] ?? 0) : 0;
+  const code = typeCodes[resource.type] ?? "GEN";
+  const year = resource.yearLevelSlugs[0]?.toUpperCase() ?? "";
+  return `${base}.076 ${code}${year ? ` ${year}` : ""}`;
 }
 
-function toCardProps(resource: CurriculumResource, grade: Grade | undefined): ResourceCardProps {
-  const gradeLabel = grade?.label ?? resource.gradeId;
-  const href = `/resources/curriculum/${resource.id}`;
-  const meta = `${gradeLabel} · Updated ${resource.updated} · ${resource.format} · ${resource.size}`;
+function yearLabelFor(resource: CurriculumResource, yearLevels: YearLevel[]): string {
+  const labels = resource.yearLevelSlugs
+    .map((slug) => yearLevels.find((y) => y.slug === slug)?.label)
+    .filter((label): label is string => Boolean(label));
+  if (labels.length === 0) return "";
+  // A guide spanning Y1–Y3 reads better as a range than a list
+  if (labels.length > 2) return `${labels[0]} – ${labels[labels.length - 1]}`;
+  return labels.join(", ");
+}
 
-  if (resource.type === "Video") {
+function toCardProps(
+  resource: CurriculumResource,
+  yearLevels: YearLevel[],
+): ResourceCardProps {
+  const meta = [
+    yearLabelFor(resource, yearLevels),
+    resource.updated ? `Updated ${formatUpdated(resource.updated)}` : "",
+    resource.format,
+    resource.size,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const badges = resource.typeLabel
+    ? [
+        {
+          label: resource.typeLabel,
+          tone: resource.type === "assessment" ? ("accent" as const) : ("primary" as const),
+        },
+      ]
+    : [];
+
+  if (resource.isVideo) {
     return {
       variant: "video",
-      duration: resource.duration ?? "",
+      duration: "",
       title: resource.title,
       description: resource.summary,
       meta,
-      badges: [{ label: "Video", tone: "primary" as const }],
-      href,
+      badges,
+      href: resource.href,
     };
   }
 
-  const isAssessment = resource.type === "Assessment";
   return {
     variant: "textbook",
-    image: coverImageFor(resource.id),
+    // The folder's OG image doubles as the shelf cover; most resources
+    // won't have one, so fall back to the generic library artwork.
+    image: resource.coverImage ?? FALLBACK_COVER,
     callNumber: callNumberFor(resource),
     title: resource.title,
     description: resource.summary,
     meta,
-    badges: [{ label: resource.type, tone: isAssessment ? "accent" : ("primary" as const) }],
-    href,
+    badges,
+    href: resource.href,
   };
 }
 
 export function CurriculumResourceList({
   resources,
-  grades,
+  yearLevels,
 }: {
   resources: CurriculumResource[];
-  grades: Grade[];
+  yearLevels: YearLevel[];
 }) {
-  const documents = resources.filter((r) => r.type !== "Video");
-  const videos = resources.filter((r) => r.type === "Video");
+  const documents = resources.filter((r) => !r.isVideo);
+  const videos = resources.filter((r) => r.isVideo);
 
   const [tab, setTab] = useState<"documents" | "videos">(
     documents.length > 0 ? "documents" : "videos"
@@ -136,7 +172,7 @@ export function CurriculumResourceList({
               key={r.id}
               className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-300"
               style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-              {...toCardProps(r, grades.find((g) => g.id === r.gradeId))}
+              {...toCardProps(r, yearLevels)}
             />
           ))}
         </div>
@@ -147,7 +183,7 @@ export function CurriculumResourceList({
               key={r.id}
               className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-300"
               style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
-              {...toCardProps(r, grades.find((g) => g.id === r.gradeId))}
+              {...toCardProps(r, yearLevels)}
             />
           ))}
         </div>

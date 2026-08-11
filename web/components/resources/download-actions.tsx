@@ -1,20 +1,29 @@
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
 /**
- * Download stays a styled stand-in (no real file store wired up yet, so
- * no onClick).
+ * Downloads the selected file straight from media storage. `download` asks
+ * the browser to save rather than navigate, and carries the resource's own
+ * label so the saved file isn't named after an opaque storage path.
  */
 export function DownloadActions({
   resource,
 }: {
-  resource: { format: string; size: string };
+  resource: { format: string; size: string; url: string; filename: string };
 }) {
   return (
-    <Button size="lg" className="w-full">
+    <a
+      href={resource.url}
+      download={resource.filename}
+      aria-label={`Download ${resource.filename} (${resource.format}${resource.size ? `, ${resource.size}` : ""})`}
+      className={cn(buttonVariants({ size: "lg" }), "w-full")}
+    >
       <Icon name="download" className="h-4 w-4" />
       Download {resource.format}
-      <span className="font-normal opacity-75">· {resource.size}</span>
-    </Button>
+      {resource.size && (
+        <span className="font-normal opacity-75">· {resource.size}</span>
+      )}
+    </a>
   );
 }

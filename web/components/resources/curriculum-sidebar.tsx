@@ -9,7 +9,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import type { Grade, ResourceType, Subject } from "@/app/lib/curriculum";
+import type {
+  CurriculumFilters,
+  ResourceTypeChoice,
+  Subject,
+  YearLevel,
+} from "@/lib/curriculum";
 
 function FilterSelect<T extends string>({
   id,
@@ -48,17 +53,10 @@ function FilterSelect<T extends string>({
   );
 }
 
-export type CurriculumFilters = {
-  type: ResourceType | null;
-  subjectId: string | null;
-  gradeId: string | null;
-  query: string;
-};
-
 export function CurriculumSidebar({
   resourceTypes,
   subjects,
-  grades,
+  yearLevels,
   filters,
   onFilterChange,
   onReset,
@@ -66,9 +64,9 @@ export function CurriculumSidebar({
   onBackToList,
   isMapOpen = false,
 }: {
-  resourceTypes: ResourceType[];
+  resourceTypes: ResourceTypeChoice[];
   subjects: Subject[];
-  grades: Grade[];
+  yearLevels: YearLevel[];
   filters: CurriculumFilters;
   onFilterChange: (patch: Partial<CurriculumFilters>) => void;
   onReset: () => void;
@@ -77,7 +75,8 @@ export function CurriculumSidebar({
   /** Coverage Map is currently shown — swaps the button into a "back" toggle. */
   isMapOpen?: boolean;
 }) {
-  const hasActiveFilters = filters.type || filters.subjectId || filters.gradeId || filters.query;
+  const hasActiveFilters =
+    filters.type || filters.subjectSlug || filters.yearLevelSlug || filters.query;
 
   return (
     <aside className="hidden w-full shrink-0 flex-col gap-5 lg:sticky lg:top-24 lg:flex lg:w-64 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto">
@@ -123,29 +122,35 @@ export function CurriculumSidebar({
       <FilterSelect
         id="filter-resource-type"
         label="Resource type"
-        options={resourceTypes}
+        options={resourceTypes.map((t) => t.value)}
         active={filters.type}
         onChange={(type) => onFilterChange({ type })}
-        optionLabel={(t) => t}
+        optionLabel={(value) =>
+          resourceTypes.find((t) => t.value === value)?.label ?? value
+        }
       />
 
       <FilterSelect
         id="filter-subject"
         label="Subject"
-        options={subjects.map((s) => s.id)}
-        active={filters.subjectId}
-        onChange={(subjectId) => onFilterChange({ subjectId })}
-        optionLabel={(id) => subjects.find((s) => s.id === id)?.name ?? id}
+        options={subjects.map((s) => s.slug)}
+        active={filters.subjectSlug}
+        onChange={(subjectSlug) => onFilterChange({ subjectSlug })}
+        optionLabel={(slug) => subjects.find((s) => s.slug === slug)?.name ?? slug}
       />
 
-      <FilterSelect
-        id="filter-grade"
-        label="Grade / year level"
-        options={grades.map((g) => g.id)}
-        active={filters.gradeId}
-        onChange={(gradeId) => onFilterChange({ gradeId })}
-        optionLabel={(id) => grades.find((g) => g.id === id)?.label ?? id}
-      />
+      {yearLevels.length > 0 && (
+        <FilterSelect
+          id="filter-year-level"
+          label="Grade / year level"
+          options={yearLevels.map((y) => y.slug)}
+          active={filters.yearLevelSlug}
+          onChange={(yearLevelSlug) => onFilterChange({ yearLevelSlug })}
+          optionLabel={(slug) =>
+            yearLevels.find((y) => y.slug === slug)?.label ?? slug
+          }
+        />
+      )}
 
       <Button
         variant="secondary"

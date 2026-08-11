@@ -5,7 +5,31 @@ from django.core.validators import FileExtensionValidator
 from django.template.defaultfilters import filesizeformat
 from wagtail.admin.widgets import AdminDateInput
 
-from .models import Resource, ResourceFolder, is_video_filename
+from .models import (
+    EducationLevel,
+    Resource,
+    ResourceFolder,
+    Subject,
+    YearLevel,
+    is_video_filename,
+)
+
+
+def validate_year_levels_match_level(level, year_levels):
+    """
+    Curriculum facets have to agree: a folder set to Primary can't be tagged
+    Form 3. Shared by the folder and upload forms, which both collect the
+    pair. Returns an error message, or None when consistent.
+    """
+    if not level or not year_levels:
+        return None
+    mismatched = [y.label for y in year_levels if y.level_id != level.pk]
+    if not mismatched:
+        return None
+    return (
+        f"{', '.join(mismatched)} "
+        f"{'does' if len(mismatched) == 1 else 'do'} not belong to {level.name}."
+    )
 
 
 class FolderForm(forms.ModelForm):
@@ -21,12 +45,17 @@ class FolderForm(forms.ModelForm):
             "name",
             "description",
             "resource_type",
+            "level",
+            "subject",
+            "year_levels",
+            "topics",
             "revision_date",
             "meta_description",
             "canonical_url",
         ]
         widgets = {
             "description": forms.Textarea(attrs={"rows": 3}),
+            "year_levels": forms.CheckboxSelectMultiple,
             "revision_date": AdminDateInput,
             "meta_description": forms.Textarea(attrs={"rows": 2}),
             "canonical_url": forms.URLInput(attrs={"placeholder": "https://example.com/resources/page/"}),
@@ -34,6 +63,15 @@ class FolderForm(forms.ModelForm):
         help_texts = {
             "description": "Shown on the resource page once this folder has files.",
         }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        error = validate_year_levels_match_level(
+            cleaned_data.get("level"), cleaned_data.get("year_levels")
+        )
+        if error:
+            self.add_error("year_levels", error)
+        return cleaned_data
 
 
 
@@ -141,11 +179,55 @@ class UploadForm(forms.Form):
         required=False,
         help_text="Applied to each new resource; ignored when adding files to this folder.",
     )
+    # Curriculum facets, collected here so a bulk upload lands fully
+    # classified and shows up in the frontend explorer's filters straight
+    # away — rather than needing every folder reopened afterwards.
+    level = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        help_text="Applied to each new resource; ignored when adding files to this folder.",
+    )
+    subject = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        help_text="Applied to each new resource; ignored when adding files to this folder.",
+    )
+    year_levels = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        help_text="Applied to each new resource; ignored when adding files to this folder.",
+    )
+    topics = forms.CharField(
+        required=False,
+        help_text="Comma-separated keywords applied to each new resource.",
+    )
     revision_date = forms.DateField(
         required=False,
         widget=AdminDateInput,
         help_text="Applied to each new resource; ignored when adding files to this folder.",
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set at runtime rather than import time so the querysets aren't
+        # evaluated before migrations have created the tables.
+        self.fields["level"].queryset = EducationLevel.objects.all()
+        self.fields["subject"].queryset = Subject.objects.all()
+        self.fields["year_levels"].queryset = YearLevel.objects.select_related("level")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        error = validate_year_levels_match_level(
+            cleaned_data.get("level"), cleaned_data.get("year_levels")
+        )
+        if error:
+            self.add_error("year_levels", error)
+        return cleaned_data
+
+    def clean_topics(self):
+        raw = self.cleaned_data.get("topics", "")
+        return [t.strip() for t in raw.split(",") if t.strip()]
 
 
 class ResourceForm(forms.ModelForm):
