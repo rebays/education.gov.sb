@@ -170,6 +170,21 @@ class ResourceFolder(index.Indexed, MP_Node):
         help_text="Used in the resource page's public URL; generated from the name if left blank",
     )
     description = models.TextField(blank=True)
+    lead = models.TextField(
+        blank=True,
+        help_text=(
+            "Short intro shown in the resource page header. "
+            "Leave blank to use the description."
+        ),
+    )
+    cover_image = models.ForeignKey(
+        "wagtailimages.Image",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+        help_text="Cover shown on the resource card in the explorer.",
+    )
     meta_description = models.CharField(
         max_length=160,
         blank=True,
@@ -196,10 +211,12 @@ class ResourceFolder(index.Indexed, MP_Node):
         blank=True,
         default="",
     )
-    revision_date = models.DateField(
+    published_date = models.DateField(
         null=True,
         blank=True,
-        help_text="Date of the current revision of this resource",
+        help_text=(
+            "Date this resource was published. Defaults to the upload date."
+        ),
     )
     order = models.PositiveIntegerField(
         default=0,
@@ -263,13 +280,16 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLString("name"),
         GraphQLString("slug"),
         GraphQLString("description"),
+        GraphQLString("lead"),
+        GraphQLString("display_lead"),
+        GraphQLImage("cover_image"),
         GraphQLString("meta_description"),
         GraphQLString("canonical_url"),
         GraphQLString("resource_type"),
         GraphQLString("resource_type_display"),
         GraphQLString("url_path"),
         GraphQLImage("og_image"),
-        GraphQLString("revision_date"),
+        GraphQLString("published_date"),
         GraphQLInt("order"),
         GraphQLInt("file_count"),
         GraphQLString("resource_index_page_slug"),
@@ -333,6 +353,14 @@ class ResourceFolder(index.Indexed, MP_Node):
         return None
 
     @property
+    def display_lead(self):
+        """
+        Text for the resource page header. Falls back to the description so
+        the hero is never empty on resources that predate the lead field.
+        """
+        return self.lead or self.description
+
+    @property
     def ancestor_folders(self):
         """
         Folders between the library root and this one, outermost first. The
@@ -360,18 +388,18 @@ class ResourceFolder(index.Indexed, MP_Node):
     @property
     def last_updated(self):
         """
-        Date the explorer sorts and labels by. The editor's `revision_date`
+        Date the explorer sorts and labels by. The editor's `published_date`
         wins when set — it describes the material, not the CMS record —
         otherwise fall back to when the folder was last touched.
         """
-        return self.revision_date or self.updated_at.date()
+        return self.published_date or self.updated_at.date()
 
 
 class Resource(index.Indexed, models.Model):
     """
     A file in the resource library. Page-level metadata (slug, description,
     type, revision date) lives on the containing ResourceFolder; the file
-    carries only its own label and language. Files are served directly from
+    carries only its own label. Files are served directly from
     media storage via `file.url`.
     """
 
@@ -384,12 +412,6 @@ class Resource(index.Indexed, models.Model):
         help_text="Shown as the download name; prefilled from the filename",
     )
     file = models.FileField(upload_to="resources", max_length=255)
-    language = models.CharField(
-        max_length=10,
-        blank=True,
-        default="en",
-        help_text="ISO language code, e.g. en, fr, de",
-    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     published_date = models.DateField(
         null=True,
@@ -421,13 +443,11 @@ class Resource(index.Indexed, models.Model):
         index.SearchField("label"),
         index.AutocompleteField("label"),
         index.FilterField("folder"),
-        index.FilterField("language"),
     ]
 
     graphql_fields = [
         GraphQLString("label"),
         GraphQLString("display_label"),
-        GraphQLString("language"),
         GraphQLString("url"),
         GraphQLString("filename"),
         GraphQLString("file_extension"),

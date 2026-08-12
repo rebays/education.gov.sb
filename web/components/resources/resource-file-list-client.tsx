@@ -104,10 +104,6 @@ export function ResourceFileListClient({ files }: ResourceFileListClientProps) {
                   <dd className="font-medium">{selectedFile.pages}</dd>
                 </div>
               )}
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Language</dt>
-                <dd className="font-medium">{selectedFile.language || "EN"}</dd>
-              </div>
             </dl>
 
             {/* Download Button */}

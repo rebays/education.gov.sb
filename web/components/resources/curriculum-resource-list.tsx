@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ResourceCard, type ResourceCardProps } from "@/components/ui/resource-card";
 import {
   formatUpdated,
+  formatYearLevelRange,
   type CurriculumResource,
   type YearLevel,
 } from "@/lib/curriculum";
@@ -51,10 +52,7 @@ function yearLabelFor(resource: CurriculumResource, yearLevels: YearLevel[]): st
   const labels = resource.yearLevelSlugs
     .map((slug) => yearLevels.find((y) => y.slug === slug)?.label)
     .filter((label): label is string => Boolean(label));
-  if (labels.length === 0) return "";
-  // A guide spanning Y1–Y3 reads better as a range than a list
-  if (labels.length > 2) return `${labels[0]} – ${labels[labels.length - 1]}`;
-  return labels.join(", ");
+  return formatYearLevelRange(labels);
 }
 
 function toCardProps(

@@ -6,8 +6,13 @@ export type ResourcePage = {
   name: string;
   slug: string;
   description: string;
+  displayLead: string;
+  coverImage?: { url: string } | null;
   resourceType: string;
-  revisionDate?: string;
+  resourceTypeDisplay: string;
+  publishedDate?: string | null;
+  subject?: { name: string } | null;
+  yearLevels: { label: string }[];
   order: number;
   fileCount: number;
   children: ResourceSubfolder[];

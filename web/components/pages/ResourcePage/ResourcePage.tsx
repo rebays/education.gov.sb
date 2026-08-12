@@ -24,7 +24,7 @@ export default function ResourcePage({
       <PageHeader
         id={`resource-folder-${page.id}`}
         title={page.name}
-        lead={page.description || ""}
+        lead={page.displayLead}
         crumbs={[
           { label: "Resources", href: indexPath },
           // Ancestors are CMS-side organisation, not public pages — their
@@ -40,6 +40,10 @@ export default function ResourcePage({
           files={page.resources}
           folderDescription={page.description}
           folderName={page.name}
+          subject={page.subject?.name}
+          yearLevelLabels={page.yearLevels.map((y) => y.label)}
+          typeLabel={page.resourceTypeDisplay}
+          publishedDate={page.publishedDate}
         />
       </main>
 

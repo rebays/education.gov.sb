@@ -5,10 +5,21 @@ const GET_RESOURCE_FOLDER = `
       name
       slug
       description
+      displayLead
+      coverImage {
+        url
+      }
       metaDescription
       canonicalUrl
       resourceType
-      revisionDate
+      resourceTypeDisplay
+      publishedDate
+      subject {
+        name
+      }
+      yearLevels {
+        label
+      }
       order
       fileCount
       resourceIndexPageSlug
@@ -33,7 +44,6 @@ const GET_RESOURCE_FOLDER = `
         fileExtension
         isVideo
         fileSize
-        language
         office
         publishedDate
         pages
@@ -51,7 +61,6 @@ export interface ResourceFile {
   fileExtension: string;
   isVideo: boolean;
   fileSize?: number;
-  language: string;
   office?: string;
   publishedDate?: string;
   pages?: number;
@@ -81,10 +90,16 @@ export interface ResourceFolderData {
   name: string;
   slug: string;
   description: string;
+  /** Hero text: the folder's lead, falling back to its description. */
+  displayLead: string;
+  coverImage?: { url: string } | null;
   metaDescription?: string;
   canonicalUrl?: string;
   resourceType: string;
-  revisionDate?: string;
+  resourceTypeDisplay: string;
+  publishedDate?: string | null;
+  subject?: { name: string } | null;
+  yearLevels: { label: string }[];
   order: number;
   fileCount: number;
   resourceIndexPageSlug?: string;

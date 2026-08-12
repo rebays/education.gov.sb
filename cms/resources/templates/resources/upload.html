@@ -3,6 +3,19 @@
 
 {% block titletag %}Upload files | Resource Library{% endblock %}
 
+{% block extra_css %}
+    {{ block.super }}
+    {{ form.media.css }}
+{% endblock %}
+
+{# AdminDateInput renders a plain text input plus an inline initDateChooser()
+   call; without its media the function is undefined and the field never
+   becomes a date picker. #}
+{% block extra_js %}
+    {{ block.super }}
+    {{ form.media.js }}
+{% endblock %}
+
 {% block content %}
     {% include "wagtailadmin/shared/header.html" with title="Upload files" subtitle=folder.name icon="folder-open-inverse" %}
 

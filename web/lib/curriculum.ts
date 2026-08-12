@@ -153,6 +153,17 @@ export function firstPopulatedLevel(
   return populated?.slug ?? vocabulary.levels[0]?.slug ?? null;
 }
 
+/**
+ * "Year 1, Year 2" for a pair, "Year 1 – Year 3" for a longer run. Shared by
+ * the explorer cards and the resource page details table so a resource
+ * spanning several years reads the same in both.
+ */
+export function formatYearLevelRange(labels: string[]): string {
+  if (labels.length === 0) return "";
+  if (labels.length > 2) return `${labels[0]} – ${labels[labels.length - 1]}`;
+  return labels.join(", ");
+}
+
 export function formatFileSize(bytes?: number): string {
   if (!bytes) return "";
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
