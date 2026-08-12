@@ -237,6 +237,27 @@ class UploadForm(forms.Form):
         raw = self.cleaned_data.get("topics", "")
         return [t.strip() for t in raw.split(",") if t.strip()]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set at runtime rather than import time so the querysets aren't
+        # evaluated before migrations have created the tables.
+        self.fields["level"].queryset = EducationLevel.objects.all()
+        self.fields["subject"].queryset = Subject.objects.all()
+        self.fields["year_levels"].queryset = YearLevel.objects.select_related("level")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        error = validate_year_levels_match_level(
+            cleaned_data.get("level"), cleaned_data.get("year_levels")
+        )
+        if error:
+            self.add_error("year_levels", error)
+        return cleaned_data
+
+    def clean_topics(self):
+        raw = self.cleaned_data.get("topics", "")
+        return [t.strip() for t in raw.split(",") if t.strip()]
+
 
 class ResourceForm(forms.ModelForm):
     """Edit form for a single file; replacing the file itself is optional."""

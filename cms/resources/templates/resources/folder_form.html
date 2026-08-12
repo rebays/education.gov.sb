@@ -94,6 +94,18 @@
                 {% formattedfield field=form.topics %}
             </div>
 
+            {# Curriculum Tab — drives the filters on the public resources explorer #}
+            <div id="curriculum-pane" class="folder-form-tab-pane" role="tabpanel" aria-labelledby="curriculum-tab">
+                <p style="margin-bottom: 20px; font-size: 13px; color: var(--w-color-text-meta);">
+                    These fields power the filters and coverage map on the public
+                    Resources page. They only take effect once this folder holds files.
+                </p>
+                {% formattedfield field=form.level %}
+                {% formattedfield field=form.subject %}
+                {% formattedfield field=form.year_levels %}
+                {% formattedfield field=form.topics %}
+            </div>
+
             {# Promote Tab #}
             <div id="promote-pane" class="folder-form-tab-pane" role="tabpanel" aria-labelledby="promote-tab">
                 {# Slug - Display only #}
