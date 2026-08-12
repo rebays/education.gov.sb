@@ -1,3 +1,4 @@
+from datetime import date
 from pathlib import Path
 
 from django.contrib import messages
@@ -242,7 +243,6 @@ def upload(request, folder_id):
                 # The root is organisational by definition — it never becomes
                 # a resource page itself
                 mode = UploadForm.MODE_SEPARATE
-            language = form.cleaned_data["language"]
             for f in form.cleaned_data["files"]:
                 stem = Path(f.name).stem
                 if mode == UploadForm.MODE_SEPARATE:
@@ -251,7 +251,9 @@ def upload(request, folder_id):
                             name=stem,
                             description=form.cleaned_data["description"],
                             resource_type=form.cleaned_data["resource_type"],
-                            revision_date=form.cleaned_data["revision_date"],
+                            published_date=(
+                                form.cleaned_data["published_date"] or date.today()
+                            ),
                             level=form.cleaned_data["level"],
                             subject=form.cleaned_data["subject"],
                         )
@@ -266,7 +268,6 @@ def upload(request, folder_id):
                     folder=target,
                     file=f,
                     label=stem,
-                    language=language,
                     uploaded_by_user=request.user,
                 )
                 resource.set_file_metadata()

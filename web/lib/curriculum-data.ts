@@ -49,7 +49,7 @@ const GET_CURRICULUM = /* GraphQL */ `
       resourceType
       resourceTypeDisplay
       lastUpdated
-      ogImage {
+      coverImage {
         url
       }
       fileCount
@@ -84,7 +84,7 @@ type RawResourcePage = {
   resourceTypeDisplay: string;
   lastUpdated: string;
   fileCount: number;
-  ogImage: { url: string } | null;
+  coverImage: { url: string } | null;
   level: { slug: string } | null;
   subject: { slug: string } | null;
   yearLevels: { slug: string }[];
@@ -145,7 +145,7 @@ function toResource(page: RawResourcePage): CurriculumResource {
     yearLevelSlugs: page.yearLevels.map((y) => y.slug),
     topics: page.topics.map((t) => t.name),
     updated: page.lastUpdated ?? "",
-    coverImage: page.ogImage?.url ?? null,
+    coverImage: page.coverImage?.url ?? null,
     format: firstFile?.fileExtension?.toUpperCase() ?? "",
     size: formatFileSize(firstFile?.fileSize),
     isVideo: firstFile?.isVideo ?? false,

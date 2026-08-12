@@ -4,34 +4,62 @@ import React, { useState, useMemo } from "react";
 import { CMSResourcePreviewer } from "@/components/resources/cms-resource-previewer";
 import { FactSheet } from "@/components/ui/fact-sheet";
 import { DownloadActions } from "@/components/resources/download-actions";
+import {
+  formatFileSize,
+  formatUpdated,
+  formatYearLevelRange,
+} from "@/lib/curriculum";
 import type { ResourceFile } from "@/lib/hooks/use-resource-folder";
 
 interface ResourceFolderPreviewProps {
   files: ResourceFile[];
   folderDescription?: string;
   folderName: string;
-}
-
-function formatFileSize(bytes?: number): string {
-  if (!bytes) return "";
-  if (bytes < 1024 * 1024) {
-    return `${(bytes / 1024).toFixed(1)} KB`;
-  }
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  /**
+   * Curriculum classification, from the folder rather than the file — every
+   * field is optional in the CMS, so each row appears only when set.
+   */
+  subject?: string | null;
+  yearLevelLabels?: string[];
+  typeLabel?: string;
+  publishedDate?: string | null;
 }
 
 const ResourceFolderPreview = React.memo(function ResourceFolderPreview({
   files,
   folderDescription,
+  subject,
+  yearLevelLabels = [],
+  typeLabel,
+  publishedDate,
 }: ResourceFolderPreviewProps) {
   const [selectedFileIdx, setSelectedFileIdx] = useState(0);
   const selectedFile = files[selectedFileIdx];
   const isMultipleFiles = files.length > 1;
 
   const facts: [string, string][] = useMemo(() => {
-    const f: [string, string][] = [
-      ["Format", selectedFile.fileExtension.toUpperCase()],
-    ];
+    const f: [string, string][] = [];
+
+    // What the resource is — from the folder, shared by all its files
+    if (subject) {
+      f.push(["Subject", subject]);
+    }
+
+    const years = formatYearLevelRange(yearLevelLabels);
+    if (years) {
+      f.push(["Grade / year level", years]);
+    }
+
+    if (typeLabel) {
+      f.push(["Type", typeLabel]);
+    }
+
+    if (publishedDate) {
+      f.push(["Published", formatUpdated(publishedDate)]);
+    }
+
+    // Specifics of the file currently selected
+    f.push(["Format", selectedFile.fileExtension.toUpperCase()]);
 
     if (selectedFile.fileSize) {
       f.push(["File size", formatFileSize(selectedFile.fileSize)]);
@@ -41,20 +69,12 @@ const ResourceFolderPreview = React.memo(function ResourceFolderPreview({
       f.push(["Office", selectedFile.office]);
     }
 
-    if (selectedFile.publishedDate) {
-      f.push(["Published", selectedFile.publishedDate]);
-    }
-
     if (selectedFile.pages) {
       f.push(["Pages", String(selectedFile.pages)]);
     }
 
-    if (selectedFile.language) {
-      f.push(["Language", selectedFile.language]);
-    }
-
     return f;
-  }, [selectedFile]);
+  }, [selectedFile, subject, yearLevelLabels, typeLabel, publishedDate]);
 
   return (
     <>

@@ -116,11 +116,6 @@
             color: var(--w-color-text-meta);
             font-weight: 400;
         }
-        .rl-folder-actions {
-            display: flex;
-            gap: 2px;
-            margin-left: auto;
-        }
         .rl-card {
             position: relative;
         }
@@ -181,26 +176,6 @@
                     {% endif %}
                 {% endfor %}
             </h1>
-            <div class="rl-folder-actions">
-                {% if not is_root and can_change_folder %}
-                    <a href="{% url 'resource_library:edit_folder' folder.pk %}"
-                       class="button button-secondary rl-icon-btn"
-                       title="Edit folder details" aria-label="Edit folder details">
-                        {% icon name="edit" %}
-                    </a>
-                {% endif %}
-                {% if not is_root and can_delete_folder %}
-                    <a href="{% url 'resource_library:delete_folder' folder.pk %}"
-                       class="button button-secondary no rl-icon-btn"
-                       title="Delete folder" aria-label="Delete folder">
-                        {% icon name="bin" %}
-                    </a>
-                {% endif %}
-                {% if is_root %}
-                    {# Invisible placeholder keeps the heading row the same height when the buttons are absent #}
-                    <span class="button rl-icon-btn" style="visibility: hidden;" aria-hidden="true">{% icon name="edit" %}</span>
-                {% endif %}
-            </div>
         </div>
 
         {# Toolbar: actions on the folder's contents #}
@@ -256,18 +231,34 @@
             {% if layout == 'grid' %}
                 <div class="rl-grid">
                     {% for sub in subfolders %}
-                        <a class="rl-card" href="{% url 'resource_library:folder' sub.pk %}">
-                            <span class="rl-card__thumb">{% icon name="folder-open-inverse" %}</span>
-                            <span class="rl-card__title">{{ sub.name }}</span>
-                            <span class="rl-card__meta">
-                                {% if sub.resource_type %}{{ sub.get_resource_type_display }} · {% endif %}
-                                {% if sub.document_count or sub.folder_count %}
-                                    {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}
-                                {% else %}
-                                    Empty
-                                {% endif %}
-                            </span>
-                        </a>
+                        <div class="rl-card">
+                            <a href="{% url 'resource_library:folder' sub.pk %}" style="display: contents;">
+                                <span class="rl-card__thumb">{% icon name="folder-open-inverse" %}</span>
+                                <span class="rl-card__title">{{ sub.name }}</span>
+                                <span class="rl-card__meta">
+                                    {% if sub.resource_type %}{{ sub.get_resource_type_display }} · {% endif %}
+                                    {% if sub.document_count or sub.folder_count %}
+                                        {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}
+                                    {% else %}
+                                        Empty
+                                    {% endif %}
+                                </span>
+                            </a>
+                            {% if can_change_folder or can_delete_folder %}
+                                <div class="rl-card__actions">
+                                    {% if can_change_folder %}
+                                        <a href="{% url 'resource_library:edit_folder' sub.pk %}" class="rl-card__action-btn" title="Edit folder details" aria-label="Edit folder">
+                                            {% icon name="edit" %}
+                                        </a>
+                                    {% endif %}
+                                    {% if can_delete_folder %}
+                                        <a href="{% url 'resource_library:delete_folder' sub.pk %}" class="rl-card__action-btn delete" title="Delete folder" aria-label="Delete folder">
+                                            {% icon name="bin" %}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
                     {% endfor %}
                     {% for doc in page_obj %}
                         <div class="rl-card">
@@ -282,19 +273,21 @@
                                 </span>
                                 <span class="rl-card__title">{{ doc.display_label }}</span>
                                 <span class="rl-card__meta">
-                                    {{ doc.language|upper }}{% if search_query %} · {{ doc.folder.name }}{% endif %}
+                                    {{ doc.file_extension|upper }}{% if search_query %} · {{ doc.folder.name }}{% endif %}
                                 </span>
                             </a>
-                            {% if can_delete_documents %}
+                            {% if can_edit_documents or can_delete_documents %}
                                 <div class="rl-card__actions">
                                     {% if can_edit_documents %}
                                         <a href="{% url 'resource_library:edit_resource' doc.pk %}" class="rl-card__action-btn" title="Edit this file" aria-label="Edit">
                                             {% icon name="edit" %}
                                         </a>
                                     {% endif %}
-                                    <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="rl-card__action-btn delete" title="Delete this file" aria-label="Delete">
-                                        {% icon name="bin" %}
-                                    </a>
+                                    {% if can_delete_documents %}
+                                        <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="rl-card__action-btn delete" title="Delete this file" aria-label="Delete">
+                                            {% icon name="bin" %}
+                                        </a>
+                                    {% endif %}
                                 </div>
                             {% endif %}
                         </div>
@@ -307,7 +300,6 @@
                             <th>Name</th>
                             <th>Type</th>
                             {% if search_query %}<th>Folder</th>{% endif %}
-                            <th>Language</th>
                             <th>Size</th>
                             <th></th>
                         </tr>
@@ -324,8 +316,18 @@
                                 <td>Folder{% if sub.resource_type %} · {{ sub.get_resource_type_display }}{% endif %} · {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}</td>
                                 {% if search_query %}<td></td>{% endif %}
                                 <td></td>
-                                <td></td>
-                                <td></td>
+                                <td style="display: flex; gap: 8px; align-items: center;">
+                                    {% if can_change_folder %}
+                                        <a href="{% url 'resource_library:edit_folder' sub.pk %}" class="button button-secondary rl-icon-btn" title="Edit folder details" aria-label="Edit folder">
+                                            {% icon name="edit" %}
+                                        </a>
+                                    {% endif %}
+                                    {% if can_delete_folder %}
+                                        <a href="{% url 'resource_library:delete_folder' sub.pk %}" class="button button-secondary rl-icon-btn no" title="Delete folder" aria-label="Delete folder">
+                                            {% icon name="bin" %}
+                                        </a>
+                                    {% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                         {% for doc in page_obj %}
@@ -342,7 +344,6 @@
                                 </td>
                                 <td>{{ doc.file_extension|upper }}</td>
                                 {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
-                                <td>{{ doc.language|default:"—" }}</td>
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
                                 <td style="display: flex; gap: 8px; align-items: center;">
                                     <a href="{{ doc.url }}" class="button button-secondary rl-icon-btn" title="Download this file" aria-label="Download">

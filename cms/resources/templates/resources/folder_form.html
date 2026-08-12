@@ -5,6 +5,7 @@
 
 {% block extra_css %}
     {{ block.super }}
+    {{ form.media.css }}
     <style>
         .folder-form-tabs {
             display: flex;
@@ -39,6 +40,11 @@
     </style>
 {% endblock %}
 
+{% block extra_js %}
+    {{ block.super }}
+    {{ form.media.js }}
+{% endblock %}
+
 {% block content %}
     {% include "wagtailadmin/shared/header.html" with title=page_title subtitle=folder.name icon="folder-open-inverse" %}
 
@@ -69,9 +75,11 @@
             {# Content Tab #}
             <div id="content-pane" class="folder-form-tab-pane active" role="tabpanel" aria-labelledby="content-tab">
                 {% formattedfield field=form.name %}
+                {% formattedfield field=form.lead %}
                 {% formattedfield field=form.description %}
+                {% formattedfield field=form.cover_image %}
                 {% formattedfield field=form.resource_type %}
-                {% formattedfield field=form.revision_date %}
+                {% formattedfield field=form.published_date %}
             </div>
 
             {# Curriculum Tab — drives the filters on the public resources explorer #}

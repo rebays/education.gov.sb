@@ -5,6 +5,7 @@ from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from django.utils.text import slugify
 
 from .models import (
     LIBRARY_ROOT_NAME,
@@ -16,12 +17,11 @@ from .models import (
 )
 
 
-def add_file(folder, filename="doc.txt", content=b"contents", label="", language="en"):
+def add_file(folder, filename="doc.txt", content=b"contents", label=""):
     resource = Resource(
         folder=folder,
         file=SimpleUploadedFile(filename, content),
         label=label,
-        language=language,
     )
     resource.set_file_metadata()
     resource.save()
@@ -66,7 +66,7 @@ class ResourceLibraryTests(TestCase):
                 "name": "Year 3 Mathematics Syllabus",
                 "description": "The Year 3 mathematics syllabus",
                 "resource_type": "syllabus",
-                "revision_date": "2025-06-30",
+                "published_date": "2025-06-30",
             },
         )
         folder = ResourceFolder.objects.get(name="Year 3 Mathematics Syllabus")
@@ -113,7 +113,7 @@ class ResourceLibraryTests(TestCase):
                 "name": "Primary Science Teacher Guide",
                 "description": "Hands-on activities for the primary science kit",
                 "resource_type": "teacher_guide",
-                "revision_date": "2026-01-15",
+                "published_date": "2026-01-15",
             },
         )
         self.assertRedirects(
@@ -122,7 +122,7 @@ class ResourceLibraryTests(TestCase):
         folder.refresh_from_db()
         self.assertEqual(folder.name, "Primary Science Teacher Guide")
         self.assertEqual(folder.resource_type, "teacher_guide")
-        self.assertEqual(str(folder.revision_date), "2026-01-15")
+        self.assertEqual(str(folder.published_date), "2026-01-15")
 
     def test_upload_separate_creates_resource_per_file(self):
         root = ResourceFolder.get_library_root()
@@ -136,7 +136,6 @@ class ResourceLibraryTests(TestCase):
                     SimpleUploadedFile("Term dates.txt", b"two"),
                 ],
                 "mode": "separate",
-                "language": "en",
                 "description": "Practice workbook",
                 "resource_type": "workbook",
             },
@@ -156,7 +155,6 @@ class ResourceLibraryTests(TestCase):
             self.assertEqual(folder.resource_type, "workbook")
             resource = folder.resources.get()
             self.assertEqual(resource.label, name)
-            self.assertEqual(resource.language, "en")
             self.assertEqual(resource.uploaded_by_user, self.user)
             self.assertTrue(resource.file_size)
             self.assertTrue(resource.file_hash)
@@ -181,7 +179,6 @@ class ResourceLibraryTests(TestCase):
             {
                 "files": SimpleUploadedFile("Annex A.txt", b"annex"),
                 "mode": "add",
-                "language": "en",
             },
         )
         self.assertRedirects(
@@ -211,7 +208,6 @@ class ResourceLibraryTests(TestCase):
             {
                 "files": SimpleUploadedFile("Loose file.txt", b"contents"),
                 "mode": "add",  # ignored at the root
-                "language": "en",
             },
         )
         self.assertRedirects(
@@ -247,7 +243,6 @@ class ResourceLibraryTests(TestCase):
                 "files": SimpleUploadedFile("Numeracy training.mp4", b"video bytes"),
                 "mode": "separate",
                 "resource_type": "video",
-                "language": "en",
             },
         )
         self.assertRedirects(
@@ -365,14 +360,13 @@ class ResourceLibraryTests(TestCase):
 
         response = self.client.post(
             reverse("resource_library:edit_resource", args=[resource.pk]),
-            {"label": "Full report", "language": "fr"},
+            {"label": "Full report"},
         )
         self.assertRedirects(
             response, reverse("resource_library:folder", args=[folder.pk])
         )
         resource.refresh_from_db()
         self.assertEqual(resource.label, "Full report")
-        self.assertEqual(resource.language, "fr")
 
     def test_replace_file(self):
         root = ResourceFolder.get_library_root()
@@ -385,7 +379,6 @@ class ResourceLibraryTests(TestCase):
             reverse("resource_library:edit_resource", args=[resource.pk]),
             {
                 "label": "report",
-                "language": "en",
                 "file": SimpleUploadedFile("report-v2.txt", b"new contents"),
             },
         )
@@ -470,7 +463,7 @@ class ResourceLibraryTests(TestCase):
                     description
                     resourceType
                     fileCount
-                    resources { displayLabel language url isVideo fileSize }
+                    resources { displayLabel url isVideo fileSize }
                 }
             }
             """
@@ -673,7 +666,6 @@ class CurriculumFacetTests(TestCase):
                     SimpleUploadedFile("Shapes.txt", b"two"),
                 ],
                 "mode": "separate",
-                "language": "en",
                 "resource_type": "workbook",
                 "level": self.primary.pk,
                 "subject": self.maths.pk,
@@ -692,13 +684,13 @@ class CurriculumFacetTests(TestCase):
             self.assertEqual(list(folder.year_levels.all()), [self.y1])
             self.assertEqual(list(folder.topics.names()), ["numeracy"])
 
-    def test_last_updated_prefers_revision_date(self):
+    def test_last_updated_prefers_published_date(self):
         root = ResourceFolder.get_library_root()
         folder = root.add_child(instance=ResourceFolder(name="Dated"))
-        # Falls back to the CMS timestamp while revision_date is unset
+        # Falls back to the CMS timestamp while published_date is unset
         self.assertEqual(folder.last_updated, folder.updated_at.date())
 
-        folder.revision_date = date(2026, 3, 10)
+        folder.published_date = date(2026, 3, 10)
         folder.save()
         self.assertEqual(folder.last_updated, date(2026, 3, 10))
 
@@ -869,3 +861,244 @@ class CurriculumGraphQLTests(TestCase):
         )
         self.assertEqual(data["resourcePage"]["ancestorFolders"], [])
         self.assertEqual(data["resourcePage"]["urlPath"], "/resources/standalone/")
+
+
+# 1x1 transparent PNG — enough for Wagtail to create a real Image record
+TEST_PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06"
+    b"\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05"
+    b"\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82"
+)
+
+
+def make_image(title="Cover"):
+    from wagtail.images import get_image_model
+
+    return get_image_model().objects.create(
+        title=title,
+        file=SimpleUploadedFile(f"{slugify(title)}.png", TEST_PNG, "image/png"),
+        width=1,
+        height=1,
+    )
+
+
+class ResourceLeadAndCoverTests(TestCase):
+    """
+    `lead` drives the resource page header and `cover_image` the card in the
+    explorer. Both are optional, so the fallbacks matter as much as the
+    fields themselves.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+
+    def execute(self, query):
+        from grapple.schema import schema
+
+        result = schema.execute(query)
+        self.assertIsNone(result.errors)
+        return result.data
+
+    def test_display_lead_falls_back_to_description(self):
+        folder = self.root.add_child(
+            instance=ResourceFolder(name="Guide", description="A description")
+        )
+        self.assertEqual(folder.display_lead, "A description")
+
+        folder.lead = "A punchier intro"
+        folder.save()
+        self.assertEqual(folder.display_lead, "A punchier intro")
+
+    def test_display_lead_empty_when_nothing_set(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Bare"))
+        self.assertEqual(folder.display_lead, "")
+
+    def test_graphql_exposes_lead_and_cover(self):
+        image = make_image()
+        page = self.root.add_child(
+            instance=ResourceFolder(
+                name="Numeracy Workbook",
+                description="Practice book",
+                lead="Everything a Year 3 teacher needs",
+                cover_image=image,
+            )
+        )
+        add_file(page, "workbook.pdf")
+
+        data = self.execute(
+            """
+            {
+                resourcePage(slug: "numeracy-workbook") {
+                    lead
+                    displayLead
+                    description
+                    coverImage { url }
+                }
+            }
+            """
+        )
+        result = data["resourcePage"]
+        self.assertEqual(result["lead"], "Everything a Year 3 teacher needs")
+        self.assertEqual(result["displayLead"], "Everything a Year 3 teacher needs")
+        self.assertEqual(result["description"], "Practice book")
+        self.assertTrue(result["coverImage"]["url"])
+
+    def test_graphql_cover_is_null_when_unset(self):
+        page = self.root.add_child(instance=ResourceFolder(name="No Cover"))
+        add_file(page, "doc.pdf")
+        data = self.execute(
+            '{ resourcePage(slug: "no-cover") { coverImage { url } lead } }'
+        )
+        self.assertIsNone(data["resourcePage"]["coverImage"])
+        self.assertEqual(data["resourcePage"]["lead"], "")
+
+    def test_folder_form_saves_lead_and_cover(self):
+        image = make_image("Chosen cover")
+        folder = self.root.add_child(instance=ResourceFolder(name="Syllabus"))
+
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            {
+                "name": "Syllabus",
+                "lead": "The 2026 mathematics syllabus",
+                "description": "Full syllabus document",
+                "cover_image": image.pk,
+            },
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[folder.pk])
+        )
+        folder.refresh_from_db()
+        self.assertEqual(folder.lead, "The 2026 mathematics syllabus")
+        self.assertEqual(folder.cover_image, image)
+
+    def test_edit_form_renders_image_chooser(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Chooser"))
+        response = self.client.get(
+            reverse("resource_library:edit_folder", args=[folder.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        # The chooser is a Wagtail widget with its own JS; a plain <select>
+        # would mean it silently fell back to the default widget
+        self.assertContains(response, "chooser")
+        self.assertContains(response, "image-chooser")
+
+    def test_upload_defaults_published_date_to_today(self):
+        from datetime import date as _date
+
+        category = self.root.add_child(instance=ResourceFolder(name="Batch"))
+        response = self.client.post(
+            reverse("resource_library:upload", args=[category.pk]),
+            {
+                "files": SimpleUploadedFile("Handbook.txt", b"x"),
+                "mode": "separate",
+                # published_date deliberately omitted
+            },
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[category.pk])
+        )
+        folder = ResourceFolder.objects.get(name="Handbook")
+        self.assertEqual(folder.published_date, _date.today())
+
+    def test_upload_respects_explicit_published_date(self):
+        category = self.root.add_child(instance=ResourceFolder(name="Backdated"))
+        self.client.post(
+            reverse("resource_library:upload", args=[category.pk]),
+            {
+                "files": SimpleUploadedFile("Old syllabus.txt", b"x"),
+                "mode": "separate",
+                "published_date": "2024-02-01",
+            },
+        )
+        folder = ResourceFolder.objects.get(name="Old syllabus")
+        self.assertEqual(str(folder.published_date), "2024-02-01")
+
+    def test_upload_form_prefills_today(self):
+        from datetime import date as _date
+
+        category = self.root.add_child(instance=ResourceFolder(name="Prefill"))
+        response = self.client.get(
+            reverse("resource_library:upload", args=[category.pk])
+        )
+        self.assertEqual(
+            response.context["form"].fields["published_date"].initial(), _date.today()
+        )
+
+    def test_graphql_exposes_published_date(self):
+        page = self.root.add_child(
+            instance=ResourceFolder(
+                name="Dated Resource", published_date=date(2026, 5, 4)
+            )
+        )
+        add_file(page, "doc.pdf")
+        data = self.execute(
+            '{ resourcePage(slug: "dated-resource") { publishedDate } }'
+        )
+        self.assertEqual(data["resourcePage"]["publishedDate"], "2026-05-04")
+
+    def test_date_fields_render_as_pickers(self):
+        """
+        AdminDateInput emits a text input plus an inline initDateChooser()
+        call — the picker only materialises if the widget's media is on the
+        page. These bespoke templates render fields by hand, so the media is
+        easy to forget and the failure is silent (a plain text box).
+        """
+        folder = self.root.add_child(instance=ResourceFolder(name="Picker"))
+        for url in (
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            reverse("resource_library:upload", args=[folder.pk]),
+        ):
+            with self.subTest(url=url):
+                html = self.client.get(url).content.decode()
+                self.assertIn("initDateChooser", html)
+                self.assertIn("date-time-chooser.js", html)
+
+    def test_folder_cards_carry_edit_and_delete_actions(self):
+        child = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        response = self.client.get(reverse("resource_library:index"))
+        html = response.content.decode()
+
+        edit_url = reverse("resource_library:edit_folder", args=[child.pk])
+        delete_url = reverse("resource_library:delete_folder", args=[child.pk])
+        self.assertIn(edit_url, html)
+        self.assertIn(delete_url, html)
+        # Folders are managed from the parent listing now, so the heading no
+        # longer carries its own edit/delete buttons
+        self.assertNotIn("rl-folder-actions", html)
+
+    def test_folder_actions_present_in_list_layout(self):
+        child = self.root.add_child(instance=ResourceFolder(name="Secondary"))
+        response = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        )
+        html = response.content.decode()
+        self.assertIn(reverse("resource_library:edit_folder", args=[child.pk]), html)
+        self.assertIn(reverse("resource_library:delete_folder", args=[child.pk]), html)
+
+    def test_folder_card_is_not_a_nested_anchor(self):
+        """
+        The card used to be a bare <a>; action links can't be nested inside
+        one. It has to be a wrapper element with the link as a child.
+        """
+        self.root.add_child(instance=ResourceFolder(name="Nested"))
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertNotIn('<a class="rl-card"', html)
+
+    def test_viewer_without_permissions_sees_no_folder_actions(self):
+        child = self.root.add_child(instance=ResourceFolder(name="ReadOnly"))
+        viewer = get_user_model().objects.create_user(
+            username="viewer", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource"),
+            Permission.objects.get(codename="access_admin", content_type__app_label="wagtailadmin"),
+        )
+        self.client.force_login(viewer)
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertNotIn(reverse("resource_library:edit_folder", args=[child.pk]), html)
+        self.assertNotIn(reverse("resource_library:delete_folder", args=[child.pk]), html)

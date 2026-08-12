@@ -1,9 +1,12 @@
+from datetime import date
+
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.template.defaultfilters import filesizeformat
 from wagtail.admin.widgets import AdminDateInput
+from wagtail.images.widgets import AdminImageChooser
 
 from .models import (
     EducationLevel,
@@ -43,20 +46,26 @@ class FolderForm(forms.ModelForm):
         model = ResourceFolder
         fields = [
             "name",
+            "lead",
             "description",
+            "cover_image",
             "resource_type",
             "level",
             "subject",
             "year_levels",
             "topics",
-            "revision_date",
+            "published_date",
             "meta_description",
             "canonical_url",
         ]
         widgets = {
+            "lead": forms.Textarea(attrs={"rows": 2}),
             "description": forms.Textarea(attrs={"rows": 3}),
+            # Without this the image FK renders as a plain <select> listing
+            # every image in the library
+            "cover_image": AdminImageChooser,
             "year_levels": forms.CheckboxSelectMultiple,
-            "revision_date": AdminDateInput,
+            "published_date": AdminDateInput,
             "meta_description": forms.Textarea(attrs={"rows": 2}),
             "canonical_url": forms.URLInput(attrs={"placeholder": "https://example.com/resources/page/"}),
         }
@@ -164,12 +173,6 @@ class UploadForm(forms.Form):
         widget=forms.RadioSelect,
         label="Upload as",
     )
-    language = forms.CharField(
-        max_length=10,
-        required=False,
-        initial="en",
-        help_text="ISO language code applied to every file, e.g. en, fr, de",
-    )
     description = forms.CharField(
         required=False,
         widget=forms.Textarea(attrs={"rows": 3}),
@@ -203,10 +206,14 @@ class UploadForm(forms.Form):
         required=False,
         help_text="Comma-separated keywords applied to each new resource.",
     )
-    revision_date = forms.DateField(
+    published_date = forms.DateField(
         required=False,
+        initial=date.today,
         widget=AdminDateInput,
-        help_text="Applied to each new resource; ignored when adding files to this folder.",
+        help_text=(
+            "Applied to each new resource; defaults to today. "
+            "Ignored when adding files to this folder."
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -236,5 +243,5 @@ class ResourceForm(forms.ModelForm):
 
     class Meta:
         model = Resource
-        fields = ["label", "file", "language"]
+        fields = ["label", "file"]
         field_classes = {"file": ResourceFileField}
