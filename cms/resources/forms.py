@@ -99,6 +99,11 @@ class ResourceFileField(forms.FileField):
                 *self.validators,
                 FileExtensionValidator(allowed_extensions),
             ]
+            # Filters the OS file picker. Advisory only — the validator above
+            # is what actually enforces the rule.
+            self.widget.attrs.setdefault(
+                "accept", ",".join(f".{ext}" for ext in allowed_extensions)
+            )
         if not self.help_text:
             self.help_text = self.size_limits_text()
 
@@ -111,7 +116,15 @@ class ResourceFileField(forms.FileField):
             parts.append(f"documents up to {filesizeformat(doc_max)}")
         if video_max is not None:
             parts.append(f"videos up to {filesizeformat(video_max)}")
-        return f"Maximum filesize: {', '.join(parts)}." if parts else ""
+        size_text = f"Maximum filesize: {', '.join(parts)}." if parts else ""
+
+        allowed = getattr(settings, "RESOURCE_LIBRARY_EXTENSIONS", None)
+        if not allowed:
+            return size_text
+        allowed_text = (
+            f"Accepted formats: {', '.join(ext.upper() for ext in allowed)}."
+        )
+        return f"{allowed_text} {size_text}".strip()
 
     def validate(self, value):
         super().validate(value)

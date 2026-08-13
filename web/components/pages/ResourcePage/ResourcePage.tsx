@@ -2,8 +2,12 @@ import PageHeader from "@/components/shared/page-header";
 import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
 import { ResourceFolderPreview } from "@/components/resources/resource-folder-preview";
+import { ScrollPastHero } from "@/components/resources/scroll-past-hero";
 import type { ResourceAncestor } from "@/lib/hooks/use-resource-folder";
 import type { ResourcePage as ResourcePageProps } from "./types";
+
+/** Scroll target for {@link ScrollPastHero}. */
+const CONTENT_ID = "resource-content";
 
 interface ResourcePageComponentProps {
   page: ResourcePageProps;
@@ -35,7 +39,11 @@ export default function ResourcePage({
         ]}
       />
 
-      <main className="flex-1 bg-background">
+      <ScrollPastHero targetId={CONTENT_ID} />
+
+      {/* scroll-mt clears the sticky site header, which the browser would
+          otherwise leave covering the top of the content. */}
+      <main id={CONTENT_ID} className="flex-1 scroll-mt-20 bg-background">
         <ResourceFolderPreview
           files={page.resources}
           folderDescription={page.description}

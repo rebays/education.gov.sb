@@ -44,7 +44,7 @@ const filterInstructionSteps: { icon: IconName; title: string; description: stri
   { icon: "graduation", title: "Grade / year level", description: "Filter to a specific year or form level." },
 ];
 
-function FilterInstructions() {
+function FilterInstructions({ onShowAll }: { onShowAll: () => void }) {
   return (
     <div className="animate-in fade-in-0 zoom-in-95 flex min-h-128 flex-col justify-center rounded-2xl border border-dashed border-border bg-surface p-16 text-center duration-300">
       <Icon name="filter" className="mx-auto h-10 w-10 text-muted" />
@@ -67,6 +67,11 @@ function FilterInstructions() {
           </div>
         ))}
       </dl>
+      {/* Escape hatch for visitors who would rather browse than narrow —
+          placed after the filter guidance, as the alternative to it. */}
+      <div className="mt-10">
+        <Button onClick={onShowAll}>Show all resources</Button>
+      </div>
     </div>
   );
 }
@@ -100,6 +105,10 @@ export function CurriculumExplorer({
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [filters, setFilters] = useState<CurriculumFilters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(true);
+  // Set by "Show all resources" on the landing card, and sticky once set:
+  // having opted into browsing, nobody wants to be dropped back onto an
+  // instructions screen when they clear a filter.
+  const [showAll, setShowAll] = useState(false);
 
   // Sidebar options span every level; the map's axes are scoped to its own.
   const subjects = useMemo(() => getSubjects(vocabulary, null), [vocabulary]);
@@ -245,7 +254,7 @@ export function CurriculumExplorer({
             </div>
           ) : (
             <p
-              key={`${filters.type ?? ""}-${filters.subjectSlug ?? ""}-${filters.yearLevelSlug ?? ""}-${filters.query}`}
+              key={`${filters.type ?? ""}-${filters.subjectSlug ?? ""}-${filters.yearLevelSlug ?? ""}-${filters.query}-${showAll}`}
               className="animate-in fade-in-0 slide-in-from-top-1 ml-auto text-sm text-muted duration-300"
               aria-live="polite"
             >
@@ -256,6 +265,11 @@ export function CurriculumExplorer({
                   {activeYearLevel && <> · {activeYearLevel.label}</>}
                   {activeType && <> · {activeType.label}</>}
                   {filters.query && <> · &ldquo;{filters.query}&rdquo;</>}
+                </>
+              ) : showAll ? (
+                <>
+                  All {filteredResources.length}{" "}
+                  {filteredResources.length === 1 ? "resource" : "resources"} · newest first
                 </>
               ) : (
                 <>Use the filters to find resources</>
@@ -274,14 +288,16 @@ export function CurriculumExplorer({
               }
               onCellClick={handleCellClick}
             />
-          ) : hasActiveFilters ? (
+          ) : hasActiveFilters || showAll ? (
+            // With no filters applied this is the whole library, already
+            // ordered newest-first by filterResources.
             <CurriculumResourceList
               key={`${filters.type ?? ""}-${filters.subjectSlug ?? ""}-${filters.yearLevelSlug ?? ""}-${filters.query}`}
               resources={filteredResources}
               yearLevels={yearLevels}
             />
           ) : (
-            <FilterInstructions />
+            <FilterInstructions onShowAll={() => setShowAll(true)} />
           )}
         </div>
       </div>

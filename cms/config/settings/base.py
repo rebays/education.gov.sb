@@ -214,13 +214,23 @@ WAGTAILDOCS_EXTENSIONS = ['csv', 'docx', 'key', 'odt', 'pdf', 'pptx', 'rtf', 'tx
 # Maximum upload size for documents in bytes.
 WAGTAILDOCS_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
 
-# Resource library uploads. Video extensions (see resources.models.VIDEO_EXTENSIONS)
-# get the larger video limit; everything else uses the document limit. Note that
-# the production proxy/host must also accept request bodies of the video size.
-RESOURCE_LIBRARY_EXTENSIONS = [
-    'csv', 'docx', 'key', 'odt', 'pdf', 'pptx', 'rtf', 'txt', 'xlsx', 'zip',
-    'mp4', 'webm', 'm4v',
-]
+# Resource library uploads.
+#
+# Documents are PDF only: it's the one document format that renders inline in
+# the frontend previewer, needs no office software to open, and looks the same
+# on every device. Office formats (docx/xlsx/pptx/odt/rtf) and archives are
+# deliberately excluded — publish a PDF export instead.
+#
+# Media is restricted to browser-playable video, since the frontend renders it
+# in a <video> element; mov/avi and similar would upload but not play. This
+# list must stay in step with resources.models.VIDEO_EXTENSIONS, which decides
+# what counts as video for the larger size limit and the player — there's a
+# test asserting the two agree.
+RESOURCE_LIBRARY_DOCUMENT_EXTENSIONS = ['pdf']
+RESOURCE_LIBRARY_VIDEO_EXTENSIONS = ['mp4', 'webm', 'm4v']
+RESOURCE_LIBRARY_EXTENSIONS = (
+    RESOURCE_LIBRARY_DOCUMENT_EXTENSIONS + RESOURCE_LIBRARY_VIDEO_EXTENSIONS
+)
 RESOURCE_LIBRARY_MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
 RESOURCE_LIBRARY_VIDEO_MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200MB
 

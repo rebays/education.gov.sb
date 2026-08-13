@@ -121,11 +121,18 @@ const ResourceFolderPreview = React.memo(function ResourceFolderPreview({
             downloadUrl={selectedFile.url}
           />
 
-          {/* Description */}
-          <div className="mt-8">
-            <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground/70">
+          {/* Names the file being previewed. The page's h1 is the folder
+              that holds it, which for a multi-file resource says nothing
+              about which of them is on screen. */}
+          <h2 className="mt-8 font-serif text-2xl leading-snug text-foreground">
+            {selectedFile.displayLabel}
+          </h2>
+
+          {/* Description — the folder's, so it is shared by every file. */}
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-foreground/70">
               Description
-            </h2>
+            </h3>
             <p className="mt-3 text-[15px] leading-relaxed text-muted">
               {folderDescription || "No description available."}
             </p>
