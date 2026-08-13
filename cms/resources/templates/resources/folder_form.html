@@ -166,12 +166,7 @@
 
             {# Promote Tab #}
             <div id="promote-pane" class="folder-form-tab-pane" role="tabpanel" aria-labelledby="promote-tab">
-                {# Slug - Display only #}
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-weight: 500; font-size: 13px; margin-bottom: 4px;">Slug</label>
-                    <p style="margin-bottom: 8px; font-size: 13px; color: var(--w-color-text-meta);">Auto-generated from the folder name and used in public URLs. Cannot be changed.</p>
-                    <div style="font-family: monospace; padding: 8px 0; font-size: 18px; border-bottom: 2px solid var(--w-color-secondary); display: inline-block;">{{ folder.slug }}</div>
-                </div>
+                {% formattedfield field=form.slug %}
 
                 {# Meta Description #}
                 {% formattedfield field=form.meta_description %}

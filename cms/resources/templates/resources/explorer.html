@@ -85,6 +85,15 @@
             align-items: center;
             justify-content: center;
         }
+        /* Rows carry different numbers of actions — an unpublished folder has
+           no "view on site" — so align the group to the right edge. Delete is
+           last, and therefore always in the same place. */
+        .rl-row-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+        }
         .rl-icon-btn svg.icon {
             width: 16px;
             height: 16px;
@@ -197,7 +206,7 @@
         {# Toolbar: actions on the folder's contents #}
         <div style="margin-bottom: 50px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             {% if can_upload and not is_root %}
-                <a href="{% url 'resource_library:upload' folder.pk %}" class="button bicolor button--icon">{% icon name="plus" wrapped=1 %}New file</a>
+                <a href="{% url 'resource_library:upload' folder.pk %}" class="button bicolor button--icon">{% icon name="upload" wrapped=1 %}Upload</a>
             {% endif %}
             {% if can_add_folder %}
                 <a href="{% url 'resource_library:add_folder' folder.pk %}"
@@ -348,7 +357,7 @@
                                 </td>
                                 {% if search_query %}<td></td>{% endif %}
                                 <td></td>
-                                <td style="display: flex; gap: 8px; align-items: center;">
+                                <td class="rl-row-actions">
                                     {% if sub.page_kind != 'none' %}
                                         <a href="{{ sub.public_url }}" class="button button-secondary rl-icon-btn" target="_blank" rel="noreferrer" title="View on site" aria-label="View on site">
                                             {% icon name="link-external" %}
@@ -382,7 +391,7 @@
                                 <td>{{ doc.file_extension|upper }}</td>
                                 {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
-                                <td style="display: flex; gap: 8px; align-items: center;">
+                                <td class="rl-row-actions">
                                     <a href="{{ doc.url }}" class="button button-secondary rl-icon-btn" title="Download this file" aria-label="Download">
                                         {% icon name="download" %}
                                     </a>

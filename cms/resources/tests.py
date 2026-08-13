@@ -454,7 +454,7 @@ class ResourceLibraryPermissionTests(TestCase):
 
         response = self.client.get(reverse("resource_library:index"))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "New file")
+        self.assertNotContains(response, "Upload")
         self.assertNotContains(response, "New folder")
 
         root = ResourceFolder.get_library_root()
@@ -1016,7 +1016,6 @@ class ResourceLeadAndCoverTests(TestCase):
         self.assertIn('accept=".pdf,.mp4,.webm,.m4v"', html)
         self.assertIn("Accepted formats: PDF, MP4, WEBM, M4V.", html)
 
-
 class VocabularyDeletionSafetyTests(TestCase):
     """
     Deleting a curriculum vocabulary entry used to be silently destructive:
@@ -1470,6 +1469,33 @@ class FolderPageKindTests(TestCase):
         )
         self.assertContains(response, "don't apply to directories")
 
+    def test_list_view_actions_are_right_aligned(self):
+        """
+        Rows carry different numbers of actions — an unpublished folder has
+        no "view on site" link — so the group is right-aligned and delete,
+        being last, always lands in the same place.
+        """
+        published = self.root.add_child(instance=ResourceFolder(name="Published"))
+        add_file(published, "doc.pdf")
+        self.root.add_child(instance=ResourceFolder(name="Unpublished"))
+
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertIn("justify-content: flex-end", html)
+        # One action cell per row, both using the shared class
+        self.assertEqual(html.count('<td class="rl-row-actions">'), 2)
+
+    def test_delete_is_the_last_action_in_a_row(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Ordered"))
+        add_file(folder, "doc.pdf")
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        cell = re.search(r'<td class="rl-row-actions">(.*?)</td>', html, re.S).group(1)
+        actions = re.findall(r"/(edit|delete)/", cell)
+        self.assertEqual(actions[-1], "delete")
+
 
 class UploadFormLayoutTests(TestCase):
     """
@@ -1865,4 +1891,74 @@ class FolderFormLayoutTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIsNone(
             ResourceFolder.objects.get(name="Undated").published_date
+        )
+
+    def test_slug_syncs_from_the_name_only_while_creating(self):
+        """
+        Same wiring as a page title, so a new folder shows the address it
+        will get. Not on edit, where the slug is fixed.
+        """
+        add = self.client.get(
+            reverse("resource_library:add_folder", args=[self.root.pk])
+        ).content.decode()
+        self.assertIn('data-w-sync-target-value="#id_slug"', add)
+
+        folder = self.root.add_child(instance=ResourceFolder(name="Existing"))
+        edit = self.client.get(
+            reverse("resource_library:edit_folder", args=[folder.pk])
+        ).content.decode()
+        self.assertNotIn("data-w-sync-target-value", edit)
+
+    def test_renaming_still_leaves_the_slug_alone_server_side(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Keep Slug"))
+        self.client.post(
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            {"name": "Totally Different", "slug": folder.slug},
+        )
+        folder.refresh_from_db()
+        self.assertEqual(folder.name, "Totally Different")
+        self.assertEqual(folder.slug, "keep-slug")
+
+    def test_blank_slug_is_still_generated_from_the_name(self):
+        response = self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Generated From Name", "slug": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            ResourceFolder.objects.get(name="Generated From Name").slug,
+            "generated-from-name",
+        )
+
+    def test_slug_input_is_read_only(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Fixed"))
+        html = self.client.get(
+            reverse("resource_library:edit_folder", args=[folder.pk])
+        ).content.decode()
+        field = re.search(r'<input[^>]*name="slug"[^>]*>', html).group(0)
+        self.assertIn("readonly", field)
+
+    def test_posted_slug_is_ignored(self):
+        """
+        Read-only is cosmetic — the browser will happily submit a value that
+        JavaScript or a crafted post has changed, so the form discards it.
+        """
+        folder = self.root.add_child(instance=ResourceFolder(name="Fixed"))
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            {"name": "Fixed", "slug": "hijacked"},
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[folder.pk])
+        )
+        folder.refresh_from_db()
+        self.assertEqual(folder.slug, "fixed")
+
+    def test_posted_slug_is_ignored_on_create_too(self):
+        self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "New Folder", "slug": "not-this-one"},
+        )
+        self.assertEqual(
+            ResourceFolder.objects.get(name="New Folder").slug, "new-folder"
         )

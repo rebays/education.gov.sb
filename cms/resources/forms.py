@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.template.defaultfilters import filesizeformat
 from wagtail.admin.widgets import AdminDateInput
+from wagtail.admin.widgets.slug import SlugInput
 from wagtail.images.widgets import AdminImageChooser
 
 from .models import (
@@ -65,6 +66,7 @@ class FolderForm(forms.ModelForm):
         model = ResourceFolder
         fields = [
             "name",
+            "slug",
             "lead",
             "description",
             "cover_image",
@@ -79,6 +81,8 @@ class FolderForm(forms.ModelForm):
         ]
         field_classes = {"year_levels": GroupedYearLevelsField}
         widgets = {
+            # Shown for reference, not for editing; see clean_slug().
+            "slug": SlugInput(attrs={"readonly": True}),
             "lead": forms.Textarea(attrs={"rows": 2}),
             "description": forms.Textarea(attrs={"rows": 3}),
             # Without this the image FK renders as a plain <select> listing
@@ -95,11 +99,35 @@ class FolderForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Prefill on create only. Stamping today onto an existing folder
-        # being edited for some unrelated reason would quietly restate when
-        # its material was published.
         if self.instance.pk is None:
+            # Prefill on create only. Stamping today onto an existing folder
+            # being edited for some unrelated reason would quietly restate
+            # when its material was published.
             self.fields["published_date"].initial = date.today
+
+            # Type the name, get a slug — the same wiring TitleFieldPanel sets
+            # up for pages. Only while creating: once a folder is published,
+            # renaming it must not silently move its URL.
+            self.fields["name"].widget.attrs.update(
+                {
+                    "data-controller": "w-sync",
+                    "data-action": (
+                        "focus->w-sync#check blur->w-sync#apply "
+                        "change->w-sync#apply keyup->w-sync#apply"
+                    ),
+                    "data-w-sync-target-value": "#id_slug",
+                }
+            )
+
+    def clean_slug(self):
+        """
+        The slug is never taken from the form. It's rendered read-only, but
+        that's cosmetic — a crafted post could still carry one — so the
+        submitted value is discarded here. An existing folder keeps its slug
+        so its public URL survives renaming; a new one gets a blank, which
+        the model generates from the name on save.
+        """
+        return self.instance.slug if self.instance.pk else ""
 
     def clean(self):
         cleaned_data = super().clean()

@@ -260,7 +260,11 @@ class ResourceFolder(index.Indexed, MP_Node):
         max_length=255,
         unique=True,
         blank=True,
-        help_text="Used in the resource page's public URL; generated from the name if left blank",
+        help_text=(
+            "The last part of this folder's public web address, generated "
+            "from the name. Fixed once created, so links to this folder — "
+            "and to everything inside it — keep working when it's renamed."
+        ),
     )
     description = models.TextField(blank=True)
     lead = models.TextField(
