@@ -7,12 +7,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { cn } from "@/lib/utils";
 import type {
   CurriculumFilters,
+  EducationLevel,
   ResourceTypeChoice,
   Subject,
   YearLevel,
 } from "@/lib/curriculum";
 
-type PickerKey = "search" | "type" | "subject" | "yearLevel";
+type PickerKey = "search" | "level" | "type" | "subject" | "yearLevel";
 
 /**
  * Mobile replacement for `CurriculumSidebar` — a floating bottom dock with
@@ -23,6 +24,7 @@ type PickerKey = "search" | "type" | "subject" | "yearLevel";
  * normally lives inside the now-hidden sidebar too.
  */
 export function MobileFilterIsland({
+  levels,
   resourceTypes,
   subjects,
   yearLevels,
@@ -30,6 +32,7 @@ export function MobileFilterIsland({
   onFilterChange,
   onShowMap,
 }: {
+  levels: EducationLevel[];
   resourceTypes: ResourceTypeChoice[];
   subjects: Subject[];
   yearLevels: YearLevel[];
@@ -41,12 +44,14 @@ export function MobileFilterIsland({
   const [searchDraft, setSearchDraft] = useState(filters.query);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const activeLevel = levels.find((l) => l.slug === filters.levelSlug);
   const activeSubject = subjects.find((s) => s.slug === filters.subjectSlug);
   const activeYearLevel = yearLevels.find((y) => y.slug === filters.yearLevelSlug);
   const activeType = resourceTypes.find((t) => t.value === filters.type);
 
   const items: { key: PickerKey; category: string; value: string | null; icon: IconName }[] = [
     { key: "search", category: "Search", value: filters.query || null, icon: "search" },
+    { key: "level", category: "Level", value: activeLevel?.name ?? null, icon: "graduation" },
     { key: "type", category: "Type", value: activeType?.label ?? null, icon: "tag" },
     { key: "subject", category: "Subject", value: activeSubject?.name ?? null, icon: "book" },
     { key: "yearLevel", category: "Year", value: activeYearLevel?.label ?? null, icon: "graduation" },
@@ -108,6 +113,19 @@ export function MobileFilterIsland({
           </button>
         </div>
       </div>
+
+      <OptionSheet
+        open={openPicker === "level"}
+        onOpenChange={(open) => setOpenPicker(open ? "level" : null)}
+        title="Education level"
+        options={levels.map((l) => l.slug)}
+        active={filters.levelSlug}
+        optionLabel={(slug) => levels.find((l) => l.slug === slug)?.name ?? slug}
+        onSelect={(value) => {
+          onFilterChange({ levelSlug: value });
+          setOpenPicker(null);
+        }}
+      />
 
       <OptionSheet
         open={openPicker === "type"}

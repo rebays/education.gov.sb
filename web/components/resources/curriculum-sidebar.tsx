@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import type {
   CurriculumFilters,
+  EducationLevel,
   ResourceTypeChoice,
   Subject,
   YearLevel,
@@ -54,6 +55,7 @@ function FilterSelect<T extends string>({
 }
 
 export function CurriculumSidebar({
+  levels,
   resourceTypes,
   subjects,
   yearLevels,
@@ -64,6 +66,7 @@ export function CurriculumSidebar({
   onBackToList,
   isMapOpen = false,
 }: {
+  levels: EducationLevel[];
   resourceTypes: ResourceTypeChoice[];
   subjects: Subject[];
   yearLevels: YearLevel[];
@@ -76,7 +79,11 @@ export function CurriculumSidebar({
   isMapOpen?: boolean;
 }) {
   const hasActiveFilters =
-    filters.type || filters.subjectSlug || filters.yearLevelSlug || filters.query;
+    filters.levelSlug ||
+    filters.type ||
+    filters.subjectSlug ||
+    filters.yearLevelSlug ||
+    filters.query;
 
   return (
     <aside className="hidden w-full shrink-0 flex-col gap-5 lg:sticky lg:top-24 lg:flex lg:w-64 lg:max-h-[calc(100vh-7rem)] lg:self-start lg:overflow-y-auto">
@@ -118,6 +125,17 @@ export function CurriculumSidebar({
           />
         </div>
       </div>
+
+      {levels.length > 0 && (
+        <FilterSelect
+          id="filter-level"
+          label="Education level"
+          options={levels.map((l) => l.slug)}
+          active={filters.levelSlug}
+          onChange={(levelSlug) => onFilterChange({ levelSlug })}
+          optionLabel={(slug) => levels.find((l) => l.slug === slug)?.name ?? slug}
+        />
+      )}
 
       <FilterSelect
         id="filter-resource-type"
