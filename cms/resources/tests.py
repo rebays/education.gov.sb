@@ -17,7 +17,7 @@ from .models import (
 )
 
 
-def add_file(folder, filename="doc.txt", content=b"contents", label=""):
+def add_file(folder, filename="doc.pdf", content=b"contents", label=""):
     resource = Resource(
         folder=folder,
         file=SimpleUploadedFile(filename, content),
@@ -132,8 +132,8 @@ class ResourceLibraryTests(TestCase):
             reverse("resource_library:upload", args=[category.pk]),
             {
                 "files": [
-                    SimpleUploadedFile("Fee guidance.txt", b"one"),
-                    SimpleUploadedFile("Term dates.txt", b"two"),
+                    SimpleUploadedFile("Fee guidance.pdf", b"one"),
+                    SimpleUploadedFile("Term dates.pdf", b"two"),
                 ],
                 "mode": "separate",
                 "description": "Practice workbook",
@@ -172,12 +172,12 @@ class ResourceLibraryTests(TestCase):
         folder = root.add_child(
             instance=ResourceFolder(name="Annual Report", resource_type="workbook")
         )
-        add_file(folder, "report.txt")
+        add_file(folder, "report.pdf")
 
         response = self.client.post(
             reverse("resource_library:upload", args=[folder.pk]),
             {
-                "files": SimpleUploadedFile("Annex A.txt", b"annex"),
+                "files": SimpleUploadedFile("Annex A.pdf", b"annex"),
                 "mode": "add",
             },
         )
@@ -206,7 +206,7 @@ class ResourceLibraryTests(TestCase):
         response = self.client.post(
             reverse("resource_library:upload", args=[root.pk]),
             {
-                "files": SimpleUploadedFile("Loose file.txt", b"contents"),
+                "files": SimpleUploadedFile("Loose file.pdf", b"contents"),
                 "mode": "add",  # ignored at the root
             },
         )
@@ -273,7 +273,7 @@ class ResourceLibraryTests(TestCase):
         response = self.client.post(
             upload_url,
             {
-                "files": SimpleUploadedFile("big.txt", b"x" * 100),
+                "files": SimpleUploadedFile("big.pdf", b"x" * 100),
                 "mode": "separate",
             },
         )
@@ -335,7 +335,7 @@ class ResourceLibraryTests(TestCase):
                 name="Annual Report 2025", description="Yearly performance report"
             )
         )
-        add_file(page, "report.txt", label="Budget summary")
+        add_file(page, "report.pdf", label="Budget summary")
 
         # Folder found by name, searching from the library root
         response = self.client.get(reverse("resource_library:index"), {"q": "annual"})
@@ -356,7 +356,7 @@ class ResourceLibraryTests(TestCase):
     def test_edit_file(self):
         root = ResourceFolder.get_library_root()
         folder = root.add_child(instance=ResourceFolder(name="Reports"))
-        resource = add_file(folder, "report.txt", label="report")
+        resource = add_file(folder, "report.pdf", label="report")
 
         response = self.client.post(
             reverse("resource_library:edit_resource", args=[resource.pk]),
@@ -371,7 +371,7 @@ class ResourceLibraryTests(TestCase):
     def test_replace_file(self):
         root = ResourceFolder.get_library_root()
         folder = root.add_child(instance=ResourceFolder(name="Reports"))
-        resource = add_file(folder, "report.txt", content=b"old contents")
+        resource = add_file(folder, "report.pdf", content=b"old contents")
         old_file_name = resource.file.name
         storage = resource.file.storage
 
@@ -379,7 +379,7 @@ class ResourceLibraryTests(TestCase):
             reverse("resource_library:edit_resource", args=[resource.pk]),
             {
                 "label": "report",
-                "file": SimpleUploadedFile("report-v2.txt", b"new contents"),
+                "file": SimpleUploadedFile("report-v2.pdf", b"new contents"),
             },
         )
         self.assertRedirects(
@@ -449,7 +449,7 @@ class ResourceLibraryTests(TestCase):
                 resource_type="assessment",
             )
         )
-        add_file(page, "report.txt", label="Full report")
+        add_file(page, "report.pdf", label="Full report")
         add_file(page, "summary.mp4", label="Video summary")
 
         from grapple.schema import schema
@@ -540,7 +540,7 @@ class ResourceLibraryPermissionTests(TestCase):
         response = self.client.post(
             reverse("resource_library:upload", args=[root.pk]),
             {
-                "files": SimpleUploadedFile("doc.txt", b"contents"),
+                "files": SimpleUploadedFile("doc.pdf", b"contents"),
                 "mode": "separate",
             },
         )
@@ -555,7 +555,7 @@ class ResourceLibraryPermissionTests(TestCase):
         response = self.client.post(
             reverse("resource_library:upload", args=[root.pk]),
             {
-                "files": SimpleUploadedFile("doc.txt", b"contents"),
+                "files": SimpleUploadedFile("doc.pdf", b"contents"),
                 "mode": "separate",
             },
         )
@@ -662,8 +662,8 @@ class CurriculumFacetTests(TestCase):
             reverse("resource_library:upload", args=[category.pk]),
             {
                 "files": [
-                    SimpleUploadedFile("Counting.txt", b"one"),
-                    SimpleUploadedFile("Shapes.txt", b"two"),
+                    SimpleUploadedFile("Counting.pdf", b"one"),
+                    SimpleUploadedFile("Shapes.pdf", b"two"),
                 ],
                 "mode": "separate",
                 "resource_type": "workbook",
@@ -714,7 +714,7 @@ class CurriculumGraphQLTests(TestCase):
         )
         self.maths_page.year_levels.set([self.y1])
         self.maths_page.topics.add("numeracy")
-        add_file(self.maths_page, "workbook.txt")
+        add_file(self.maths_page, "workbook.pdf")
 
         self.english_page = root.add_child(
             instance=ResourceFolder(
@@ -725,7 +725,7 @@ class CurriculumGraphQLTests(TestCase):
             )
         )
         self.english_page.year_levels.set([self.y1, self.y3])
-        add_file(self.english_page, "guide.txt")
+        add_file(self.english_page, "guide.pdf")
 
     def execute(self, query, **variables):
         from grapple.schema import schema
@@ -825,7 +825,7 @@ class CurriculumGraphQLTests(TestCase):
         root = ResourceFolder.get_library_root()
         category = root.add_child(instance=ResourceFolder(name="Primary"))
         nested = category.add_child(instance=ResourceFolder(name="Year 1 English"))
-        add_file(nested, "unit.txt")
+        add_file(nested, "unit.pdf")
 
         data = self.execute(
             '{ resourcePage(slug: "year-1-english") { urlPath } }'
@@ -839,7 +839,7 @@ class CurriculumGraphQLTests(TestCase):
         category = root.add_child(instance=ResourceFolder(name="Primary"))
         year = category.add_child(instance=ResourceFolder(name="Year 1"))
         page = year.add_child(instance=ResourceFolder(name="Counting Unit"))
-        add_file(page, "unit.txt")
+        add_file(page, "unit.pdf")
 
         data = self.execute(
             '{ resourcePage(slug: "counting-unit") { ancestorFolders { name } } }'
@@ -854,7 +854,7 @@ class CurriculumGraphQLTests(TestCase):
     def test_top_level_resource_page_has_no_ancestors(self):
         root = ResourceFolder.get_library_root()
         page = root.add_child(instance=ResourceFolder(name="Standalone"))
-        add_file(page, "doc.txt")
+        add_file(page, "doc.pdf")
 
         data = self.execute(
             '{ resourcePage(slug: "standalone") { ancestorFolders { name } urlPath } }'
@@ -994,7 +994,7 @@ class ResourceLeadAndCoverTests(TestCase):
         response = self.client.post(
             reverse("resource_library:upload", args=[category.pk]),
             {
-                "files": SimpleUploadedFile("Handbook.txt", b"x"),
+                "files": SimpleUploadedFile("Handbook.pdf", b"x"),
                 "mode": "separate",
                 # published_date deliberately omitted
             },
@@ -1010,7 +1010,7 @@ class ResourceLeadAndCoverTests(TestCase):
         self.client.post(
             reverse("resource_library:upload", args=[category.pk]),
             {
-                "files": SimpleUploadedFile("Old syllabus.txt", b"x"),
+                "files": SimpleUploadedFile("Old syllabus.pdf", b"x"),
                 "mode": "separate",
                 "published_date": "2024-02-01",
             },
@@ -1102,3 +1102,75 @@ class ResourceLeadAndCoverTests(TestCase):
         html = self.client.get(reverse("resource_library:index")).content.decode()
         self.assertNotIn(reverse("resource_library:edit_folder", args=[child.pk]), html)
         self.assertNotIn(reverse("resource_library:delete_folder", args=[child.pk]), html)
+
+    def test_video_extension_lists_stay_in_sync(self):
+        """
+        Two lists describe "what is a video": the settings list gates uploads,
+        and models.VIDEO_EXTENSIONS decides the size limit and whether the
+        frontend renders a player. If they drift, a file can be accepted but
+        never play, or get the wrong size limit.
+        """
+        from django.conf import settings as django_settings
+
+        from .models import VIDEO_EXTENSIONS
+
+        self.assertEqual(
+            sorted(django_settings.RESOURCE_LIBRARY_VIDEO_EXTENSIONS),
+            sorted(VIDEO_EXTENSIONS),
+        )
+
+    def test_allowed_extensions_are_pdf_and_video_only(self):
+        from django.conf import settings as django_settings
+
+        self.assertEqual(
+            sorted(django_settings.RESOURCE_LIBRARY_EXTENSIONS),
+            sorted(["pdf", "mp4", "webm", "m4v"]),
+        )
+
+    def test_office_documents_and_archives_are_rejected(self):
+        from django.conf import settings as django_settings
+
+        folder = self.root.add_child(instance=ResourceFolder(name="Uploads"))
+        for filename in ("notes.docx", "budget.xlsx", "deck.pptx", "pack.zip", "notes.txt"):
+            with self.subTest(filename=filename):
+                response = self.client.post(
+                    reverse("resource_library:upload", args=[folder.pk]),
+                    {
+                        "files": SimpleUploadedFile(filename, b"contents"),
+                        "mode": "separate",
+                    },
+                )
+                self.assertEqual(response.status_code, 200)  # redisplayed with errors
+                # Django lists the extensions in the order they're configured
+                allowed = ", ".join(django_settings.RESOURCE_LIBRARY_EXTENSIONS)
+                self.assertFormError(
+                    response.context["form"],
+                    "files",
+                    f"File extension “{filename.rsplit('.', 1)[1]}” is not allowed. "
+                    f"Allowed extensions are: {allowed}.",
+                )
+        self.assertFalse(Resource.objects.exists())
+
+    def test_pdf_and_video_are_accepted(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Accepted"))
+        for filename in ("syllabus.pdf", "lesson.mp4", "clip.webm", "clip.m4v"):
+            with self.subTest(filename=filename):
+                response = self.client.post(
+                    reverse("resource_library:upload", args=[folder.pk]),
+                    {
+                        "files": SimpleUploadedFile(filename, b"contents"),
+                        "mode": "separate",
+                    },
+                )
+                self.assertRedirects(
+                    response, reverse("resource_library:folder", args=[folder.pk])
+                )
+        self.assertEqual(Resource.objects.count(), 4)
+
+    def test_upload_input_advertises_accepted_formats(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Advertised"))
+        html = self.client.get(
+            reverse("resource_library:upload", args=[folder.pk])
+        ).content.decode()
+        self.assertIn('accept=".pdf,.mp4,.webm,.m4v"', html)
+        self.assertIn("Accepted formats: PDF, MP4, WEBM, M4V.", html)
