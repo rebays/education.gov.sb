@@ -308,7 +308,8 @@ class ResourceFolder(index.Indexed, MP_Node):
         null=True,
         blank=True,
         help_text=(
-            "Date this resource was published. Defaults to the upload date."
+            "Date this material was published. Shown on the resource page "
+            "and used to sort the library; defaults to today."
         ),
     )
     order = models.PositiveIntegerField(

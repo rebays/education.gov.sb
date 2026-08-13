@@ -1739,3 +1739,130 @@ class UploadTargetsCurrentFolderTests(TestCase):
             reverse("resource_library:upload", args=[self.folder.pk]), html
         )
 
+
+
+class FolderFormLayoutTests(TestCase):
+    """Layout of the folder form's tabs."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.folder = self.root.add_child(instance=ResourceFolder(name="Folder"))
+
+    def pane(self, html, pane_id):
+        start = html.index(f'id="{pane_id}"')
+        rest = html[start:]
+        nxt = min(
+            (i for i in (rest.find('id="curriculum-pane"', 1),
+                         rest.find('id="promote-pane"', 1),
+                         rest.find("</form>", 1)) if i > 0),
+            default=len(rest),
+        )
+        return rest[:nxt]
+
+    def test_each_field_is_rendered_once(self):
+        """
+        A merge left a duplicated curriculum pane, so every field in it was
+        emitted twice — invisible, since the tab script only ever shows the
+        first, but posting the form sent each value twice.
+        """
+        html = self.client.get(
+            reverse("resource_library:edit_folder", args=[self.folder.pk])
+        ).content.decode()
+        self.assertEqual(html.count('id="curriculum-pane"'), 1)
+        for field in ("resource_type", "level", "subject", "topics"):
+            with self.subTest(field=field):
+                self.assertEqual(html.count(f'name="{field}"'), 1)
+
+    def test_resource_type_sits_with_the_other_filters(self):
+        """
+        It's one of the four public filters and is equally meaningless on a
+        directory, so it belongs beside level, subject and year levels.
+        """
+        html = self.client.get(
+            reverse("resource_library:edit_folder", args=[self.folder.pk])
+        ).content.decode()
+        self.assertIn('name="resource_type"', self.pane(html, "curriculum-pane"))
+        self.assertNotIn('name="resource_type"', self.pane(html, "content-pane"))
+
+    def test_year_levels_are_grouped_by_education_level(self):
+        """
+        Twelve ungrouped checkboxes are unreadable; Django emits a <label>
+        per group, which the form's CSS turns into a heading.
+        """
+        html = self.client.get(
+            reverse("resource_library:edit_folder", args=[self.folder.pk])
+        ).content.decode()
+        pane = self.pane(html, "curriculum-pane")
+        for level in ("Primary", "Junior Secondary", "Senior Secondary"):
+            with self.subTest(level=level):
+                self.assertIn(f"<label>{level}</label>", pane)
+
+    def test_grouped_year_levels_still_save(self):
+        y1 = YearLevel.objects.get(slug="y1")
+        y2 = YearLevel.objects.get(slug="y2")
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[self.folder.pk]),
+            {
+                "name": "Folder",
+                "level": EducationLevel.objects.get(slug="primary").pk,
+                "year_levels": [y1.pk, y2.pk],
+            },
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[self.folder.pk])
+        )
+        self.assertEqual(
+            sorted(self.folder.year_levels.values_list("slug", flat=True)),
+            ["y1", "y2"],
+        )
+
+    def test_new_folder_form_prefills_todays_date(self):
+        from datetime import date as _date
+
+        response = self.client.get(
+            reverse("resource_library:add_folder", args=[self.root.pk])
+        )
+        initial = response.context["form"].fields["published_date"].initial
+        self.assertEqual(initial(), _date.today())
+
+    def test_editing_does_not_restamp_the_published_date(self):
+        """
+        The prefill is for new folders. Opening an old one to fix a typo
+        shouldn't quietly claim it was published today.
+        """
+        from datetime import date as _date
+
+        dated = self.root.add_child(
+            instance=ResourceFolder(name="Old", published_date=_date(2024, 3, 1))
+        )
+        response = self.client.get(
+            reverse("resource_library:edit_folder", args=[dated.pk])
+        )
+        form = response.context["form"]
+        self.assertIsNone(form.fields["published_date"].initial)
+        self.assertEqual(form.initial["published_date"], _date(2024, 3, 1))
+
+    def test_creating_a_folder_saves_the_prefilled_date(self):
+        from datetime import date as _date
+
+        self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Dated", "published_date": _date.today().isoformat()},
+        )
+        self.assertEqual(
+            ResourceFolder.objects.get(name="Dated").published_date, _date.today()
+        )
+
+    def test_a_blank_published_date_is_still_allowed(self):
+        response = self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Undated", "published_date": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNone(
+            ResourceFolder.objects.get(name="Undated").published_date
+        )

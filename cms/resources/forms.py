@@ -1,4 +1,6 @@
 
+from datetime import date
+
 from django import forms
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -12,6 +14,27 @@ from .models import (
     ResourceFolder,
     is_video_filename,
 )
+
+
+class YearLevelsByLevelIterator(forms.models.ModelChoiceIterator):
+    """
+    Groups the year levels under their education level, so the field renders
+    as "Primary: Year 1–6 / Junior Secondary: Form 1–3 …" instead of twelve
+    undifferentiated checkboxes. Django renders grouped choices with a
+    <label> per group, which the form's CSS lays out.
+    """
+
+    def __iter__(self):
+        groups = {}
+        for obj in self.queryset.select_related("level"):
+            # YearLevel.Meta orders by level then position, so insertion
+            # order already puts the groups in curriculum order.
+            groups.setdefault(obj.level.name, []).append(self.choice(obj))
+        yield from groups.items()
+
+
+class GroupedYearLevelsField(forms.ModelMultipleChoiceField):
+    iterator = YearLevelsByLevelIterator
 
 
 def validate_year_levels_match_level(level, year_levels):
@@ -54,6 +77,7 @@ class FolderForm(forms.ModelForm):
             "meta_description",
             "canonical_url",
         ]
+        field_classes = {"year_levels": GroupedYearLevelsField}
         widgets = {
             "lead": forms.Textarea(attrs={"rows": 2}),
             "description": forms.Textarea(attrs={"rows": 3}),
@@ -68,6 +92,14 @@ class FolderForm(forms.ModelForm):
         help_texts = {
             "description": "Shown on the resource page once this folder has files.",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Prefill on create only. Stamping today onto an existing folder
+        # being edited for some unrelated reason would quietly restate when
+        # its material was published.
+        if self.instance.pk is None:
+            self.fields["published_date"].initial = date.today
 
     def clean(self):
         cleaned_data = super().clean()

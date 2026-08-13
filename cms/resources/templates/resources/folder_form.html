@@ -37,6 +37,35 @@
         .folder-form-tab-pane.active {
             display: block;
         }
+        /* Twelve year levels in a flat column is unreadable. Django renders
+           the grouped choices as one <div> per education level, each opening
+           with a bare <label>; style that as a heading and wrap the
+           checkboxes beneath it into rows. */
+        .rl-year-levels #id_year_levels {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .rl-year-levels #id_year_levels > div {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 18px;
+        }
+        .rl-year-levels #id_year_levels > div > label:first-child {
+            flex-basis: 100%;
+            margin-bottom: 2px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--w-color-text-meta);
+        }
+        .rl-year-levels #id_year_levels > div > div {
+            flex: 0 0 auto;
+        }
+        .rl-year-levels #id_year_levels label {
+            font-weight: 400;
+        }
     </style>
 {% endblock %}
 
@@ -109,7 +138,6 @@
                 {% formattedfield field=form.lead %}
                 {% formattedfield field=form.description %}
                 {% formattedfield field=form.cover_image %}
-                {% formattedfield field=form.resource_type %}
                 {% formattedfield field=form.published_date %}
             </div>
 
@@ -125,27 +153,14 @@
                         They take effect once this folder holds files.
                     {% endif %}
                 </p>
-                {% formattedfield field=form.level %}
-                {% formattedfield field=form.subject %}
-                {% formattedfield field=form.year_levels %}
-                {% formattedfield field=form.topics %}
-            </div>
+                {% formattedfield field=form.resource_type %}
 
-            {# Curriculum Tab — drives the filters on the public resources explorer #}
-            <div id="curriculum-pane" class="folder-form-tab-pane" role="tabpanel" aria-labelledby="curriculum-tab">
-                <p style="margin-bottom: 20px; font-size: 13px; color: var(--w-color-text-meta);">
-                    These fields power the filters and coverage map on the public Resources
-                    page.
-                    {% if page_kind == 'directory' %}
-                        This folder publishes as a directory, so they have no effect here —
-                        set them on the folders that hold the files.
-                    {% else %}
-                        They take effect once this folder holds files.
-                    {% endif %}
-                </p>
-                {% formattedfield field=form.level %}
-                {% formattedfield field=form.subject %}
-                {% formattedfield field=form.year_levels %}
+                <div class="w-field-row">
+                    {% formattedfield field=form.level classname="col6" %}
+                    {% formattedfield field=form.subject classname="col6" %}
+                </div>
+
+                {% formattedfield field=form.year_levels classname="rl-year-levels" %}
                 {% formattedfield field=form.topics %}
             </div>
 
