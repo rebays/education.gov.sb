@@ -63,6 +63,7 @@ export type CurriculumVocabulary = {
 };
 
 export type CurriculumFilters = {
+  levelSlug: string | null;
   type: string | null;
   subjectSlug: string | null;
   yearLevelSlug: string | null;
@@ -70,11 +71,51 @@ export type CurriculumFilters = {
 };
 
 export const emptyFilters: CurriculumFilters = {
+  levelSlug: null,
   type: null,
   subjectSlug: null,
   yearLevelSlug: null,
   query: "",
 };
+
+/**
+ * Reads a filter set out of a URL, so a link can land on the explorer
+ * already narrowed — the landing page's level tiles point at
+ * `/resources?level=primary`.
+ *
+ * Values are checked against the CMS vocabulary and dropped when unknown:
+ * a stale bookmark or a hand-typed slug then shows the unfiltered library
+ * rather than an empty list with no visible cause.
+ */
+export function filtersFromSearchParams(
+  params: { get(key: string): string | null },
+  vocabulary: CurriculumVocabulary,
+): CurriculumFilters {
+  const pick = (key: string, allowed: string[]): string | null => {
+    const value = params.get(key);
+    return value && allowed.includes(value) ? value : null;
+  };
+
+  return {
+    levelSlug: pick(
+      "level",
+      vocabulary.levels.map((l) => l.slug),
+    ),
+    type: pick(
+      "type",
+      vocabulary.resourceTypes.map((t) => t.value),
+    ),
+    subjectSlug: pick(
+      "subject",
+      vocabulary.subjects.map((s) => s.slug),
+    ),
+    yearLevelSlug: pick(
+      "year",
+      vocabulary.yearLevels.map((y) => y.slug),
+    ),
+    query: params.get("q") ?? "",
+  };
+}
 
 /**
  * A null `levelSlug` means "all levels" — the explorer's default. Without it

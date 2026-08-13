@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon, type IconName } from "@/components/ui/icon";
@@ -8,6 +9,7 @@ import {
   countCoverage,
   emptyFilters,
   filterResources,
+  filtersFromSearchParams,
   firstPopulatedLevel,
   getSubjects,
   getYearLevels,
@@ -33,7 +35,8 @@ type ViewMode = "map" | "list";
  *
  * The default landing state shows filter instructions rather than an
  * unfiltered list — resources only render once at least one filter
- * (search, type, subject, or year level) is applied. The Coverage Map is
+ * (search, level, type, subject, or year level) is applied, whether by the
+ * visitor or by the query string they arrived on. The Coverage Map is
  * opt-in via the sidebar button and via drilling into a specific
  * subject/year cell.
  */
@@ -96,14 +99,21 @@ export function CurriculumExplorer({
   vocabulary: CurriculumVocabulary;
   resources: CurriculumResource[];
 }) {
-  // Education level scopes the Coverage Map only — that grid plots subjects
-  // against year levels and can show one level at a time. The resource list
-  // is driven purely by the four sidebar filters, so it is never constrained
-  // by level; that would silently hide other levels' material and anything
-  // an editor left unclassified.
-  const [mapLevel, setMapLevel] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  // Education level is a filter like any other, and like the others it is
+  // off by default: nothing is scoped by level unless a visitor asks for
+  // it, since scoping silently hides other levels' material and anything an
+  // editor left unclassified. The Coverage Map keeps its own level (it can
+  // only plot one at a time), seeded from the filter when there is one.
+  //
+  // Landing state comes from the URL so a link can arrive pre-narrowed —
+  // the home page's level tiles link to `/resources?level=primary`. Read
+  // once: from here on the filters are this component's own state.
+  const [filters, setFilters] = useState<CurriculumFilters>(() =>
+    filtersFromSearchParams(searchParams, vocabulary),
+  );
+  const [mapLevel, setMapLevel] = useState<string | null>(filters.levelSlug);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [filters, setFilters] = useState<CurriculumFilters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(true);
   // Set by "Show all resources" on the landing card, and sticky once set:
   // having opted into browsing, nobody wants to be dropped back onto an
@@ -123,12 +133,16 @@ export function CurriculumExplorer({
   );
 
   const filteredResources = useMemo(
-    () => filterResources(resources, null, filters),
+    () => filterResources(resources, filters.levelSlug, filters),
     [resources, filters],
   );
 
   const hasActiveFilters = Boolean(
-    filters.type || filters.subjectSlug || filters.yearLevelSlug || filters.query
+    filters.levelSlug ||
+      filters.type ||
+      filters.subjectSlug ||
+      filters.yearLevelSlug ||
+      filters.query
   );
 
   function handleLevelChange(next: string) {
@@ -141,7 +155,15 @@ export function CurriculumExplorer({
   }
 
   function handleCellClick(subjectSlug: string, yearLevelSlug: string) {
-    setFilters({ type: null, subjectSlug, yearLevelSlug, query: "" });
+    // The cell's count is scoped to the map's level, so carry that into the
+    // filters — otherwise the list returns more than the number clicked.
+    setFilters({
+      levelSlug: mapLevel,
+      type: null,
+      subjectSlug,
+      yearLevelSlug,
+      query: "",
+    });
     setViewMode("list");
   }
 
@@ -156,6 +178,17 @@ export function CurriculumExplorer({
     setViewMode("list");
   }
 
+  // Remounts the count line and the list so their entry animations replay
+  // whenever the filter set changes.
+  const filterKey = [
+    filters.levelSlug ?? "",
+    filters.type ?? "",
+    filters.subjectSlug ?? "",
+    filters.yearLevelSlug ?? "",
+    filters.query,
+  ].join("-");
+
+  const activeLevel = vocabulary.levels.find((l) => l.slug === filters.levelSlug);
   const activeSubject = subjects.find((s) => s.slug === filters.subjectSlug);
   const activeYearLevel = yearLevels.find((y) => y.slug === filters.yearLevelSlug);
   const activeType = vocabulary.resourceTypes.find((t) => t.value === filters.type);
@@ -171,6 +204,7 @@ export function CurriculumExplorer({
   return (
     <div className="mx-auto flex w-full max-w-8xl flex-col gap-8 px-6 py-12 lg:flex-row">
       <MobileFilterIsland
+        levels={vocabulary.levels}
         resourceTypes={vocabulary.resourceTypes}
         subjects={subjects}
         yearLevels={yearLevels}
@@ -181,6 +215,7 @@ export function CurriculumExplorer({
 
       {showFilters && (
         <CurriculumSidebar
+          levels={vocabulary.levels}
           resourceTypes={vocabulary.resourceTypes}
           subjects={subjects}
           yearLevels={yearLevels}
@@ -254,13 +289,14 @@ export function CurriculumExplorer({
             </div>
           ) : (
             <p
-              key={`${filters.type ?? ""}-${filters.subjectSlug ?? ""}-${filters.yearLevelSlug ?? ""}-${filters.query}-${showAll}`}
+              key={`${filterKey}-${showAll}`}
               className="animate-in fade-in-0 slide-in-from-top-1 ml-auto text-sm text-muted duration-300"
               aria-live="polite"
             >
               {hasActiveFilters ? (
                 <>
                   {filteredResources.length} {filteredResources.length === 1 ? "resource" : "resources"}
+                  {activeLevel && <> · {activeLevel.name}</>}
                   {activeSubject && <> · {activeSubject.name}</>}
                   {activeYearLevel && <> · {activeYearLevel.label}</>}
                   {activeType && <> · {activeType.label}</>}
@@ -292,7 +328,7 @@ export function CurriculumExplorer({
             // With no filters applied this is the whole library, already
             // ordered newest-first by filterResources.
             <CurriculumResourceList
-              key={`${filters.type ?? ""}-${filters.subjectSlug ?? ""}-${filters.yearLevelSlug ?? ""}-${filters.query}`}
+              key={filterKey}
               resources={filteredResources}
               yearLevels={yearLevels}
             />

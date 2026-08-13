@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import PageHeader from "@/components/shared/page-header";
 import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
@@ -26,11 +27,16 @@ export default async function ResourceIndexPage({
         id="wm-resources"
         title={page.title}
         lead={page.lead}
-        crumbs={[{ label: "Resources" }]}
+        crumbs={[{ label: page.title }]}
       />
 
       <main className="flex-1 bg-background">
-        <CurriculumExplorer vocabulary={vocabulary} resources={resources} />
+        {/* The explorer reads its landing filters from the query string, so
+            it is suspended per the useSearchParams guidance — without a
+            boundary that would opt the whole route out of prerendering. */}
+        <Suspense fallback={null}>
+          <CurriculumExplorer vocabulary={vocabulary} resources={resources} />
+        </Suspense>
       </main>
 
       <SiteFooter />

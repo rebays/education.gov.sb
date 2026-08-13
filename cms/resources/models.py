@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.utils.functional import cached_property
 from django.utils.text import slugify
 from grapple.models import (
     GraphQLBoolean,
@@ -143,11 +144,13 @@ class Subject(models.Model):
 class ResourceFolder(index.Indexed, MP_Node):
     """
     Folder tree for the resource library, and — by convention — the resource
-    page model: the tree exists purely for organising the library in the CMS,
-    and any folder that directly contains files is rendered as a resource
-    page on the headless frontend (looked up by slug). The hierarchy itself
-    is never exposed. The library is rooted at a single root node created on
-    first use (so it survives renaming).
+    page model: any folder that directly contains files is rendered as a
+    resource page on the headless frontend (looked up by slug), and a folder
+    that only organises others is rendered as a directory of them, so a
+    visitor can walk the tree the same way an editor built it. Editors
+    organise the library freely, so no shape is assumed: a folder may hold
+    files, subfolders, or both. The library is rooted at a single root node
+    created on first use (so it survives renaming).
     """
 
     class ResourceType(models.TextChoices):
@@ -292,7 +295,9 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLString("published_date"),
         GraphQLInt("order"),
         GraphQLInt("file_count"),
+        GraphQLInt("child_count"),
         GraphQLString("resource_index_page_slug"),
+        GraphQLString("resource_index_page_title"),
         GraphQLForeignKey("level", "resources.EducationLevel"),
         GraphQLForeignKey("subject", "resources.Subject"),
         GraphQLCollection(GraphQLForeignKey, "year_levels", "resources.YearLevel"),
@@ -346,11 +351,42 @@ class ResourceFolder(index.Indexed, MP_Node):
         return self.get_children().order_by("order", "name")
 
     @property
-    def resource_index_page_slug(self):
-        """Return the slug of the associated ResourceIndexPage."""
+    def child_count(self):
+        """
+        Number of subfolders. Paired with file_count so the frontend can
+        describe a folder honestly whichever way an editor has organised
+        it — "0 files" is misleading for a folder holding only subfolders.
+        """
+        return self.get_children().count()
+
+    @cached_property
+    def index_page(self):
+        """
+        The ResourceIndexPage this folder belongs to.
+
+        The FK is optional and nothing sets it — it isn't on the folder form
+        and no upload path assigns it — so in practice it is always null.
+        Since ResourceIndexPage is max_count = 1 there is only ever one
+        section to belong to, so fall back to it rather than leaving every
+        folder unattributed and every public URL guessing at a prefix.
+        """
         if self.resource_index_page:
-            return self.resource_index_page.slug
-        return None
+            return self.resource_index_page
+        return ResourceIndexPage.objects.live().first()
+
+    @property
+    def resource_index_page_slug(self):
+        """Slug of the section this folder sits in; names its URL prefix."""
+        return self.index_page.slug if self.index_page else None
+
+    @property
+    def resource_index_page_title(self):
+        """
+        Title of the section, for breadcrumbs. The slug names the URL and
+        the title names the section; an editor renaming the index page
+        should move the breadcrumb label with it.
+        """
+        return self.index_page.title if self.index_page else None
 
     @property
     def display_lead(self):
