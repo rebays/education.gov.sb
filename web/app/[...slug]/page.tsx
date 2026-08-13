@@ -71,6 +71,7 @@ async function catchAllPage({
             resources: folder.resources,
           }}
           indexPath={`/${folder.resourceIndexPageSlug ?? slug[0]}/`}
+          indexTitle={folder.resourceIndexPageTitle}
           ancestors={folder.ancestorFolders}
         />
       );

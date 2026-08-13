@@ -26,7 +26,7 @@ export default async function ResourceIndexPage({
         id="wm-resources"
         title={page.title}
         lead={page.lead}
-        crumbs={[{ label: "Resources" }]}
+        crumbs={[{ label: page.title }]}
       />
 
       <main className="flex-1 bg-background">

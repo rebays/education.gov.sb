@@ -293,6 +293,7 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLInt("order"),
         GraphQLInt("file_count"),
         GraphQLString("resource_index_page_slug"),
+        GraphQLString("resource_index_page_title"),
         GraphQLForeignKey("level", "resources.EducationLevel"),
         GraphQLForeignKey("subject", "resources.Subject"),
         GraphQLCollection(GraphQLForeignKey, "year_levels", "resources.YearLevel"),
@@ -350,6 +351,17 @@ class ResourceFolder(index.Indexed, MP_Node):
         """Return the slug of the associated ResourceIndexPage."""
         if self.resource_index_page:
             return self.resource_index_page.slug
+        return None
+
+    @property
+    def resource_index_page_title(self):
+        """
+        Title of the associated ResourceIndexPage, for breadcrumbs. The slug
+        names the URL and the title names the section; an editor renaming
+        the index page should move the breadcrumb label with it.
+        """
+        if self.resource_index_page:
+            return self.resource_index_page.title
         return None
 
     @property

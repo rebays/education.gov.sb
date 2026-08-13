@@ -38,18 +38,31 @@ export default function PageHeader({
                     Home
                   </Link>
                 </li>
-                {crumbs.map((c) => (
-                  <li key={c.label} className="flex items-center gap-2">
-                    <span aria-hidden>/</span>
-                    {c.href ? (
-                      <Link href={c.href} className="hover:text-accent">
-                        {c.label}
-                      </Link>
-                    ) : (
-                      <span className="text-white/85">{c.label}</span>
-                    )}
-                  </li>
-                ))}
+                {crumbs.map((c, index) => {
+                  // Every call site ends its trail on the page being viewed.
+                  const isCurrent = index === crumbs.length - 1;
+                  return (
+                    <li key={c.label} className="flex items-center gap-2">
+                      <span aria-hidden>/</span>
+                      {c.href ? (
+                        <Link
+                          href={c.href}
+                          aria-current={isCurrent ? "page" : undefined}
+                          className="hover:text-accent"
+                        >
+                          {c.label}
+                        </Link>
+                      ) : (
+                        <span
+                          aria-current={isCurrent ? "page" : undefined}
+                          className="text-white/85"
+                        >
+                          {c.label}
+                        </span>
+                      )}
+                    </li>
+                  );
+                })}
               </ol>
             </nav>
           )}

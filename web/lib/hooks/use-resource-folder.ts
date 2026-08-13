@@ -23,6 +23,7 @@ const GET_RESOURCE_FOLDER = `
       order
       fileCount
       resourceIndexPageSlug
+      resourceIndexPageTitle
       ancestorFolders {
         id
         name
@@ -103,6 +104,8 @@ export interface ResourceFolderData {
   order: number;
   fileCount: number;
   resourceIndexPageSlug?: string;
+  /** Section name for breadcrumbs; the slug only names the URL. */
+  resourceIndexPageTitle?: string | null;
   ancestorFolders: ResourceAncestor[];
   children: ResourceSubfolder[];
   resources: ResourceFile[];

@@ -13,12 +13,15 @@ interface ResourcePageComponentProps {
   page: ResourcePageProps;
   /** Path of the ResourceIndexPage this resource belongs to. */
   indexPath: string;
+  /** Its title, for the breadcrumb label. Falls back when unassociated. */
+  indexTitle?: string | null;
   ancestors: ResourceAncestor[];
 }
 
 export default function ResourcePage({
   page,
   indexPath,
+  indexTitle,
   ancestors,
 }: ResourcePageComponentProps) {
   return (
@@ -30,12 +33,16 @@ export default function ResourcePage({
         title={page.name}
         lead={page.displayLead}
         crumbs={[
-          { label: "Resources", href: indexPath },
+          { label: indexTitle || "Resources", href: indexPath },
           // Ancestors are CMS-side organisation, not public pages — their
           // URLs just redirect back to the index, so they're shown as
           // context rather than links. Labelled by name, since a folder's
           // slug is often an internal working name.
           ...ancestors.map((ancestor) => ({ label: ancestor.name })),
+          // The trail ends at the resource itself: ancestorFolders stops
+          // short of this folder, so without this the deepest page and the
+          // index share a breadcrumb.
+          { label: page.name },
         ]}
       />
 
