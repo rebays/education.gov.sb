@@ -1,0 +1,25 @@
+{% extends "wagtailadmin/generic/confirm_delete.html" %}
+{% load i18n %}
+
+{% comment %}
+    Wagtail's reference index only tracks ForeignKeys, so the resources that use
+    this year level through the year_levels ManyToMany never appear in the
+    standard usage summary — it would read "referenced 0 times" while deleting
+    silently stripped the year level from every one of them. Count them here
+    instead. `is_protected` is set alongside this in the view, which makes the
+    parent template hide the delete button.
+{% endcomment %}
+{% block usage_summary %}
+    {% if in_use_count %}
+        <p>
+            {% blocktrans trimmed count counter=in_use_count %}
+                This year level is applied to {{ in_use_count }} resource.
+            {% plural %}
+                This year level is applied to {{ in_use_count }} resources.
+            {% endblocktrans %}
+            {% trans "Remove it from them before deleting, otherwise they would lose their year level without warning." %}
+        </p>
+    {% else %}
+        {{ block.super }}
+    {% endif %}
+{% endblock %}

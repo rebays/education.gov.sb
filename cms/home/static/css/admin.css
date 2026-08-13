@@ -1,0 +1,74 @@
+/*
+ * Wagtail admin chrome overrides.
+ *
+ * Sidebar width
+ * -------------
+ * Wagtail's sidebar is 200px, which truncates longer menu labels —
+ * "Curriculum structure" renders as "Curriculum struc…".
+ *
+ * Widening it is not a one-line change: Wagtail hardcodes 200px in eight
+ * places across the sidebar, the flyout panel and the sub-menu panel, plus
+ * the padding that keeps page content clear. Miss one and something is
+ * misaligned — notably the sub-menu panel, whose background is painted by an
+ * element sized from its 200px children, so it stops short of the widened
+ * edge and leaves an unpainted strip.
+ *
+ * Slim/collapsed mode (60px) is deliberately left alone. The :not() guards
+ * matter: this stylesheet loads after core.css, and `.sidebar--slim` is only
+ * a single class, so a bare `.sidebar { width }` rule here would out-cascade
+ * it and break collapsing entirely.
+ */
+
+:root {
+    --wt-sidebar-width: 240px;
+}
+
+/* 1. The sidebar itself */
+.sidebar:not(.sidebar--slim),
+.sidebar-loading:not(.sidebar-loading--slim) {
+    width: var(--wt-sidebar-width);
+}
+
+/* 2. Its off-canvas position when hidden */
+.sidebar--hidden,
+.sidebar-loading--hidden {
+    inset-inline-start: calc(-1 * var(--wt-sidebar-width));
+}
+
+/* 3. The flyout panel (page explorer / sub-menus) */
+.sidebar-panel {
+    --width: var(--wt-sidebar-width);
+}
+
+/* 4-6. The sub-menu panel: the panel, and the heading and list that size it.
+   These children are what the background stretches to. */
+.sidebar-sub-menu-panel,
+.sidebar-sub-menu-panel > h2,
+.sidebar-sub-menu-panel__list {
+    width: var(--wt-sidebar-width);
+}
+
+/* 7-8. How far the sub-menu panel slides when opening. The slim variant is
+   restated with its original selector so specificity still resolves. */
+.sidebar-sub-menu-panel--open,
+.sidebar--slim .sidebar-sub-menu-panel .sidebar-sub-menu-panel--open {
+    transform: translate3d(var(--wt-sidebar-width), 0, 0);
+}
+
+/* Same specificity as rule 1, so restate it to keep the collapsed loading
+   placeholder narrow. */
+.sidebar-collapsed .sidebar-loading {
+    width: 60px;
+}
+
+@media screen and (min-width: 50em) {
+    /* 9. Page content sits clear of the fixed sidebar */
+    .wrapper {
+        padding-inline-start: var(--wt-sidebar-width);
+    }
+
+    /* 10. Where the flyout panel opens to */
+    .sidebar-panel--open {
+        inset-inline-start: var(--wt-sidebar-width);
+    }
+}

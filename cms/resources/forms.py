@@ -1,3 +1,4 @@
+
 from datetime import date
 
 from django import forms
@@ -9,13 +10,31 @@ from wagtail.admin.widgets import AdminDateInput
 from wagtail.images.widgets import AdminImageChooser
 
 from .models import (
-    EducationLevel,
     Resource,
     ResourceFolder,
-    Subject,
-    YearLevel,
     is_video_filename,
 )
+
+
+class YearLevelsByLevelIterator(forms.models.ModelChoiceIterator):
+    """
+    Groups the year levels under their education level, so the field renders
+    as "Primary: Year 1–6 / Junior Secondary: Form 1–3 …" instead of twelve
+    undifferentiated checkboxes. Django renders grouped choices with a
+    <label> per group, which the form's CSS lays out.
+    """
+
+    def __iter__(self):
+        groups = {}
+        for obj in self.queryset.select_related("level"):
+            # YearLevel.Meta orders by level then position, so insertion
+            # order already puts the groups in curriculum order.
+            groups.setdefault(obj.level.name, []).append(self.choice(obj))
+        yield from groups.items()
+
+
+class GroupedYearLevelsField(forms.ModelMultipleChoiceField):
+    iterator = YearLevelsByLevelIterator
 
 
 def validate_year_levels_match_level(level, year_levels):
@@ -58,6 +77,7 @@ class FolderForm(forms.ModelForm):
             "meta_description",
             "canonical_url",
         ]
+        field_classes = {"year_levels": GroupedYearLevelsField}
         widgets = {
             "lead": forms.Textarea(attrs={"rows": 2}),
             "description": forms.Textarea(attrs={"rows": 3}),
@@ -72,6 +92,14 @@ class FolderForm(forms.ModelForm):
         help_texts = {
             "description": "Shown on the resource page once this folder has files.",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Prefill on create only. Stamping today onto an existing folder
+        # being edited for some unrelated reason would quietly restate when
+        # its material was published.
+        if self.instance.pk is None:
+            self.fields["published_date"].initial = date.today
 
     def clean(self):
         cleaned_data = super().clean()
@@ -163,90 +191,48 @@ class MultipleResourceFileField(ResourceFileField):
         return [f for f in cleaned if f is not None]
 
 
+class FileLabelsWidget(forms.Widget):
+    """
+    Reads the repeated `labels` inputs the upload page generates, one per
+    selected file. The page builds them in JavaScript once files are chosen,
+    so there's nothing to render server-side.
+    """
+
+    def value_from_datadict(self, data, files, name):
+        if hasattr(data, "getlist"):
+            return data.getlist(name)
+        return data.get(name)
+
+    def render(self, name, value, attrs=None, renderer=None):
+        return ""
+
+
+class FileLabelsField(forms.Field):
+    """Labels for the uploaded files, in the order they were submitted."""
+
+    widget = FileLabelsWidget
+
+    def clean(self, value):
+        if not value:
+            return []
+        if isinstance(value, str):
+            value = [value]
+        return [str(item).strip() for item in value]
+
+
 class UploadForm(forms.Form):
     """
-    Bulk upload form. In "separate" mode each file becomes its own resource
-    folder (the details below applied to each); in "add" mode the files are
-    added to the current folder and the details are ignored. Each file's
-    label is derived from its filename.
+    Upload files into the folder the editor is already looking at.
+
+    Deliberately just files and names: the folder is the unit of publishing,
+    so everything describing the resource — description, type, curriculum
+    facets — belongs on the folder form, which edits exactly one of them.
     """
 
-    MODE_SEPARATE = "separate"
-    MODE_ADD = "add"
-    MODE_CHOICES = [
-        (MODE_SEPARATE, "Create a separate resource per file"),
-        (MODE_ADD, "Add the files to this folder's resource page"),
-    ]
-
     files = MultipleResourceFileField(label="Files")
-    mode = forms.ChoiceField(
-        choices=MODE_CHOICES,
-        widget=forms.RadioSelect,
-        label="Upload as",
-    )
-    description = forms.CharField(
-        required=False,
-        widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="Applied to each new resource; ignored when adding files to this folder.",
-    )
-    resource_type = forms.ChoiceField(
-        choices=[("", "---------")] + list(ResourceFolder.ResourceType.choices),
-        required=False,
-        help_text="Applied to each new resource; ignored when adding files to this folder.",
-    )
-    # Curriculum facets, collected here so a bulk upload lands fully
-    # classified and shows up in the frontend explorer's filters straight
-    # away — rather than needing every folder reopened afterwards.
-    level = forms.ModelChoiceField(
-        queryset=None,
-        required=False,
-        help_text="Applied to each new resource; ignored when adding files to this folder.",
-    )
-    subject = forms.ModelChoiceField(
-        queryset=None,
-        required=False,
-        help_text="Applied to each new resource; ignored when adding files to this folder.",
-    )
-    year_levels = forms.ModelMultipleChoiceField(
-        queryset=None,
-        required=False,
-        widget=forms.CheckboxSelectMultiple,
-        help_text="Applied to each new resource; ignored when adding files to this folder.",
-    )
-    topics = forms.CharField(
-        required=False,
-        help_text="Comma-separated keywords applied to each new resource.",
-    )
-    published_date = forms.DateField(
-        required=False,
-        initial=date.today,
-        widget=AdminDateInput,
-        help_text=(
-            "Applied to each new resource; defaults to today. "
-            "Ignored when adding files to this folder."
-        ),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Set at runtime rather than import time so the querysets aren't
-        # evaluated before migrations have created the tables.
-        self.fields["level"].queryset = EducationLevel.objects.all()
-        self.fields["subject"].queryset = Subject.objects.all()
-        self.fields["year_levels"].queryset = YearLevel.objects.select_related("level")
-
-    def clean(self):
-        cleaned_data = super().clean()
-        error = validate_year_levels_match_level(
-            cleaned_data.get("level"), cleaned_data.get("year_levels")
-        )
-        if error:
-            self.add_error("year_levels", error)
-        return cleaned_data
-
-    def clean_topics(self):
-        raw = self.cleaned_data.get("topics", "")
-        return [t.strip() for t in raw.split(",") if t.strip()]
+    # Parallel to `files`. Blank entries fall back to the filename, so an
+    # editor only has to touch the ones they want to rename.
+    labels = FileLabelsField(required=False)
 
 
 class ResourceForm(forms.ModelForm):

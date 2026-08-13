@@ -64,6 +64,22 @@
             font-size: 12px;
             color: var(--w-color-text-meta);
         }
+        .rl-card__kind {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 1px 8px;
+            border-radius: 10px;
+            border: 1px solid var(--w-color-border-furniture);
+            color: var(--w-color-text-meta);
+        }
+        .rl-kind--resource {
+            border-color: var(--w-color-secondary);
+            color: var(--w-color-secondary);
+        }
+        .rl-kind--none {
+            border-style: dashed;
+        }
         .rl-icon-btn {
             display: inline-flex;
             align-items: center;
@@ -180,7 +196,7 @@
 
         {# Toolbar: actions on the folder's contents #}
         <div style="margin-bottom: 50px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-            {% if can_upload %}
+            {% if can_upload and not is_root %}
                 <a href="{% url 'resource_library:upload' folder.pk %}" class="button bicolor button--icon">{% icon name="plus" wrapped=1 %}New file</a>
             {% endif %}
             {% if can_add_folder %}
@@ -236,16 +252,25 @@
                                 <span class="rl-card__thumb">{% icon name="folder-open-inverse" %}</span>
                                 <span class="rl-card__title">{{ sub.name }}</span>
                                 <span class="rl-card__meta">
-                                    {% if sub.resource_type %}{{ sub.get_resource_type_display }} · {% endif %}
-                                    {% if sub.document_count or sub.folder_count %}
-                                        {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}
-                                    {% else %}
-                                        Empty
-                                    {% endif %}
+                                    {% if sub.direct_file_count %}{{ sub.direct_file_count }} file{{ sub.direct_file_count|pluralize }}{% endif %}
+                                    {% if sub.direct_file_count and sub.direct_child_count %} · {% endif %}
+                                    {% if sub.direct_child_count %}{{ sub.direct_child_count }} folder{{ sub.direct_child_count|pluralize }}{% endif %}
+                                    {% if not sub.direct_file_count and not sub.direct_child_count %}Empty{% endif %}
+                                </span>
+                                {# What the public site makes of it #}
+                                <span class="rl-card__kind rl-kind--{{ sub.page_kind }}">
+                                    {% if sub.page_kind == 'resource' %}Resource page
+                                    {% elif sub.page_kind == 'directory' %}Directory
+                                    {% else %}Not published{% endif %}
                                 </span>
                             </a>
-                            {% if can_change_folder or can_delete_folder %}
+                            {% if sub.page_kind != 'none' or can_change_folder or can_delete_folder %}
                                 <div class="rl-card__actions">
+                                    {% if sub.page_kind != 'none' %}
+                                        <a href="{{ sub.public_url }}" class="rl-card__action-btn" target="_blank" rel="noreferrer" title="View on site" aria-label="View on site">
+                                            {% icon name="link-external" %}
+                                        </a>
+                                    {% endif %}
                                     {% if can_change_folder %}
                                         <a href="{% url 'resource_library:edit_folder' sub.pk %}" class="rl-card__action-btn" title="Edit folder details" aria-label="Edit folder">
                                             {% icon name="edit" %}
@@ -313,10 +338,22 @@
                                         <a href="{% url 'resource_library:folder' sub.pk %}">{{ sub.name }}</a>
                                     </div>
                                 </td>
-                                <td>Folder{% if sub.resource_type %} · {{ sub.get_resource_type_display }}{% endif %} · {{ sub.document_count }} file{{ sub.document_count|pluralize }} · {{ sub.folder_count }} folder{{ sub.folder_count|pluralize }}</td>
+                                <td>
+                                    {% if sub.page_kind == 'resource' %}Resource page
+                                    {% elif sub.page_kind == 'directory' %}Directory
+                                    {% else %}Not published{% endif %}
+                                    {% if sub.resource_type %} · {{ sub.get_resource_type_display }}{% endif %}
+                                    · {{ sub.direct_file_count }} file{{ sub.direct_file_count|pluralize }}
+                                    · {{ sub.direct_child_count }} folder{{ sub.direct_child_count|pluralize }}
+                                </td>
                                 {% if search_query %}<td></td>{% endif %}
                                 <td></td>
                                 <td style="display: flex; gap: 8px; align-items: center;">
+                                    {% if sub.page_kind != 'none' %}
+                                        <a href="{{ sub.public_url }}" class="button button-secondary rl-icon-btn" target="_blank" rel="noreferrer" title="View on site" aria-label="View on site">
+                                            {% icon name="link-external" %}
+                                        </a>
+                                    {% endif %}
                                     {% if can_change_folder %}
                                         <a href="{% url 'resource_library:edit_folder' sub.pk %}" class="button button-secondary rl-icon-btn" title="Edit folder details" aria-label="Edit folder">
                                             {% icon name="edit" %}
@@ -381,11 +418,17 @@
             {% if search_query %}
                 <p>No documents match your search.</p>
             {% else %}
-                <p>This folder is empty.
-                    {% if can_upload %}<a href="{% url 'resource_library:upload' folder.pk %}">Upload documents</a>{% endif %}
-                    {% if can_upload and can_add_folder %} or {% endif %}
-                    {% if can_add_folder %}<a href="{% url 'resource_library:add_folder' folder.pk %}">create a folder</a>{% endif %}.
-                </p>
+                {% if is_root %}
+                    <p>The library is empty.
+                        {% if can_add_folder %}<a href="{% url 'resource_library:add_folder' folder.pk %}">Create a folder</a> to get started — files live in folders, not at the top level.{% endif %}
+                    </p>
+                {% else %}
+                    <p>This folder is empty.
+                        {% if can_upload %}<a href="{% url 'resource_library:upload' folder.pk %}">Upload files</a>{% endif %}
+                        {% if can_upload and can_add_folder %} or {% endif %}
+                        {% if can_add_folder %}<a href="{% url 'resource_library:add_folder' folder.pk %}">create a folder</a>{% endif %}.
+                    </p>
+                {% endif %}
             {% endif %}
         {% endif %}
     </div>

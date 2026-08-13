@@ -8,9 +8,6 @@
     {{ form.media.css }}
 {% endblock %}
 
-{# AdminDateInput renders a plain text input plus an inline initDateChooser()
-   call; without its media the function is undefined and the field never
-   becomes a date picker. #}
 {% block extra_js %}
     {{ block.super }}
     {{ form.media.js }}
@@ -27,19 +24,95 @@
             {% endfor %}
         </nav>
 
-        <p>You can select multiple files; each file's label is taken from its filename and can be edited afterwards.
-           <strong>Create a separate resource per file</strong> makes each file its own resource page (in its own folder, with the details below applied{% if is_root %} — the only option at the library root{% endif %}).
-           <strong>Add the files to this folder's resource page</strong> attaches them all to <em>{{ folder.name }}</em> instead.</p>
+        <p>
+            Files are added to <strong>{{ folder.name }}</strong>.
+            {% if page_kind == 'none' %}Uploading here publishes it as a resource page.{% endif %}
+            Select as many as you like; each is titled after its filename, and you can
+            edit the titles below before uploading.
+        </p>
 
         <form method="post" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
-            {% for field in form %}
-                {% formattedfield field=field %}
-            {% endfor %}
+
+            {% formattedfield field=form.files %}
+
+            {% comment %}
+                One title per selected file, prefilled with the filename so an
+                editor only edits the ones they want to rename. Built here
+                rather than server-side because the files aren't uploaded yet.
+                With JavaScript off no inputs are posted and the view falls
+                back to filenames, exactly as before.
+            {% endcomment %}
+            <div id="file-labels" hidden style="margin-bottom: 20px;">
+                <h2 style="font-size: 15px;">Titles</h2>
+                <p style="margin-bottom: 12px; font-size: 13px; color: var(--w-color-text-meta);">
+                    Each file's title on the resource page, shown above the
+                    description. Also used as the download name.
+                </p>
+                <div id="file-labels-list"></div>
+            </div>
+
+
+
+
+
             <div style="margin-top: 20px;">
                 <button type="submit" class="button">Upload</button>
                 <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Cancel</a>
             </div>
         </form>
     </div>
+
+    <script>
+        (function () {
+            const filesInput = document.querySelector('input[type="file"][name="files"]');
+            const labelsBox = document.getElementById('file-labels');
+            const labelsList = document.getElementById('file-labels-list');
+            if (!filesInput || !labelsList) return;
+
+            function stemOf(filename) {
+                return filename.replace(/\.[^.]+$/, '');
+            }
+
+            filesInput.addEventListener('change', function () {
+                labelsList.replaceChildren();
+                const files = Array.from(filesInput.files || []);
+                labelsBox.hidden = files.length === 0;
+
+                files.forEach(function (file, index) {
+                    // Mirrors the markup Wagtail's formattedfield tag emits, so
+                    // these inherit its field styling — including the 840px cap
+                    // on .w-field__wrapper that stops inputs spanning the whole
+                    // screen.
+                    const id = 'id_label_' + index;
+
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'w-field__wrapper';
+
+                    const label = document.createElement('label');
+                    label.className = 'w-field__label';
+                    label.setAttribute('for', id);
+                    label.textContent = file.name;
+
+                    const field = document.createElement('div');
+                    field.className = 'w-field w-field--char_field w-field--text_input';
+
+                    const inputWrapper = document.createElement('div');
+                    inputWrapper.className = 'w-field__input';
+
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.name = 'labels';
+                    input.id = id;
+                    input.value = stemOf(file.name);
+
+                    inputWrapper.appendChild(input);
+                    field.appendChild(inputWrapper);
+                    wrapper.appendChild(label);
+                    wrapper.appendChild(field);
+                    labelsList.appendChild(wrapper);
+                });
+            });
+        })();
+    </script>
 {% endblock %}

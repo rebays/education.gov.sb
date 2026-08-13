@@ -4,9 +4,14 @@ from django.db.models import Count, Q
 from django.urls import include, path, reverse
 from grapple.registry import registry
 from wagtail import hooks
+from wagtail.admin.admin_url_finder import (
+    ModelAdminURLFinder,
+    register_admin_url_finder,
+)
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.viewsets.chooser import ChooserViewSet
 from wagtail.documents.wagtail_hooks import DocumentsSummaryItem
+from wagtail.permission_policies import ModelPermissionPolicy
 
 # `viewsets` is imported for its side effect: registering the curriculum
 # vocabulary snippets. Only `wagtail_hooks` is autodiscovered by Wagtail, so
@@ -24,6 +29,24 @@ def register_resource_library_urls():
     ]
 
 
+class ResourceFolderAdminURLFinder(ModelAdminURLFinder):
+    """
+    Teaches Wagtail how to link to a resource folder.
+
+    Wagtail resolves referencing objects to an edit URL when rendering usage
+    listings — models managed by a viewset get this for free, but the library
+    has its own bespoke admin. Without a finder, every folder shown on a
+    subject's or level's usage page is anonymised to "(Private resource
+    folder)" with no link, which defeats the point of the page.
+    """
+
+    edit_url_name = "resource_library:edit_folder"
+    permission_policy = ModelPermissionPolicy(ResourceFolder)
+
+
+register_admin_url_finder(ResourceFolder, ResourceFolderAdminURLFinder)
+
+
 class ResourceLibraryMenuItem(MenuItem):
     def is_shown(self, request):
         return user_has_library_access(request.user)
@@ -34,7 +57,11 @@ def register_resource_library_menu_item():
     return ResourceLibraryMenuItem(
         "Resource Library",
         reverse("resource_library:index"),
-        icon_name="folder-open-inverse",
+        # Not a folder icon: that's what Pages uses, and two top-level items
+        # with the same icon are indistinguishable at a glance. A document
+        # icon also matches what the library actually holds, and what its own
+        # file cards and chooser already use.
+        icon_name="doc-full",
         order=201,
     )
 

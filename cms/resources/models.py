@@ -1,6 +1,7 @@
 import hashlib
 import os.path
 
+from django import forms as django_forms
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_delete
@@ -18,7 +19,7 @@ from grapple.models import (
 )
 from taggit.managers import TaggableManager
 from treebeard.mp_tree import MP_Node
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, TitleFieldPanel
 from wagtail.models import Page
 from wagtail.search import index
 
@@ -32,6 +33,27 @@ VIDEO_EXTENSIONS = ["mp4", "webm", "m4v"]
 
 def is_video_filename(filename):
     return os.path.splitext(filename)[1][1:].lower() in VIDEO_EXTENSIONS
+
+
+# How a folder publishes. The frontend decides this per folder (see the
+# catch-all route): files make it a resource page, subfolders that themselves
+# hold something make it a directory of them, and a folder holding neither
+# has no page and redirects to the section index.
+PAGE_KIND_RESOURCE = "resource"
+PAGE_KIND_DIRECTORY = "directory"
+PAGE_KIND_NONE = "none"
+
+
+def page_kind_for(*, has_files, has_browsable_child):
+    """
+    Single definition of the rule above, shared by the model property and the
+    explorer's bulk annotation so the two can't drift apart.
+    """
+    if has_files:
+        return PAGE_KIND_RESOURCE
+    if has_browsable_child:
+        return PAGE_KIND_DIRECTORY
+    return PAGE_KIND_NONE
 
 
 class ResourceIndexPage(Page):
@@ -63,8 +85,24 @@ class EducationLevel(models.Model):
     """
 
     name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=100, unique=True)
-    order = models.PositiveIntegerField(default=0)
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        help_text=(
+            "Used by the frontend to identify this level. Changing it breaks "
+            "existing links that filter by this level."
+        ),
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first in filters and on the coverage map.",
+    )
+
+    panels = [
+        TitleFieldPanel("name"),
+        FieldPanel("slug"),
+        FieldPanel("order"),
+    ]
 
     graphql_fields = [
         GraphQLString("name"),
@@ -83,12 +121,35 @@ class EducationLevel(models.Model):
 class YearLevel(models.Model):
     """A year/form within a level — 'Year 1', 'Form 3'."""
 
-    label = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=100, unique=True)
-    level = models.ForeignKey(
-        EducationLevel, on_delete=models.CASCADE, related_name="year_levels"
+    label = models.CharField(max_length=100, help_text="Shown to the public, e.g. “Year 1”.")
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        help_text=(
+            "Used by the frontend to identify this year, e.g. “y1”. Changing "
+            "it breaks existing links that filter by this year."
+        ),
     )
-    order = models.PositiveIntegerField(default=0)
+    level = models.ForeignKey(
+        EducationLevel,
+        # PROTECT, not CASCADE: deleting an education level used to take all
+        # of its years with it in one click, wiping the vocabulary that the
+        # public filters and coverage map are built from. Clear the years
+        # deliberately first.
+        on_delete=models.PROTECT,
+        related_name="year_levels",
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first within the level.",
+    )
+
+    panels = [
+        TitleFieldPanel("label"),
+        FieldPanel("slug"),
+        FieldPanel("level"),
+        FieldPanel("order"),
+    ]
 
     graphql_fields = [
         GraphQLString("label"),
@@ -118,11 +179,34 @@ class Subject(models.Model):
     """
 
     name = models.CharField(max_length=150)
-    slug = models.SlugField(max_length=150, unique=True)
-    levels = models.ManyToManyField(
-        EducationLevel, related_name="subjects", blank=True
+    slug = models.SlugField(
+        max_length=150,
+        unique=True,
+        help_text=(
+            "Used by the frontend to identify this subject. Changing it breaks "
+            "existing links that filter by this subject."
+        ),
     )
-    order = models.PositiveIntegerField(default=0)
+    levels = models.ManyToManyField(
+        EducationLevel,
+        related_name="subjects",
+        blank=True,
+        help_text=(
+            "Levels this subject is taught at. Controls which subjects appear "
+            "in the filters and as rows on the coverage map."
+        ),
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first in the subject filter.",
+    )
+
+    panels = [
+        TitleFieldPanel("name"),
+        FieldPanel("slug"),
+        FieldPanel("levels", widget=django_forms.CheckboxSelectMultiple),
+        FieldPanel("order"),
+    ]
 
     graphql_fields = [
         GraphQLString("name"),
@@ -139,6 +223,12 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.name
+
+    def levels_display(self):
+        """Level scoping at a glance in the listing, since it's a M2M."""
+        return ", ".join(level.name for level in self.levels.all()) or "—"
+
+    levels_display.short_description = "Levels"
 
 
 class ResourceFolder(index.Indexed, MP_Node):
@@ -218,7 +308,8 @@ class ResourceFolder(index.Indexed, MP_Node):
         null=True,
         blank=True,
         help_text=(
-            "Date this resource was published. Defaults to the upload date."
+            "Date this material was published. Shown on the resource page "
+            "and used to sort the library; defaults to today."
         ),
     )
     order = models.PositiveIntegerField(
@@ -346,6 +437,43 @@ class ResourceFolder(index.Indexed, MP_Node):
         return self.resources.exists()
 
     @property
+    def page_kind(self):
+        """
+        Whether this folder publishes as a resource page, as a directory of
+        its subfolders, or not at all.
+
+        Computing this costs a query per child, so listings prime `_page_kind`
+        in bulk (see views.annotate_folder_counts) and this returns that
+        instead. One name, so templates don't have to know which they have.
+        """
+        primed = getattr(self, "_page_kind", None)
+        if primed is not None:
+            return primed
+        return page_kind_for(
+            has_files=self.resources.exists(),
+            has_browsable_child=any(
+                child.file_count or child.child_count
+                for child in self.get_children()
+            ),
+        )
+
+    @property
+    def has_public_page(self):
+        return self.page_kind != PAGE_KIND_NONE
+
+    @property
+    def public_url(self):
+        """
+        Absolute URL of this folder on the public site. The frontend is a
+        separate host, so `url_path` alone isn't enough to link to it from
+        the admin.
+        """
+        base = getattr(settings, "WAGTAIL_HEADLESS_PREVIEW", {}).get(
+            "SERVE_BASE_URL", ""
+        )
+        return f"{base.rstrip('/')}{self.url_path}"
+
+    @property
     def children(self):
         """Return immediate child folders."""
         return self.get_children().order_by("order", "name")
@@ -445,7 +573,10 @@ class Resource(index.Indexed, models.Model):
     label = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Shown as the download name; prefilled from the filename",
+        help_text=(
+            "Titles the file on the resource page, above the description. "
+            "Also used as the download name; prefilled from the filename."
+        ),
     )
     file = models.FileField(upload_to="resources", max_length=255)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
