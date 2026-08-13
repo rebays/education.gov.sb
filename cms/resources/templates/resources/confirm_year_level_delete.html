@@ -1,12 +1,14 @@
 {% extends "wagtailadmin/generic/confirm_delete.html" %}
 {% load i18n %}
 
-{# Wagtail's reference index only tracks ForeignKeys, so the resources that use
-   this year level through the year_levels ManyToMany never appear in the
-   standard usage summary — it would read "referenced 0 times" while deleting
-   silently stripped the year level from every one of them. Count them here
-   instead. `is_protected` is set alongside this in the view, which makes the
-   parent template hide the delete button. #}
+{% comment %}
+    Wagtail's reference index only tracks ForeignKeys, so the resources that use
+    this year level through the year_levels ManyToMany never appear in the
+    standard usage summary — it would read "referenced 0 times" while deleting
+    silently stripped the year level from every one of them. Count them here
+    instead. `is_protected` is set alongside this in the view, which makes the
+    parent template hide the delete button.
+{% endcomment %}
 {% block usage_summary %}
     {% if in_use_count %}
         <p>

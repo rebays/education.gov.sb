@@ -35,6 +35,27 @@ def is_video_filename(filename):
     return os.path.splitext(filename)[1][1:].lower() in VIDEO_EXTENSIONS
 
 
+# How a folder publishes. The frontend decides this per folder (see the
+# catch-all route): files make it a resource page, subfolders that themselves
+# hold something make it a directory of them, and a folder holding neither
+# has no page and redirects to the section index.
+PAGE_KIND_RESOURCE = "resource"
+PAGE_KIND_DIRECTORY = "directory"
+PAGE_KIND_NONE = "none"
+
+
+def page_kind_for(*, has_files, has_browsable_child):
+    """
+    Single definition of the rule above, shared by the model property and the
+    explorer's bulk annotation so the two can't drift apart.
+    """
+    if has_files:
+        return PAGE_KIND_RESOURCE
+    if has_browsable_child:
+        return PAGE_KIND_DIRECTORY
+    return PAGE_KIND_NONE
+
+
 class ResourceIndexPage(Page):
     """Landing page for the resources section."""
 
@@ -415,6 +436,43 @@ class ResourceFolder(index.Indexed, MP_Node):
         return self.resources.exists()
 
     @property
+    def page_kind(self):
+        """
+        Whether this folder publishes as a resource page, as a directory of
+        its subfolders, or not at all.
+
+        Computing this costs a query per child, so listings prime `_page_kind`
+        in bulk (see views.annotate_folder_counts) and this returns that
+        instead. One name, so templates don't have to know which they have.
+        """
+        primed = getattr(self, "_page_kind", None)
+        if primed is not None:
+            return primed
+        return page_kind_for(
+            has_files=self.resources.exists(),
+            has_browsable_child=any(
+                child.file_count or child.child_count
+                for child in self.get_children()
+            ),
+        )
+
+    @property
+    def has_public_page(self):
+        return self.page_kind != PAGE_KIND_NONE
+
+    @property
+    def public_url(self):
+        """
+        Absolute URL of this folder on the public site. The frontend is a
+        separate host, so `url_path` alone isn't enough to link to it from
+        the admin.
+        """
+        base = getattr(settings, "WAGTAIL_HEADLESS_PREVIEW", {}).get(
+            "SERVE_BASE_URL", ""
+        )
+        return f"{base.rstrip('/')}{self.url_path}"
+
+    @property
     def children(self):
         """Return immediate child folders."""
         return self.get_children().order_by("order", "name")
@@ -514,7 +572,10 @@ class Resource(index.Indexed, models.Model):
     label = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Shown as the download name; prefilled from the filename",
+        help_text=(
+            "Titles the file on the resource page, above the description. "
+            "Also used as the download name; prefilled from the filename."
+        ),
     )
     file = models.FileField(upload_to="resources", max_length=255)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)

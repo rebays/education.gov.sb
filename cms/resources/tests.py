@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 from django.contrib.auth import get_user_model
@@ -16,6 +17,7 @@ from .models import (
     Subject,
     YearLevel,
 )
+from .views import annotate_folder_counts
 
 
 def add_file(folder, filename="doc.pdf", content=b"contents", label=""):
@@ -43,7 +45,7 @@ class ResourceLibraryTests(TestCase):
         self.assertIsNotNone(root)
         self.assertEqual(root.name, LIBRARY_ROOT_NAME)
         self.assertTrue(root.slug)
-        self.assertContains(response, "This folder is empty.")
+        self.assertContains(response, "The library is empty.")
 
     def test_menu_item_appears_in_admin(self):
         response = self.client.get(reverse("wagtailadmin_home"))
@@ -125,49 +127,6 @@ class ResourceLibraryTests(TestCase):
         self.assertEqual(folder.resource_type, "teacher_guide")
         self.assertEqual(str(folder.published_date), "2026-01-15")
 
-    def test_upload_separate_creates_resource_per_file(self):
-        root = ResourceFolder.get_library_root()
-        category = root.add_child(instance=ResourceFolder(name="Workbooks 2026"))
-
-        response = self.client.post(
-            reverse("resource_library:upload", args=[category.pk]),
-            {
-                "files": [
-                    SimpleUploadedFile("Fee guidance.pdf", b"one"),
-                    SimpleUploadedFile("Term dates.pdf", b"two"),
-                ],
-                "mode": "separate",
-                "description": "Practice workbook",
-                "resource_type": "workbook",
-            },
-        )
-        self.assertRedirects(
-            response, reverse("resource_library:folder", args=[category.pk])
-        )
-
-        # Each file got its own resource folder with the shared details
-        category.refresh_from_db()
-        self.assertEqual(category.get_children().count(), 2)
-        self.assertFalse(category.resources.exists())
-        for name in ("Fee guidance", "Term dates"):
-            folder = ResourceFolder.objects.get(name=name)
-            self.assertEqual(folder.get_parent().pk, category.pk)
-            self.assertEqual(folder.description, "Practice workbook")
-            self.assertEqual(folder.resource_type, "workbook")
-            resource = folder.resources.get()
-            self.assertEqual(resource.label, name)
-            self.assertEqual(resource.uploaded_by_user, self.user)
-            self.assertTrue(resource.file_size)
-            self.assertTrue(resource.file_hash)
-
-        # Counted on the category's listing
-        response = self.client.get(
-            reverse("resource_library:folder", args=[category.pk])
-        )
-        self.assertContains(response, "Fee guidance")
-        response = self.client.get(reverse("resource_library:index"))
-        self.assertContains(response, "2 files · 2 folders")
-
     def test_upload_add_to_resource_folder(self):
         root = ResourceFolder.get_library_root()
         folder = root.add_child(
@@ -179,7 +138,6 @@ class ResourceLibraryTests(TestCase):
             reverse("resource_library:upload", args=[folder.pk]),
             {
                 "files": SimpleUploadedFile("Annex A.pdf", b"annex"),
-                "mode": "add",
             },
         )
         self.assertRedirects(
@@ -187,37 +145,6 @@ class ResourceLibraryTests(TestCase):
         )
         self.assertEqual(folder.resources.count(), 2)
         self.assertFalse(folder.get_children().exists())
-
-    def test_upload_mode_defaults(self):
-        root = ResourceFolder.get_library_root()
-        category = root.add_child(instance=ResourceFolder(name="Empty"))
-        page = root.add_child(instance=ResourceFolder(name="Page"))
-        add_file(page)
-
-        response = self.client.get(
-            reverse("resource_library:upload", args=[category.pk])
-        )
-        self.assertEqual(response.context["form"].initial["mode"], "separate")
-
-        response = self.client.get(reverse("resource_library:upload", args=[page.pk]))
-        self.assertEqual(response.context["form"].initial["mode"], "add")
-
-    def test_upload_at_root_forces_separate(self):
-        root = ResourceFolder.get_library_root()
-        response = self.client.post(
-            reverse("resource_library:upload", args=[root.pk]),
-            {
-                "files": SimpleUploadedFile("Loose file.pdf", b"contents"),
-                "mode": "add",  # ignored at the root
-            },
-        )
-        self.assertRedirects(
-            response, reverse("resource_library:folder", args=[root.pk])
-        )
-        root.refresh_from_db()
-        self.assertFalse(root.resources.exists())
-        folder = ResourceFolder.objects.get(name="Loose file")
-        self.assertEqual(folder.resources.count(), 1)
 
     def test_upload_rejects_disallowed_extension(self):
         root = ResourceFolder.get_library_root()
@@ -227,7 +154,6 @@ class ResourceLibraryTests(TestCase):
             reverse("resource_library:upload", args=[folder.pk]),
             {
                 "files": SimpleUploadedFile("malware.exe", b"nope"),
-                "mode": "separate",
             },
         )
         self.assertEqual(response.status_code, 200)  # re-rendered with errors
@@ -242,8 +168,6 @@ class ResourceLibraryTests(TestCase):
             reverse("resource_library:upload", args=[category.pk]),
             {
                 "files": SimpleUploadedFile("Numeracy training.mp4", b"video bytes"),
-                "mode": "separate",
-                "resource_type": "video",
             },
         )
         self.assertRedirects(
@@ -251,13 +175,12 @@ class ResourceLibraryTests(TestCase):
         )
         resource = Resource.objects.get()
         self.assertTrue(resource.is_video)
-        page = resource.folder
-        self.assertEqual(page.name, "Numeracy training")
-        self.assertEqual(page.resource_type, "video")
+        self.assertEqual(resource.folder, category)
+        self.assertEqual(resource.label, "Numeracy training")
 
         # Grid card shows the media icon instead of the document icon
         response = self.client.get(
-            reverse("resource_library:folder", args=[page.pk])
+            reverse("resource_library:folder", args=[category.pk])
         )
         self.assertContains(response, "#icon-media")
 
@@ -275,7 +198,6 @@ class ResourceLibraryTests(TestCase):
             upload_url,
             {
                 "files": SimpleUploadedFile("big.pdf", b"x" * 100),
-                "mode": "separate",
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -287,7 +209,6 @@ class ResourceLibraryTests(TestCase):
             upload_url,
             {
                 "files": SimpleUploadedFile("big.mp4", b"x" * 100),
-                "mode": "separate",
             },
         )
         self.assertRedirects(
@@ -304,7 +225,6 @@ class ResourceLibraryTests(TestCase):
             reverse("resource_library:upload", args=[folder.pk]),
             {
                 "files": SimpleUploadedFile("huge.mp4", b"x" * 100),
-                "mode": "separate",
             },
         )
         self.assertEqual(response.status_code, 200)
@@ -542,7 +462,6 @@ class ResourceLibraryPermissionTests(TestCase):
             reverse("resource_library:upload", args=[root.pk]),
             {
                 "files": SimpleUploadedFile("doc.pdf", b"contents"),
-                "mode": "separate",
             },
         )
         self.assertEqual(response.status_code, 302)  # denied -> admin redirect
@@ -553,15 +472,13 @@ class ResourceLibraryPermissionTests(TestCase):
         self.client.login(username="uploader", password="password")
 
         root = ResourceFolder.get_library_root()
+        folder = root.add_child(instance=ResourceFolder(name="Uploads"))
         response = self.client.post(
-            reverse("resource_library:upload", args=[root.pk]),
-            {
-                "files": SimpleUploadedFile("doc.pdf", b"contents"),
-                "mode": "separate",
-            },
+            reverse("resource_library:upload", args=[folder.pk]),
+            {"files": SimpleUploadedFile("doc.pdf", b"contents")},
         )
         self.assertRedirects(
-            response, reverse("resource_library:folder", args=[root.pk])
+            response, reverse("resource_library:folder", args=[folder.pk])
         )
         self.assertEqual(Resource.objects.count(), 1)
 
@@ -654,36 +571,6 @@ class CurriculumFacetTests(TestCase):
         )
         folder.refresh_from_db()
         self.assertIsNone(folder.level)
-
-    def test_upload_applies_facets_to_each_resource(self):
-        root = ResourceFolder.get_library_root()
-        category = root.add_child(instance=ResourceFolder(name="Year 1 Maths"))
-
-        response = self.client.post(
-            reverse("resource_library:upload", args=[category.pk]),
-            {
-                "files": [
-                    SimpleUploadedFile("Counting.pdf", b"one"),
-                    SimpleUploadedFile("Shapes.pdf", b"two"),
-                ],
-                "mode": "separate",
-                "resource_type": "workbook",
-                "level": self.primary.pk,
-                "subject": self.maths.pk,
-                "year_levels": [self.y1.pk],
-                "topics": "numeracy",
-            },
-        )
-        self.assertRedirects(
-            response, reverse("resource_library:folder", args=[category.pk])
-        )
-
-        for name in ("Counting", "Shapes"):
-            folder = ResourceFolder.objects.get(name=name)
-            self.assertEqual(folder.level, self.primary)
-            self.assertEqual(folder.subject, self.maths)
-            self.assertEqual(list(folder.year_levels.all()), [self.y1])
-            self.assertEqual(list(folder.topics.names()), ["numeracy"])
 
     def test_last_updated_prefers_published_date(self):
         root = ResourceFolder.get_library_root()
@@ -988,48 +875,6 @@ class ResourceLeadAndCoverTests(TestCase):
         self.assertContains(response, "chooser")
         self.assertContains(response, "image-chooser")
 
-    def test_upload_defaults_published_date_to_today(self):
-        from datetime import date as _date
-
-        category = self.root.add_child(instance=ResourceFolder(name="Batch"))
-        response = self.client.post(
-            reverse("resource_library:upload", args=[category.pk]),
-            {
-                "files": SimpleUploadedFile("Handbook.pdf", b"x"),
-                "mode": "separate",
-                # published_date deliberately omitted
-            },
-        )
-        self.assertRedirects(
-            response, reverse("resource_library:folder", args=[category.pk])
-        )
-        folder = ResourceFolder.objects.get(name="Handbook")
-        self.assertEqual(folder.published_date, _date.today())
-
-    def test_upload_respects_explicit_published_date(self):
-        category = self.root.add_child(instance=ResourceFolder(name="Backdated"))
-        self.client.post(
-            reverse("resource_library:upload", args=[category.pk]),
-            {
-                "files": SimpleUploadedFile("Old syllabus.pdf", b"x"),
-                "mode": "separate",
-                "published_date": "2024-02-01",
-            },
-        )
-        folder = ResourceFolder.objects.get(name="Old syllabus")
-        self.assertEqual(str(folder.published_date), "2024-02-01")
-
-    def test_upload_form_prefills_today(self):
-        from datetime import date as _date
-
-        category = self.root.add_child(instance=ResourceFolder(name="Prefill"))
-        response = self.client.get(
-            reverse("resource_library:upload", args=[category.pk])
-        )
-        self.assertEqual(
-            response.context["form"].fields["published_date"].initial(), _date.today()
-        )
-
     def test_graphql_exposes_published_date(self):
         page = self.root.add_child(
             instance=ResourceFolder(
@@ -1050,14 +895,11 @@ class ResourceLeadAndCoverTests(TestCase):
         easy to forget and the failure is silent (a plain text box).
         """
         folder = self.root.add_child(instance=ResourceFolder(name="Picker"))
-        for url in (
-            reverse("resource_library:edit_folder", args=[folder.pk]),
-            reverse("resource_library:upload", args=[folder.pk]),
-        ):
-            with self.subTest(url=url):
-                html = self.client.get(url).content.decode()
-                self.assertIn("initDateChooser", html)
-                self.assertIn("date-time-chooser.js", html)
+        html = self.client.get(
+            reverse("resource_library:edit_folder", args=[folder.pk])
+        ).content.decode()
+        self.assertIn("initDateChooser", html)
+        self.assertIn("date-time-chooser.js", html)
 
     def test_folder_cards_carry_edit_and_delete_actions(self):
         child = self.root.add_child(instance=ResourceFolder(name="Primary"))
@@ -1138,8 +980,7 @@ class ResourceLeadAndCoverTests(TestCase):
                     reverse("resource_library:upload", args=[folder.pk]),
                     {
                         "files": SimpleUploadedFile(filename, b"contents"),
-                        "mode": "separate",
-                    },
+                            },
                 )
                 self.assertEqual(response.status_code, 200)  # redisplayed with errors
                 # Django lists the extensions in the order they're configured
@@ -1160,8 +1001,7 @@ class ResourceLeadAndCoverTests(TestCase):
                     reverse("resource_library:upload", args=[folder.pk]),
                     {
                         "files": SimpleUploadedFile(filename, b"contents"),
-                        "mode": "separate",
-                    },
+                            },
                 )
                 self.assertRedirects(
                     response, reverse("resource_library:folder", args=[folder.pk])
@@ -1500,3 +1340,402 @@ class CurriculumMenuTests(TestCase):
         # as an empty square with no error anywhere.
         sprite = "".join(get_icons())
         self.assertIn(f'id="icon-{CurriculumViewSetGroup.menu_icon}"', sprite)
+
+
+class FolderPageKindTests(TestCase):
+    """
+    Every folder is public now: files make it a resource page, subfolders make
+    it a directory of them, and a folder holding neither redirects away. The
+    explorer has to say which, because the editor can't tell otherwise.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+
+    def test_page_kind_matches_the_frontend_rule(self):
+        resource = self.root.add_child(instance=ResourceFolder(name="Counting"))
+        add_file(resource, "counting.pdf")
+
+        directory = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        nested = directory.add_child(instance=ResourceFolder(name="Year 1"))
+        add_file(nested, "y1.pdf")
+
+        empty = self.root.add_child(instance=ResourceFolder(name="Empty"))
+        # A folder whose only child is itself empty has nothing to browse
+        hollow = self.root.add_child(instance=ResourceFolder(name="Hollow"))
+        hollow.add_child(instance=ResourceFolder(name="Also empty"))
+
+        self.assertEqual(resource.page_kind, "resource")
+        self.assertEqual(directory.page_kind, "directory")
+        self.assertEqual(empty.page_kind, "none")
+        self.assertEqual(hollow.page_kind, "none")
+        self.assertTrue(resource.has_public_page)
+        self.assertFalse(empty.has_public_page)
+
+    def test_counts_describe_the_folder_itself(self):
+        """
+        A category holding one nested document used to read "1 file", which
+        is not something it contains.
+        """
+        category = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        nested = category.add_child(instance=ResourceFolder(name="Year 1"))
+        add_file(nested, "unit.pdf")
+
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        card = re.search(r"Primary.*?</a>", html, re.S).group(0)
+        text = re.sub(r"\s+", " ", re.sub(r"<[^>]+>", " ", card))
+        self.assertIn("1 folder", text)
+        self.assertNotIn("1 file", text)
+
+    def test_annotation_agrees_with_the_model_property(self):
+        """The listing and the single-folder property must not drift."""
+        for name, files, children in (
+            ("WithFiles", 1, 0),
+            ("WithChildren", 0, 1),
+            ("Nothing", 0, 0),
+        ):
+            folder = self.root.add_child(instance=ResourceFolder(name=name))
+            for i in range(files):
+                add_file(folder, f"{name}{i}.pdf")
+            for i in range(children):
+                child = folder.add_child(
+                    instance=ResourceFolder(name=f"{name} child {i}")
+                )
+                add_file(child, f"{name}c{i}.pdf")
+
+        subfolders = list(self.root.get_children())
+        annotate_folder_counts(subfolders)
+        for folder in subfolders:
+            with self.subTest(folder=folder.name):
+                self.assertEqual(
+                    folder.page_kind,
+                    ResourceFolder.objects.get(pk=folder.pk).page_kind,
+                )
+
+    def test_annotation_query_count_is_flat(self):
+        for i in range(20):
+            folder = self.root.add_child(instance=ResourceFolder(name=f"F{i}"))
+            add_file(folder, f"f{i}.pdf")
+        subfolders = list(self.root.get_children())
+        with self.assertNumQueries(2):
+            annotate_folder_counts(subfolders)
+
+    def test_explorer_links_to_the_public_page(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Linkable"))
+        add_file(folder, "doc.pdf")
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertIn(folder.public_url, html)
+        self.assertIn("View on site", html)
+
+    def test_no_public_link_for_folders_without_a_page(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Nothing here"))
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertNotIn(folder.public_url, html)
+        self.assertIn("Not published", html)
+
+    def test_public_url_points_at_the_frontend_host(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Hosted"))
+        self.assertTrue(folder.public_url.startswith("http"))
+        self.assertTrue(folder.public_url.endswith(folder.url_path))
+
+    def test_folder_form_explains_how_it_publishes(self):
+        resource = self.root.add_child(instance=ResourceFolder(name="Guide"))
+        add_file(resource, "guide.pdf")
+        directory = self.root.add_child(instance=ResourceFolder(name="Section"))
+        child = directory.add_child(instance=ResourceFolder(name="Inner"))
+        add_file(child, "inner.pdf")
+        empty = self.root.add_child(instance=ResourceFolder(name="Blank"))
+
+        for folder, expected in (
+            (resource, "resource page"),
+            (directory, "directory"),
+            (empty, "no public page"),
+        ):
+            with self.subTest(folder=folder.name):
+                response = self.client.get(
+                    reverse("resource_library:edit_folder", args=[folder.pk])
+                )
+                self.assertContains(response, expected)
+
+    def test_directory_form_says_curriculum_fields_do_not_apply(self):
+        directory = self.root.add_child(instance=ResourceFolder(name="Section"))
+        child = directory.add_child(instance=ResourceFolder(name="Inner"))
+        add_file(child, "inner.pdf")
+        response = self.client.get(
+            reverse("resource_library:edit_folder", args=[directory.pk])
+        )
+        self.assertContains(response, "don't apply to directories")
+
+
+class UploadFormLayoutTests(TestCase):
+    """
+    Resource details only apply when each file becomes its own resource, so
+    the form shouldn't ask for them when the files are joining an existing
+    resource page.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+
+    def test_label_inputs_use_wagtail_field_markup(self):
+        """
+        The generated inputs have to carry Wagtail's field classes, or they
+        miss the 840px cap on .w-field__wrapper and stretch the full width
+        while the fields below them don't.
+        """
+        folder = self.root.add_child(instance=ResourceFolder(name="Widths"))
+        html = self.client.get(
+            reverse("resource_library:upload", args=[folder.pk])
+        ).content.decode()
+        for css_class in (
+            "w-field__wrapper",
+            "w-field__label",
+            "w-field w-field--char_field w-field--text_input",
+            "w-field__input",
+        ):
+            with self.subTest(css_class=css_class):
+                self.assertIn(css_class, html)
+
+
+class UploadLabelTests(TestCase):
+    """
+    The label titles a file on the public resource page, above the
+    description — so it's worth setting at upload time rather than opening
+    each file afterwards. Labels arrive parallel to the files, letting a bulk
+    upload be titled in one pass.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.category = self.root.add_child(instance=ResourceFolder(name="Batch"))
+
+    def upload(self, files, **extra):
+        return self.client.post(
+            reverse("resource_library:upload", args=[self.category.pk]),
+            {"files": files, **extra},
+        )
+
+    def test_labels_are_applied_in_order(self):
+        self.upload(
+            [
+                SimpleUploadedFile("scan001.pdf", b"a"),
+                SimpleUploadedFile("scan002.pdf", b"b"),
+            ],
+            labels=["Year 1 Syllabus", "Year 2 Syllabus"],
+        )
+        self.assertEqual(
+            sorted(Resource.objects.values_list("label", flat=True)),
+            ["Year 1 Syllabus", "Year 2 Syllabus"],
+        )
+
+    def test_blank_label_falls_back_to_the_filename(self):
+        self.upload(
+            [
+                SimpleUploadedFile("keep-me.pdf", b"a"),
+                SimpleUploadedFile("rename-me.pdf", b"b"),
+            ],
+            labels=["", "Renamed"],
+        )
+        self.assertTrue(Resource.objects.filter(label="keep-me").exists())
+        self.assertTrue(Resource.objects.filter(label="Renamed").exists())
+
+    def test_no_labels_posted_falls_back_to_filenames(self):
+        """JavaScript off: no label inputs exist, so nothing is posted."""
+        self.upload(SimpleUploadedFile("plain.pdf", b"a"))
+        self.assertEqual(Resource.objects.get().label, "plain")
+
+    def test_labels_are_trimmed(self):
+        self.upload(SimpleUploadedFile("x.pdf", b"a"), labels=["  Padded  "])
+        self.assertEqual(Resource.objects.get().label, "Padded")
+
+    def test_labels_apply_when_adding_to_an_existing_resource(self):
+        page = self.root.add_child(instance=ResourceFolder(name="Existing"))
+        add_file(page, "first.pdf")
+        self.client.post(
+            reverse("resource_library:upload", args=[page.pk]),
+            {
+                "files": SimpleUploadedFile("annex.pdf", b"x"),
+                "labels": ["Annex A"],
+            },
+        )
+        self.assertTrue(page.resources.filter(label="Annex A").exists())
+        # ...but it must not rename the folder it joined
+        page.refresh_from_db()
+        self.assertEqual(page.name, "Existing")
+
+    def test_fewer_labels_than_files_is_survivable(self):
+        self.upload(
+            [
+                SimpleUploadedFile("one.pdf", b"a"),
+                SimpleUploadedFile("two.pdf", b"b"),
+            ],
+            labels=["Only the first"],
+        )
+        self.assertTrue(Resource.objects.filter(label="Only the first").exists())
+        self.assertTrue(Resource.objects.filter(label="two").exists())
+
+    def test_upload_form_describes_what_the_title_does(self):
+        """
+        Calling it "the download name" undersold it: the label is the
+        heading shown above the description on the resource page.
+        """
+        html = self.client.get(
+            reverse("resource_library:upload", args=[self.category.pk])
+        ).content.decode()
+        self.assertIn("title on the resource page", html)
+        self.assertIn("above the", html)
+
+
+class TemplateCommentTests(TestCase):
+    """
+    Django's `{# #}` comments are single-line only — a multi-line one isn't a
+    comment at all and renders as literal text on the page. Nothing errors,
+    so it only shows up by looking at the admin.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+
+    def test_no_multiline_hash_comments_in_templates(self):
+        import pathlib
+        import re
+
+        templates = pathlib.Path(__file__).parent / "templates"
+        offenders = [
+            f"{path.name}:{source[: m.start()].count(chr(10)) + 1}"
+            for path in templates.rglob("*.html")
+            for source in [path.read_text(encoding="utf-8")]
+            for m in re.finditer(r"\{#.*?#\}", source, re.S)
+            if "\n" in m.group(0)
+        ]
+        self.assertEqual(
+            offenders, [], "use {% comment %} for comments spanning lines"
+        )
+
+    def test_admin_pages_render_no_comment_text(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Rendered"))
+        add_file(folder, "doc.pdf")
+        year_level = YearLevel.objects.get(slug="y1")
+
+        pages = {
+            "explorer": reverse("resource_library:index"),
+            "folder": reverse("resource_library:folder", args=[folder.pk]),
+            "upload": reverse("resource_library:upload", args=[folder.pk]),
+            "edit folder": reverse(
+                "resource_library:edit_folder", args=[folder.pk]
+            ),
+            "new folder": reverse(
+                "resource_library:add_folder", args=[folder.pk]
+            ),
+            "delete year level": reverse(
+                "wagtailsnippets_resources_yearlevel:delete", args=[year_level.pk]
+            ),
+        }
+        for name, url in pages.items():
+            with self.subTest(page=name):
+                html = self.client.get(url).content.decode()
+                self.assertNotIn("{#", html)
+                self.assertNotIn("#}", html)
+                self.assertNotIn("{% comment %}", html)
+
+
+class UploadTargetsCurrentFolderTests(TestCase):
+    """
+    Upload does one thing: put files in the folder you're looking at. The
+    folder is the unit of publishing, so creating resources means creating
+    folders — and everything describing one lives on the folder form.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.folder = self.root.add_child(instance=ResourceFolder(name="Year 1"))
+
+    def test_files_land_in_the_folder_without_creating_subfolders(self):
+        response = self.client.post(
+            reverse("resource_library:upload", args=[self.folder.pk]),
+            {
+                "files": [
+                    SimpleUploadedFile("one.pdf", b"a"),
+                    SimpleUploadedFile("two.pdf", b"b"),
+                ]
+            },
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[self.folder.pk])
+        )
+        self.assertEqual(self.folder.resources.count(), 2)
+        self.assertFalse(self.folder.get_children().exists())
+
+    def test_uploading_publishes_an_empty_folder_as_a_resource_page(self):
+        self.assertEqual(self.folder.page_kind, "none")
+        self.client.post(
+            reverse("resource_library:upload", args=[self.folder.pk]),
+            {"files": SimpleUploadedFile("syllabus.pdf", b"a")},
+        )
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.folder.pk).page_kind, "resource"
+        )
+
+    def test_upload_form_has_only_files_and_names(self):
+        html = self.client.get(
+            reverse("resource_library:upload", args=[self.folder.pk])
+        ).content.decode()
+        self.assertIn('name="files"', html)
+        self.assertIn('id="file-labels"', html)
+        for gone in ('name="mode"', 'name="level"', 'name="subject"',
+                     'name="published_date"', 'name="resource_type"'):
+            with self.subTest(field=gone):
+                self.assertNotIn(gone, html)
+
+    def test_root_cannot_hold_files(self):
+        """
+        Files placed at the root have no public page to belong to — the
+        frontend resolves resources by their path below it.
+        """
+        response = self.client.post(
+            reverse("resource_library:upload", args=[self.root.pk]),
+            {"files": SimpleUploadedFile("loose.pdf", b"a")},
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[self.root.pk])
+        )
+        self.assertFalse(Resource.objects.exists())
+        self.assertIn(
+            "Create one first",
+            " ".join(str(m.message) for m in get_messages(response.wsgi_request)),
+        )
+
+    def test_root_offers_no_upload_button(self):
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertNotIn(
+            reverse("resource_library:upload", args=[self.root.pk]), html
+        )
+
+    def test_folders_still_offer_upload(self):
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.folder.pk])
+        ).content.decode()
+        self.assertIn(
+            reverse("resource_library:upload", args=[self.folder.pk]), html
+        )
+

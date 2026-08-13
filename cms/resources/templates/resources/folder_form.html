@@ -56,6 +56,37 @@
             {% endfor %}
         </nav>
 
+        {% comment %}
+            What the public site currently makes of this folder. The same form
+            edits both resource pages and directories, and the curriculum
+            fields only mean something for the former.
+        {% endcomment %}
+        {% if page_kind %}
+            <div class="help-block {% if page_kind == 'none' %}help-warning{% else %}help-info{% endif %}" style="margin-bottom: 20px;">
+                {% if page_kind == 'resource' %}
+                    <p>
+                        Holds {{ direct_file_count }} file{{ direct_file_count|pluralize }}, so it publishes as a
+                        <strong>resource page</strong> at
+                        <a href="{{ folder.public_url }}" target="_blank" rel="noreferrer">{{ folder.url_path }}</a>.
+                        The Curriculum fields decide where it appears in the public filters.
+                    </p>
+                {% elif page_kind == 'directory' %}
+                    <p>
+                        Holds no files of its own, so it publishes as a
+                        <strong>directory</strong> listing its {{ direct_child_count }} subfolder{{ direct_child_count|pluralize }} at
+                        <a href="{{ folder.public_url }}" target="_blank" rel="noreferrer">{{ folder.url_path }}</a>.
+                        The Curriculum fields don't apply to directories — set them on the folders that hold the files.
+                    </p>
+                {% else %}
+                    <p>
+                        Empty, so it has <strong>no public page</strong> yet and its URL redirects to the
+                        Resources index. Upload files to publish it as a resource page, or add subfolders
+                        to publish it as a directory.
+                    </p>
+                {% endif %}
+            </div>
+        {% endif %}
+
         <form method="post" novalidate id="folder-form">
             {% csrf_token %}
 
@@ -85,8 +116,14 @@
             {# Curriculum Tab — drives the filters on the public resources explorer #}
             <div id="curriculum-pane" class="folder-form-tab-pane" role="tabpanel" aria-labelledby="curriculum-tab">
                 <p style="margin-bottom: 20px; font-size: 13px; color: var(--w-color-text-meta);">
-                    These fields power the filters and coverage map on the public
-                    Resources page. They only take effect once this folder holds files.
+                    These fields power the filters and coverage map on the public Resources
+                    page.
+                    {% if page_kind == 'directory' %}
+                        This folder publishes as a directory, so they have no effect here —
+                        set them on the folders that hold the files.
+                    {% else %}
+                        They take effect once this folder holds files.
+                    {% endif %}
                 </p>
                 {% formattedfield field=form.level %}
                 {% formattedfield field=form.subject %}
@@ -97,8 +134,14 @@
             {# Curriculum Tab — drives the filters on the public resources explorer #}
             <div id="curriculum-pane" class="folder-form-tab-pane" role="tabpanel" aria-labelledby="curriculum-tab">
                 <p style="margin-bottom: 20px; font-size: 13px; color: var(--w-color-text-meta);">
-                    These fields power the filters and coverage map on the public
-                    Resources page. They only take effect once this folder holds files.
+                    These fields power the filters and coverage map on the public Resources
+                    page.
+                    {% if page_kind == 'directory' %}
+                        This folder publishes as a directory, so they have no effect here —
+                        set them on the folders that hold the files.
+                    {% else %}
+                        They take effect once this folder holds files.
+                    {% endif %}
                 </p>
                 {% formattedfield field=form.level %}
                 {% formattedfield field=form.subject %}
