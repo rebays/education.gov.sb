@@ -2,6 +2,7 @@ from datetime import date
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -1174,3 +1175,328 @@ class ResourceLeadAndCoverTests(TestCase):
         ).content.decode()
         self.assertIn('accept=".pdf,.mp4,.webm,.m4v"', html)
         self.assertIn("Accepted formats: PDF, MP4, WEBM, M4V.", html)
+
+
+class VocabularyDeletionSafetyTests(TestCase):
+    """
+    Deleting a curriculum vocabulary entry used to be silently destructive:
+    the confirmation screen reported "referenced 0 times" while the delete
+    unclassified every resource using it, and removing an education level
+    cascaded away all of its year levels.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.primary = EducationLevel.objects.get(slug="primary")
+        self.maths = Subject.objects.get(slug="mathematics")
+
+        root = ResourceFolder.get_library_root()
+        self.folder = root.add_child(
+            instance=ResourceFolder(
+                name="Year 1 Maths", level=self.primary, subject=self.maths
+            )
+        )
+        add_file(self.folder, "unit.pdf")
+
+    def test_resource_folder_is_registered_for_reference_tracking(self):
+        from wagtail.models.reference_index import ReferenceIndex
+
+        self.assertTrue(ReferenceIndex.is_indexed(ResourceFolder))
+
+    def test_folder_references_are_recorded(self):
+        """The count on the delete screen comes from this index."""
+        from wagtail.models.reference_index import ReferenceIndex
+
+        for target in (self.maths, self.primary):
+            with self.subTest(target=target):
+                refs = ReferenceIndex.get_references_to(target)
+                self.assertGreater(
+                    refs.count(), 0, f"no reference recorded to {target}"
+                )
+
+    def test_delete_screen_reports_real_usage(self):
+        response = self.client.get(
+            reverse("wagtailsnippets_resources_subject:delete", args=[self.maths.pk])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertGreater(response.context["usage_count"], 0)
+
+    def test_education_level_with_year_levels_cannot_be_deleted(self):
+        year_count = self.primary.year_levels.count()
+        self.assertGreater(year_count, 0)
+
+        response = self.client.post(
+            reverse(
+                "wagtailsnippets_resources_educationlevel:delete",
+                args=[self.primary.pk],
+            )
+        )
+        # Redirected with an explanation rather than a 500, and nothing
+        # was destroyed. Note this is the ProtectedError safety net doing the
+        # work, not Wagtail's reference-index check — vocabulary seeded by a
+        # data migration isn't in the index until it's rebuilt.
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            "can’t be deleted",
+            " ".join(str(m.message) for m in get_messages(response.wsgi_request)),
+        )
+        self.assertTrue(
+            EducationLevel.objects.filter(pk=self.primary.pk).exists(),
+            "the education level was deleted despite being protected",
+        )
+        self.assertEqual(self.primary.year_levels.count(), year_count)
+        self.folder.refresh_from_db()
+        self.assertEqual(self.folder.level, self.primary)
+
+    def test_protect_is_enforced_at_the_database_level(self):
+        from django.db.models.deletion import ProtectedError
+
+        with self.assertRaises(ProtectedError):
+            self.primary.delete()
+
+    def test_education_level_without_year_levels_can_still_be_deleted(self):
+        spare = EducationLevel.objects.create(name="TVET", slug="tvet", order=99)
+        response = self.client.post(
+            reverse(
+                "wagtailsnippets_resources_educationlevel:delete", args=[spare.pk]
+            )
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(EducationLevel.objects.filter(pk=spare.pk).exists())
+
+
+class VocabularyEditingTests(TestCase):
+    """The three curriculum vocabularies are edited as Wagtail snippets."""
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+
+    def test_name_syncs_into_slug(self):
+        """
+        Slugs are the frontend's contract (filters and the call-number map key
+        off them), so editors shouldn't be hand-typing them.
+        """
+        html = self.client.get(
+            reverse("wagtailsnippets_resources_subject:add")
+        ).content.decode()
+        # TitleFieldPanel wires the source field to emit sync events that the
+        # slug widget's w-slug controller listens for
+        self.assertIn("w-sync", html)
+        self.assertIn("w-sync#apply", html)
+
+    def test_levels_render_as_checkboxes(self):
+        html = self.client.get(
+            reverse("wagtailsnippets_resources_subject:add")
+        ).content.decode()
+        self.assertIn('type="checkbox"', html)
+        self.assertNotIn('<select name="levels"', html)
+
+    def test_help_text_explains_slug_risk(self):
+        for label in ("educationlevel", "yearlevel", "subject"):
+            with self.subTest(label=label):
+                html = self.client.get(
+                    reverse(f"wagtailsnippets_resources_{label}:add")
+                ).content.decode()
+                self.assertIn("Changing it breaks", html)
+
+    def test_subject_listing_shows_levels(self):
+        html = self.client.get(
+            reverse("wagtailsnippets_resources_subject:list")
+        ).content.decode()
+        # Business Studies is senior secondary only — the scoping should be
+        # visible without opening the record
+        self.assertIn("Senior Secondary", html)
+
+    def test_levels_display_handles_unscoped_subject(self):
+        subject = Subject.objects.create(name="Unscoped", slug="unscoped")
+        self.assertEqual(subject.levels_display(), "—")
+
+
+class YearLevelDeletionTests(TestCase):
+    """
+    Deleting a year level used to be invisible damage: the M2M from
+    ResourceFolder isn't in Wagtail's reference index, so the screen said
+    "referenced 0 times" and the delete quietly stripped it from every
+    resource.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.y1 = YearLevel.objects.get(slug="y1")
+        self.y2 = YearLevel.objects.get(slug="y2")
+
+        root = ResourceFolder.get_library_root()
+        self.folder = root.add_child(
+            instance=ResourceFolder(
+                name="Counting", level=EducationLevel.objects.get(slug="primary")
+            )
+        )
+        self.folder.year_levels.set([self.y1])
+        add_file(self.folder, "counting.pdf")
+
+    def delete_url(self, year_level):
+        return reverse(
+            "wagtailsnippets_resources_yearlevel:delete", args=[year_level.pk]
+        )
+
+    def test_confirm_screen_reports_real_usage(self):
+        response = self.client.get(self.delete_url(self.y1))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["in_use_count"], 1)
+        self.assertTrue(response.context["is_protected"])
+        self.assertContains(response, "applied to 1 resource")
+        # Protected means the parent template hides the delete button
+        self.assertNotContains(response, "Yes, delete")
+
+    def test_year_level_in_use_cannot_be_deleted(self):
+        response = self.client.post(self.delete_url(self.y1))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(YearLevel.objects.filter(pk=self.y1.pk).exists())
+        self.assertEqual(list(self.folder.year_levels.all()), [self.y1])
+        self.assertIn(
+            "can’t be deleted",
+            " ".join(str(m.message) for m in get_messages(response.wsgi_request)),
+        )
+
+    def test_unused_year_level_can_still_be_deleted(self):
+        response = self.client.post(self.delete_url(self.y2))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(YearLevel.objects.filter(pk=self.y2.pk).exists())
+
+    def test_unused_year_level_shows_normal_confirmation(self):
+        response = self.client.get(self.delete_url(self.y2))
+        self.assertFalse(response.context.get("is_protected"))
+        self.assertContains(response, "Yes, delete")
+
+
+class VocabularyUsageViewTests(TestCase):
+    """
+    The usage pages answer "which resources use this?" — the question an
+    editor asks before renaming or deleting a vocabulary entry.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.primary = EducationLevel.objects.get(slug="primary")
+        self.maths = Subject.objects.get(slug="mathematics")
+        self.y1 = YearLevel.objects.get(slug="y1")
+        self.y2 = YearLevel.objects.get(slug="y2")
+
+        root = ResourceFolder.get_library_root()
+        self.folder = root.add_child(
+            instance=ResourceFolder(
+                name="Counting", level=self.primary, subject=self.maths
+            )
+        )
+        self.folder.year_levels.set([self.y1])
+        add_file(self.folder, "counting.pdf")
+
+    def usage_url(self, label, obj):
+        return reverse(f"wagtailsnippets_resources_{label}:usage", args=[obj.pk])
+
+    def test_folder_is_named_and_linked_not_private(self):
+        """
+        Without an AdminURLFinder every referencing folder was anonymised to
+        "(Private resource folder)" with no way to reach it.
+        """
+        for label, obj in (("subject", self.maths), ("educationlevel", self.primary)):
+            with self.subTest(label=label):
+                html = self.client.get(self.usage_url(label, obj)).content.decode()
+                self.assertIn("Counting", html)
+                self.assertNotIn("(Private", html)
+                self.assertIn(
+                    reverse("resource_library:edit_folder", args=[self.folder.pk]),
+                    html,
+                )
+
+    def test_admin_url_finder_resolves_folders(self):
+        from wagtail.admin.admin_url_finder import AdminURLFinder
+
+        self.assertEqual(
+            AdminURLFinder(self.user).get_edit_url(self.folder),
+            reverse("resource_library:edit_folder", args=[self.folder.pk]),
+        )
+
+    def test_url_finder_respects_permissions(self):
+        """A user who can't change folders shouldn't get an edit link."""
+        from wagtail.admin.admin_url_finder import AdminURLFinder
+
+        viewer = get_user_model().objects.create_user(
+            username="viewer", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource")
+        )
+        self.assertIsNone(AdminURLFinder(viewer).get_edit_url(self.folder))
+
+    def test_year_level_usage_lists_m2m_resources(self):
+        """
+        year_levels is a ManyToMany, which the reference index can't see — the
+        default page was empty while the delete screen said it was in use.
+        """
+        html = self.client.get(self.usage_url("yearlevel", self.y1)).content.decode()
+        self.assertIn("Counting", html)
+        self.assertIn(
+            reverse("resource_library:edit_folder", args=[self.folder.pk]), html
+        )
+        self.assertNotIn("(Private", html)
+
+    def test_unused_year_level_usage_is_empty(self):
+        html = self.client.get(self.usage_url("yearlevel", self.y2)).content.decode()
+        self.assertNotIn("Counting", html)
+
+    def test_usage_page_and_delete_screen_agree(self):
+        usage = self.client.get(self.usage_url("yearlevel", self.y1)).content.decode()
+        delete = self.client.get(
+            reverse("wagtailsnippets_resources_yearlevel:delete", args=[self.y1.pk])
+        )
+        self.assertIn("Counting", usage)
+        self.assertEqual(delete.context["in_use_count"], 1)
+
+
+class CurriculumMenuTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+
+    def test_menu_label(self):
+        response = self.client.get(reverse("wagtailadmin_home"))
+        self.assertContains(response, "Curriculum structure")
+
+    def test_icon_differs_from_resource_library(self):
+        """
+        The two sit next to each other in the sidebar; sharing an icon made
+        them indistinguishable at a glance.
+        """
+        from .viewsets import CurriculumViewSetGroup
+        from .wagtail_hooks import register_resource_library_menu_item
+
+        self.assertNotEqual(
+            CurriculumViewSetGroup.menu_icon,
+            register_resource_library_menu_item().icon_name,
+        )
+
+    def test_icon_is_a_real_wagtail_icon(self):
+        """A misspelt icon name fails silently as a blank square."""
+        from wagtail.admin.icons import get_icons
+
+        from .viewsets import CurriculumViewSetGroup
+
+        # Icons are served as one SVG sprite; a name that isn't in it renders
+        # as an empty square with no error anywhere.
+        sprite = "".join(get_icons())
+        self.assertIn(f'id="icon-{CurriculumViewSetGroup.menu_icon}"', sprite)

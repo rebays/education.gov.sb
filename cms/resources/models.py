@@ -1,6 +1,7 @@
 import hashlib
 import os.path
 
+from django import forms as django_forms
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_delete
@@ -18,7 +19,7 @@ from grapple.models import (
 )
 from taggit.managers import TaggableManager
 from treebeard.mp_tree import MP_Node
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, TitleFieldPanel
 from wagtail.models import Page
 from wagtail.search import index
 
@@ -63,8 +64,24 @@ class EducationLevel(models.Model):
     """
 
     name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=100, unique=True)
-    order = models.PositiveIntegerField(default=0)
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        help_text=(
+            "Used by the frontend to identify this level. Changing it breaks "
+            "existing links that filter by this level."
+        ),
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first in filters and on the coverage map.",
+    )
+
+    panels = [
+        TitleFieldPanel("name"),
+        FieldPanel("slug"),
+        FieldPanel("order"),
+    ]
 
     graphql_fields = [
         GraphQLString("name"),
@@ -83,12 +100,35 @@ class EducationLevel(models.Model):
 class YearLevel(models.Model):
     """A year/form within a level — 'Year 1', 'Form 3'."""
 
-    label = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=100, unique=True)
-    level = models.ForeignKey(
-        EducationLevel, on_delete=models.CASCADE, related_name="year_levels"
+    label = models.CharField(max_length=100, help_text="Shown to the public, e.g. “Year 1”.")
+    slug = models.SlugField(
+        max_length=100,
+        unique=True,
+        help_text=(
+            "Used by the frontend to identify this year, e.g. “y1”. Changing "
+            "it breaks existing links that filter by this year."
+        ),
     )
-    order = models.PositiveIntegerField(default=0)
+    level = models.ForeignKey(
+        EducationLevel,
+        # PROTECT, not CASCADE: deleting an education level used to take all
+        # of its years with it in one click, wiping the vocabulary that the
+        # public filters and coverage map are built from. Clear the years
+        # deliberately first.
+        on_delete=models.PROTECT,
+        related_name="year_levels",
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first within the level.",
+    )
+
+    panels = [
+        TitleFieldPanel("label"),
+        FieldPanel("slug"),
+        FieldPanel("level"),
+        FieldPanel("order"),
+    ]
 
     graphql_fields = [
         GraphQLString("label"),
@@ -118,11 +158,34 @@ class Subject(models.Model):
     """
 
     name = models.CharField(max_length=150)
-    slug = models.SlugField(max_length=150, unique=True)
-    levels = models.ManyToManyField(
-        EducationLevel, related_name="subjects", blank=True
+    slug = models.SlugField(
+        max_length=150,
+        unique=True,
+        help_text=(
+            "Used by the frontend to identify this subject. Changing it breaks "
+            "existing links that filter by this subject."
+        ),
     )
-    order = models.PositiveIntegerField(default=0)
+    levels = models.ManyToManyField(
+        EducationLevel,
+        related_name="subjects",
+        blank=True,
+        help_text=(
+            "Levels this subject is taught at. Controls which subjects appear "
+            "in the filters and as rows on the coverage map."
+        ),
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Lower numbers appear first in the subject filter.",
+    )
+
+    panels = [
+        TitleFieldPanel("name"),
+        FieldPanel("slug"),
+        FieldPanel("levels", widget=django_forms.CheckboxSelectMultiple),
+        FieldPanel("order"),
+    ]
 
     graphql_fields = [
         GraphQLString("name"),
@@ -139,6 +202,12 @@ class Subject(models.Model):
 
     def __str__(self):
         return self.name
+
+    def levels_display(self):
+        """Level scoping at a glance in the listing, since it's a M2M."""
+        return ", ".join(level.name for level in self.levels.all()) or "—"
+
+    levels_display.short_description = "Levels"
 
 
 class ResourceFolder(index.Indexed, MP_Node):
