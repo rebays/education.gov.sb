@@ -27,6 +27,7 @@ const GET_RESOURCE_FOLDER = `
       ancestorFolders {
         id
         name
+        slug
       }
       children {
         id
@@ -35,6 +36,16 @@ const GET_RESOURCE_FOLDER = `
         description
         order
         fileCount
+        childCount
+        # One level deeper, listed inline so a visitor can skip a hop
+        # rather than clicking blind into a folder.
+        children {
+          id
+          name
+          slug
+          fileCount
+          childCount
+        }
       }
       resources {
         id
@@ -67,6 +78,15 @@ export interface ResourceFile {
   pages?: number;
 }
 
+/** A folder one level below a subfolder, listed inline as a shortcut. */
+export interface ResourceGrandchild {
+  id: string;
+  name: string;
+  slug: string;
+  fileCount: number;
+  childCount: number;
+}
+
 export interface ResourceSubfolder {
   id: string;
   name: string;
@@ -74,6 +94,9 @@ export interface ResourceSubfolder {
   description: string;
   order: number;
   fileCount: number;
+  /** Subfolders it holds; a folder may organise rather than contain. */
+  childCount: number;
+  children: ResourceGrandchild[];
 }
 
 /**
@@ -84,6 +107,7 @@ export interface ResourceSubfolder {
 export interface ResourceAncestor {
   id: string;
   name: string;
+  slug: string;
 }
 
 export interface ResourceFolderData {

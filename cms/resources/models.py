@@ -143,11 +143,13 @@ class Subject(models.Model):
 class ResourceFolder(index.Indexed, MP_Node):
     """
     Folder tree for the resource library, and — by convention — the resource
-    page model: the tree exists purely for organising the library in the CMS,
-    and any folder that directly contains files is rendered as a resource
-    page on the headless frontend (looked up by slug). The hierarchy itself
-    is never exposed. The library is rooted at a single root node created on
-    first use (so it survives renaming).
+    page model: any folder that directly contains files is rendered as a
+    resource page on the headless frontend (looked up by slug), and a folder
+    that only organises others is rendered as a directory of them, so a
+    visitor can walk the tree the same way an editor built it. Editors
+    organise the library freely, so no shape is assumed: a folder may hold
+    files, subfolders, or both. The library is rooted at a single root node
+    created on first use (so it survives renaming).
     """
 
     class ResourceType(models.TextChoices):
@@ -292,6 +294,7 @@ class ResourceFolder(index.Indexed, MP_Node):
         GraphQLString("published_date"),
         GraphQLInt("order"),
         GraphQLInt("file_count"),
+        GraphQLInt("child_count"),
         GraphQLString("resource_index_page_slug"),
         GraphQLString("resource_index_page_title"),
         GraphQLForeignKey("level", "resources.EducationLevel"),
@@ -345,6 +348,15 @@ class ResourceFolder(index.Indexed, MP_Node):
     def children(self):
         """Return immediate child folders."""
         return self.get_children().order_by("order", "name")
+
+    @property
+    def child_count(self):
+        """
+        Number of subfolders. Paired with file_count so the frontend can
+        describe a folder honestly whichever way an editor has organised
+        it — "0 files" is misleading for a folder holding only subfolders.
+        """
+        return self.get_children().count()
 
     @property
     def resource_index_page_slug(self):

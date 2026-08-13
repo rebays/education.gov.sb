@@ -43,10 +43,14 @@ async function catchAllPage({
       (!folder.resourceIndexPageSlug || folder.resourceIndexPageSlug === slug[0]);
 
     if (isUnderThisIndex) {
-      // Only folders that directly contain files are public pages. The rest
-      // of the tree is CMS-side organisation, so rather than 404 on a
-      // truncated URL, send the visitor to the section index.
-      if (folder.resources.length === 0) {
+      // A folder earns a page by holding something: files make it a
+      // resource, subfolders make it a directory of them. One holding
+      // neither has nothing to show, so rather than 404 on a truncated or
+      // emptied URL, send the visitor to the section index.
+      const hasSomethingToBrowse = folder.children.some(
+        (child) => child.fileCount > 0 || child.childCount > 0,
+      );
+      if (folder.resources.length === 0 && !hasSomethingToBrowse) {
         redirect(`/${folder.resourceIndexPageSlug ?? slug[0]}/`);
       }
 
