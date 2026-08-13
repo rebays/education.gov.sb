@@ -2,11 +2,41 @@
 
 import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
+import { cn } from "@/lib/utils";
 
 interface CMSResourcePreviewerProps {
   filename: string;
   fileExtension: string;
   downloadUrl: string;
+}
+
+/**
+ * `video/<ext>` is only a valid media type for some of the extensions the
+ * CMS accepts — a browser skips a <source> whose declared type it doesn't
+ * recognise, so `video/m4v` would silently refuse to play.
+ */
+const VIDEO_MIME_TYPES: Record<string, string> = {
+  mp4: "video/mp4",
+  m4v: "video/x-m4v",
+  webm: "video/webm",
+};
+
+/**
+ * Frame sizing follows the YouTube watch page: a 16:9 frame by default,
+ * with landscape video letterboxed inside it rather than reshaping the
+ * page around each file, but genuinely tall video given its own frame —
+ * pillarboxing a phone-shot clip into 16:9 wastes most of the width.
+ */
+const DEFAULT_FRAME_RATIO = 16 / 9;
+/** Floor for adapted frames, so an extreme ratio can't run off the page. */
+const MIN_FRAME_RATIO = 9 / 16;
+/** Share of the viewport the frame may occupy vertically. */
+const MAX_FRAME_HEIGHT = "72vh";
+
+function frameRatioFor(naturalRatio: number | null): number {
+  if (!naturalRatio) return DEFAULT_FRAME_RATIO;
+  if (naturalRatio >= 1) return DEFAULT_FRAME_RATIO;
+  return Math.max(naturalRatio, MIN_FRAME_RATIO);
 }
 
 function getFileIcon(ext: string): string {
@@ -38,13 +68,44 @@ export function CMSResourcePreviewer({
   fileExtension,
   downloadUrl,
 }: CMSResourcePreviewerProps) {
-  const isVideo = ["mp4", "webm", "m4v"].includes(fileExtension.toLowerCase());
-  const isPdf = fileExtension.toLowerCase() === "pdf";
+  const extension = fileExtension.toLowerCase();
+  const isVideo = extension in VIDEO_MIME_TYPES;
+  const isPdf = extension === "pdf";
   const [stage, setStage] = useState<PreviewStage>("loading");
+  /** The video's own width/height, once it has reported its metadata. */
+  const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
+
+  const frameRatio = frameRatioFor(naturalRatio);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-sm">
-      <div className={isPdf ? "aspect-3/4 lg:aspect-5/4" : "aspect-video lg:aspect-16/7"}>
+    <div
+      className={cn(
+        "overflow-hidden rounded-2xl border border-border bg-surface-2 shadow-sm",
+        // Centred so a height-capped or portrait player sits in the middle
+        // of the column rather than hugging its left edge.
+        isVideo && "mx-auto w-full",
+      )}
+      style={
+        isVideo
+          ? {
+              aspectRatio: String(frameRatio),
+              // Caps the frame by viewport height while preserving its
+              // ratio — a max-height would clamp the height but leave the
+              // width at 100%, reintroducing the side bars.
+              maxWidth: `calc(${MAX_FRAME_HEIGHT} * ${frameRatio})`,
+            }
+          : undefined
+      }
+    >
+      <div
+        className={
+          isVideo
+            ? "h-full w-full"
+            : isPdf
+              ? "aspect-3/4 lg:aspect-5/4"
+              : "aspect-video lg:aspect-16/7"
+        }
+      >
         {isPdf ? (
           <>
             <iframe
@@ -63,10 +124,20 @@ export function CMSResourcePreviewer({
         ) : isVideo ? (
           <video
             controls
-            className="w-full h-full bg-deep"
+            playsInline
+            // Fetches the header only — not the body, which can be 200MB —
+            // so the player can report its dimensions before playback.
+            preload="metadata"
+            className="w-full h-full bg-deep object-contain"
             controlsList="nodownload"
+            onLoadedMetadata={(event) => {
+              const { videoWidth, videoHeight } = event.currentTarget;
+              if (videoWidth && videoHeight) {
+                setNaturalRatio(videoWidth / videoHeight);
+              }
+            }}
           >
-            <source src={downloadUrl} type={`video/${fileExtension.toLowerCase()}`} />
+            <source src={downloadUrl} type={VIDEO_MIME_TYPES[extension]} />
             Your browser does not support the video tag.
           </video>
         ) : (
