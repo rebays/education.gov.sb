@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from django.utils.functional import cached_property
 from django.utils.text import slugify
 from grapple.models import (
     GraphQLBoolean,
@@ -358,23 +359,34 @@ class ResourceFolder(index.Indexed, MP_Node):
         """
         return self.get_children().count()
 
+    @cached_property
+    def index_page(self):
+        """
+        The ResourceIndexPage this folder belongs to.
+
+        The FK is optional and nothing sets it — it isn't on the folder form
+        and no upload path assigns it — so in practice it is always null.
+        Since ResourceIndexPage is max_count = 1 there is only ever one
+        section to belong to, so fall back to it rather than leaving every
+        folder unattributed and every public URL guessing at a prefix.
+        """
+        if self.resource_index_page:
+            return self.resource_index_page
+        return ResourceIndexPage.objects.live().first()
+
     @property
     def resource_index_page_slug(self):
-        """Return the slug of the associated ResourceIndexPage."""
-        if self.resource_index_page:
-            return self.resource_index_page.slug
-        return None
+        """Slug of the section this folder sits in; names its URL prefix."""
+        return self.index_page.slug if self.index_page else None
 
     @property
     def resource_index_page_title(self):
         """
-        Title of the associated ResourceIndexPage, for breadcrumbs. The slug
-        names the URL and the title names the section; an editor renaming
-        the index page should move the breadcrumb label with it.
+        Title of the section, for breadcrumbs. The slug names the URL and
+        the title names the section; an editor renaming the index page
+        should move the breadcrumb label with it.
         """
-        if self.resource_index_page:
-            return self.resource_index_page.title
-        return None
+        return self.index_page.title if self.index_page else None
 
     @property
     def display_lead(self):
