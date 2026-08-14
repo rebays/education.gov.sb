@@ -327,18 +327,23 @@
                                     {% if sub.direct_child_count %}{{ sub.direct_child_count }} folder{{ sub.direct_child_count|pluralize }}{% endif %}
                                     {% if not sub.direct_file_count and not sub.direct_child_count %}Empty{% endif %}
                                 </span>
-                                {# What the public site makes of it #}
-                                <span class="rl-card__kind rl-kind--{{ sub.page_kind }}">
-                                    {% if sub.page_kind == 'resource' %}Resource page
-                                    {% elif sub.page_kind == 'directory' %}Directory
-                                    {% else %}Not published{% endif %}
+                                {% comment %}
+                                    Whether the public can see it, which is now
+                                    a decision rather than a side effect of
+                                    holding files.
+                                {% endcomment %}
+                                <span class="rl-card__kind rl-kind--{% if ancestry_hidden or not sub.is_published %}none{% else %}{{ sub.page_kind }}{% endif %}">
+                                    {% if ancestry_hidden %}Hidden
+                                    {% elif not sub.is_published %}Draft
+                                    {% elif sub.page_kind == 'none' %}Nothing to publish
+                                    {% else %}Live{% endif %}
                                 </span>
                             </a>
                             {% if sub.page_kind != 'none' or can_change_folder or can_delete_folder %}
                                 <div class="rl-card__actions">
                                     {% fragment as actions_label %}Actions for {{ sub.name }}{% endfragment %}
                                     {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label hide_on_click=True %}
-                                        {% if sub.page_kind != 'none' %}
+                                        {% if sub.page_kind != 'none' and sub.is_published and not ancestry_hidden %}
                                             <a href="{{ sub.public_url }}" target="_blank" rel="noreferrer">
                                                 {% icon name="link-external" %}View on site
                                             </a>
@@ -427,6 +432,7 @@
                                     </a>
                                 {% endif %}
                             </th>
+                            <th>Status</th>
                             <th>Type</th>
                             {% if search_query %}<th>Folder</th>{% endif %}
                             <th>Size</th>
@@ -453,10 +459,14 @@
                                         <a href="{% url 'resource_library:folder' sub.pk %}">{{ sub.name }}</a>
                                     </div>
                                 </td>
+                                <td>{% if ancestry_hidden %}Hidden
+                                    {% elif not sub.is_published %}Draft
+                                    {% elif sub.page_kind == 'none' %}Nothing to publish
+                                    {% else %}Live{% endif %}</td>
                                 <td>
                                     {% if sub.page_kind == 'resource' %}Resource page
                                     {% elif sub.page_kind == 'directory' %}Directory
-                                    {% else %}Not published{% endif %}
+                                    {% else %}Empty{% endif %}
                                     {% if sub.resource_type %} · {{ sub.get_resource_type_display }}{% endif %}
                                     · {{ sub.direct_file_count }} file{{ sub.direct_file_count|pluralize }}
                                     · {{ sub.direct_child_count }} folder{{ sub.direct_child_count|pluralize }}
@@ -466,8 +476,8 @@
                                 <td>{{ sub.created_at|date:"j M Y" }}</td>
                                 <td class="rl-row-actions">
                                     {% fragment as actions_label %}Actions for {{ sub.name }}{% endfragment %}
-                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label hide_on_click=True %}
-                                        {% if sub.page_kind != 'none' %}
+                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label toggle_classname="button button-secondary rl-icon-btn" hide_on_click=True %}
+                                        {% if sub.page_kind != 'none' and sub.is_published and not ancestry_hidden %}
                                             <a href="{{ sub.public_url }}" target="_blank" rel="noreferrer">
                                                 {% icon name="link-external" %}View on site
                                             </a>
@@ -506,13 +516,14 @@
                                         {% endif %}
                                     </div>
                                 </td>
+                                <td></td>
                                 <td>{{ doc.file_extension|upper }}</td>
                                 {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
                                 <td>{{ doc.created_at|date:"j M Y" }}</td>
                                 <td class="rl-row-actions">
                                     {% fragment as actions_label %}Actions for {{ doc.display_label }}{% endfragment %}
-                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label hide_on_click=True %}
+                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label toggle_classname="button button-secondary rl-icon-btn" hide_on_click=True %}
                                         <a href="{{ doc.url }}">
                                             {% icon name="download" %}Download
                                         </a>

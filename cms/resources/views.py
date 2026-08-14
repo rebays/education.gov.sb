@@ -204,6 +204,9 @@ def explorer(request, folder_id=None):
             "subfolders": subfolders,
             "page_obj": page_obj,
             "search_query": search_query,
+            "ancestry_hidden": (
+                not folder.is_published or folder.unpublished_ancestor is not None
+            ),
             "layout": layout,
             "sort": sort,
             "sort_options": SORT_OPTIONS,
@@ -230,6 +233,23 @@ def explorer(request, folder_id=None):
     )
 
 
+def _apply_publish_action(folder, action, *, creating):
+    """
+    Publication is driven by which submit button was used, the way a page's
+    action menu works — there's no checkbox to forget.
+
+    A folder a person creates starts as a draft; "Save" on an existing folder
+    leaves its state alone, so editing a live folder can't take it offline by
+    accident.
+    """
+    if action == "publish":
+        folder.is_published = True
+    elif action == "unpublish":
+        folder.is_published = False
+    elif creating:
+        folder.is_published = False
+
+
 def add_folder(request, parent_id):
     check_library_access(request)
     if not request.user.has_perm("resources.add_resourcefolder"):
@@ -238,8 +258,16 @@ def add_folder(request, parent_id):
 
     form = FolderForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        folder = parent.add_child(instance=form.save(commit=False))
-        messages.success(request, f"Folder '{folder.name}' created.")
+        instance = form.save(commit=False)
+        _apply_publish_action(
+            instance, request.POST.get("action"), creating=True
+        )
+        folder = parent.add_child(instance=instance)
+        messages.success(
+            request,
+            f"Folder '{folder.name}' created"
+            + (" and published." if folder.is_published else " as a draft."),
+        )
         return redirect("resource_library:folder", folder.pk)
 
     return render(
@@ -249,6 +277,7 @@ def add_folder(request, parent_id):
             "form": form,
             "page_title": "New folder",
             "folder": parent,
+            "creating": True,
             "breadcrumbs": get_breadcrumbs(root, parent),
         },
     )
@@ -264,8 +293,18 @@ def edit_folder(request, folder_id):
 
     form = FolderForm(request.POST or None, instance=folder)
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, f"Folder '{folder.name}' updated.")
+        was_published = folder.is_published
+        instance = form.save(commit=False)
+        action = request.POST.get("action")
+        _apply_publish_action(instance, action, creating=False)
+        instance.save()
+        form.save_m2m()
+        if instance.is_published and not was_published:
+            messages.success(request, f"'{folder.name}' published.")
+        elif was_published and not instance.is_published:
+            messages.success(request, f"'{folder.name}' unpublished.")
+        else:
+            messages.success(request, f"Folder '{folder.name}' updated.")
         return redirect("resource_library:folder", folder.pk)
 
     return render(
@@ -275,6 +314,8 @@ def edit_folder(request, folder_id):
             "form": form,
             "page_title": "Edit folder",
             "folder": folder,
+            "creating": False,
+            "unpublished_ancestor": folder.unpublished_ancestor,
             "page_kind": folder.page_kind,
             "direct_file_count": folder.file_count,
             "direct_child_count": folder.child_count,
@@ -292,7 +333,11 @@ def move_destinations(root):
     return [
         {
             "pk": folder.pk,
-            "label": ("— " * (folder.depth - 1)) + folder.name,
+            "label": (
+                ("— " * (folder.depth - 1))
+                + folder.name
+                + ("" if folder.is_published else "  (draft)")
+            ),
             "path": folder.path,
             "accepts_files": folder.pk != root.pk,
         }

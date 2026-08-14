@@ -106,8 +106,29 @@ def register_resource_chooser_viewset():
 # exposed to the frontend.
 
 
+def live_folders():
+    """
+    Folders the public may see: published, and not inside anything that
+    isn't. Publication cascades — hiding a section has to hide what's inside
+    it, or its children stay reachable at URLs containing its slug.
+    """
+    hidden = list(
+        ResourceFolder.objects.filter(is_published=False).values_list(
+            "path", flat=True
+        )
+    )
+    queryset = ResourceFolder.objects.filter(is_published=True)
+    if hidden:
+        # Materialised paths: a descendant's path starts with its ancestor's
+        descendants = Q()
+        for path in hidden:
+            descendants |= Q(path__startswith=path)
+        queryset = queryset.exclude(descendants)
+    return queryset
+
+
 def resource_pages_queryset():
-    return ResourceFolder.objects.annotate(
+    return live_folders().annotate(
         direct_file_count=Count("resources")
     ).filter(direct_file_count__gt=0)
 
@@ -245,7 +266,10 @@ class ResourcePagesQuery(graphene.ObjectType):
         if not path:
             return None
         path_parts = [p.strip() for p in path.split('/') if p.strip()]
-        return resolve_folder_by_path(path_parts)
+        folder = resolve_folder_by_path(path_parts)
+        if folder is None or not folder.is_live:
+            return None
+        return folder
 
     def resolve_resource_library_root(self, info, **kwargs):
         """Return the resource library root folder."""

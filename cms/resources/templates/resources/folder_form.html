@@ -31,6 +31,14 @@
             border-bottom-color: var(--w-color-secondary);
             color: var(--w-color-secondary);
         }
+        /*
+            Wagtail sizes the split button's height but leaves its width to the
+            label, so a short one like "Save" comes out cramped next to the
+            toggle. Give it a floor; long labels still grow past it.
+        */
+        .w-dropdown-button > .action-save {
+            min-width: 9.5rem;
+        }
         .folder-form-tab-pane {
             display: none;
         }
@@ -91,8 +99,18 @@
             fields only mean something for the former.
         {% endcomment %}
         {% if page_kind %}
-            <div class="help-block {% if page_kind == 'none' %}help-warning{% else %}help-info{% endif %}" style="margin-bottom: 20px;">
-                {% if page_kind == 'resource' %}
+            <div class="help-block {% if page_kind == 'none' or not folder.is_published or unpublished_ancestor %}help-warning{% else %}help-info{% endif %}" style="margin-bottom: 20px;">
+                {% if not folder.is_published %}
+                    <p>
+                        Saved as a <strong>draft</strong> — not visible on the public
+                        site. Use Publish when it's ready.
+                    </p>
+                {% elif unpublished_ancestor %}
+                    <p>
+                        Hidden because <strong>{{ unpublished_ancestor.name }}</strong>
+                        is unpublished. Publishing that folder brings this one back.
+                    </p>
+                {% elif page_kind == 'resource' %}
                     <p>
                         Holds {{ direct_file_count }} file{{ direct_file_count|pluralize }}, so it publishes as a
                         <strong>resource page</strong> at
@@ -175,8 +193,56 @@
                 {% formattedfield field=form.canonical_url %}
             </div>
 
-            <div style="margin-top: 20px;">
-                <button type="submit" class="button">Save</button>
+            {% comment %}
+                Publication is chosen by which button is used, like a page's
+                action menu, rather than a checkbox that's easy to overlook.
+                A new folder saves as a draft unless Publish is chosen.
+            {% endcomment %}
+            {% comment %}
+                The markup below mirrors Wagtail's own page action menu
+                (wagtailadmin/pages/action_menu/save_draft.html and
+                shared/action_menu/menu_item.html) so this button matches the
+                one editors already know. Two details are load-bearing: the
+                dropdown items need `class="button"` — Wagtail's dropdown-button
+                CSS styles their borders and radii but never their background,
+                so a bare <button> renders transparent — and the primary button
+                needs the spinner/<em> structure that gives it its height.
+
+                One button serves all three states so they cannot drift apart
+                visually; only the label, the posted action and the menu item
+                differ. Deliberately no leading icon: it would widen the button
+                past the min-width floor, leaving the create and edit forms
+                looking like different controls.
+            {% endcomment %}
+            <div style="margin-top: 20px; display: flex; gap: 10px; align-items: center;">
+                {% if creating or not folder.is_published %}
+                    {% fragment as save_label %}Save draft{% endfragment %}
+                {% else %}
+                    {% fragment as save_label %}Save{% endfragment %}
+                {% endif %}
+                {% fragment as save_button %}
+                    <button type="submit" name="action" value="{% if creating %}draft{% else %}save{% endif %}"
+                            class="button action-save button-longrunning"
+                            data-controller="w-progress w-kbd"
+                            data-action="w-progress#activate"
+                            data-w-kbd-key-value="mod+s"
+                            data-w-kbd-scope-value="global"
+                            data-w-progress-active-value="Saving…">
+                        {% icon name="spinner" %}
+                        <em data-w-progress-target="label">{{ save_label }}</em>
+                    </button>
+                {% endfragment %}
+                {% dropdown_button button=save_button toggle_icon="arrow-up" %}
+                    {% if creating or not folder.is_published %}
+                        <button type="submit" name="action" value="publish" class="button">
+                            {% icon name="success" %}Publish
+                        </button>
+                    {% else %}
+                        <button type="submit" name="action" value="unpublish" class="button">
+                            {% icon name="no-view" %}Unpublish
+                        </button>
+                    {% endif %}
+                {% enddropdown_button %}
                 <a href="{% url 'resource_library:folder' folder.pk %}" class="button button-secondary">Cancel</a>
             </div>
         </form>

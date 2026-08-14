@@ -1438,7 +1438,8 @@ class FolderPageKindTests(TestCase):
         folder = self.root.add_child(instance=ResourceFolder(name="Nothing here"))
         html = self.client.get(reverse("resource_library:index")).content.decode()
         self.assertNotIn(folder.public_url, html)
-        self.assertIn("Not published", html)
+        # "Not published" would now be ambiguous — a draft is unpublished too
+        self.assertIn("Nothing to publish", html)
 
     def test_public_url_points_at_the_frontend_host(self):
         folder = self.root.add_child(instance=ResourceFolder(name="Hosted"))
@@ -2452,6 +2453,18 @@ class RowActionMenuTests(TestCase):
             html,
         )
 
+    def test_list_toggle_looks_like_the_buttons_it_replaced(self):
+        """
+        Wagtail scopes its toggle backgrounds to .w-dropdown-button, which a
+        bare dropdown isn't — so without these classes the button renders
+        transparent until hovered.
+        """
+        html = self.page("list")
+        toggle = re.search(r"<button[^>]*w-dropdown__toggle[^>]*>", html).group(0)
+        for css_class in ("button", "button-secondary", "rl-icon-btn"):
+            with self.subTest(css_class=css_class):
+                self.assertIn(css_class, toggle)
+
     def test_grid_menus_are_wider_than_the_default(self):
         """
         The menu is a popup positioned outside the card, so it can't be
@@ -2463,3 +2476,241 @@ class RowActionMenuTests(TestCase):
 
         listed = self.page("list")
         self.assertNotIn("min-width: 180px", listed)
+
+
+class PublishingTests(TestCase):
+    """
+    Publication used to be a side effect of holding files: the first upload
+    put a folder on the public site, with no way to stage anything.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.section = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        self.page = self.section.add_child(instance=ResourceFolder(name="Year 1"))
+        add_file(self.page, "unit.pdf")
+
+    def graphql(self, query, **variables):
+        from grapple.schema import schema
+
+        result = schema.execute(query, variables=variables or None)
+        self.assertIsNone(result.errors)
+        return result.data
+
+    def live_slugs(self):
+        return [
+            p["slug"] for p in self.graphql("{ resourcePages { slug } }")["resourcePages"]
+        ]
+
+    # --- the flag itself -------------------------------------------------
+    def test_existing_folders_stay_published(self):
+        """The migration must not take live content offline."""
+        self.assertTrue(self.page.is_published)
+        self.assertTrue(self.page.is_live)
+
+    def test_a_draft_is_not_live(self):
+        self.page.is_published = False
+        self.page.save()
+        self.assertFalse(ResourceFolder.objects.get(pk=self.page.pk).is_live)
+
+    def test_publication_cascades(self):
+        """
+        Hiding a section has to hide what's inside it, or its children stay
+        reachable at URLs that still contain its slug.
+        """
+        self.section.is_published = False
+        self.section.save()
+        page = ResourceFolder.objects.get(pk=self.page.pk)
+        self.assertTrue(page.is_published)
+        self.assertFalse(page.is_live)
+        self.assertEqual(page.unpublished_ancestor, self.section)
+
+    def test_a_published_folder_with_nothing_in_it_is_not_live(self):
+        empty = self.root.add_child(instance=ResourceFolder(name="Empty"))
+        self.assertTrue(empty.is_published)
+        self.assertFalse(empty.is_live)
+
+    # --- what the public sees --------------------------------------------
+    def test_drafts_are_absent_from_the_listing(self):
+        self.assertEqual(self.live_slugs(), ["year-1"])
+        self.page.is_published = False
+        self.page.save()
+        self.assertEqual(self.live_slugs(), [])
+
+    def test_an_unpublished_ancestor_hides_its_descendants(self):
+        self.section.is_published = False
+        self.section.save()
+        self.assertEqual(self.live_slugs(), [])
+
+    def test_a_draft_folder_does_not_resolve_by_path(self):
+        query = '{ resourceFolder(path: "primary/year-1") { slug } }'
+        self.assertIsNotNone(self.graphql(query)["resourceFolder"])
+        self.page.is_published = False
+        self.page.save()
+        self.assertIsNone(self.graphql(query)["resourceFolder"])
+
+    def test_directory_listings_leave_drafts_out(self):
+        self.page.is_published = False
+        self.page.save()
+        self.assertEqual(list(self.section.children), [])
+
+    # --- the action buttons ----------------------------------------------
+    def test_a_new_folder_is_saved_as_a_draft(self):
+        self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Fresh", "action": "draft"},
+        )
+        self.assertFalse(ResourceFolder.objects.get(name="Fresh").is_published)
+
+    def test_a_new_folder_can_be_published_straight_away(self):
+        self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Immediate", "action": "publish"},
+        )
+        self.assertTrue(ResourceFolder.objects.get(name="Immediate").is_published)
+
+    def action_bar(self, url):
+        """The split save button's markup, cut off before the Cancel link."""
+        html = self.client.get(url).content.decode()
+        # Anchor on the element, not the bare class name — that also appears in
+        # the page's own stylesheet, which would swallow the whole document.
+        bar = html[html.index('<div class="w-dropdown-button"'):]
+        return bar[: bar.index("Cancel")]
+
+    def test_every_action_button_is_styled_like_a_button(self):
+        """
+        Wagtail's dropdown-button CSS gives menu items their borders and radii
+        but never a background — that comes from `.button`, which its own
+        menu_item.html always applies. Without it the Publish/Unpublish items
+        render transparent until hovered.
+        """
+        draft = self.root.add_child(
+            instance=ResourceFolder(name="Draft", is_published=False)
+        )
+        urls = {
+            "create": reverse("resource_library:add_folder", args=[self.root.pk]),
+            "edit draft": reverse("resource_library:edit_folder", args=[draft.pk]),
+            "edit live": reverse("resource_library:edit_folder", args=[self.page.pk]),
+        }
+        for view, url in urls.items():
+            bar = self.action_bar(url)
+            buttons = re.findall(r"<button\b[^>]*>", bar)
+            self.assertTrue(buttons)
+            for button in buttons:
+                with self.subTest(view=view, button=button[:60]):
+                    self.assertIn('class="', button)
+                    classes = re.search(r'class="([^"]*)"', button).group(1).split()
+                    self.assertIn("button", classes)
+
+    def test_the_save_button_matches_the_one_on_pages(self):
+        """
+        Mirrors wagtailadmin/pages/action_menu/save_draft.html — the icon and
+        <em> label are what give the button its size, so a plain <button> with
+        a text node comes out visibly smaller than the one editors know.
+        """
+        bar = self.action_bar(reverse("resource_library:add_folder", args=[self.root.pk]))
+        save = re.search(r"<button\b[^>]*>", bar).group(0)
+        for expected in ("action-save", "button-longrunning"):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, save)
+        self.assertIn("<em data-w-progress-target=\"label\">Save draft</em>", bar)
+
+    def test_the_new_folder_button_matches_the_existing_folder_one(self):
+        """
+        The two forms sit one click apart, so any difference in the save button
+        reads as a different control. Only the posted action and the label may
+        vary — an extra icon on one of them also widens it past the min-width
+        floor, which is what made them look mismatched.
+        """
+        buttons = {}
+        for view, url in (
+            ("create", reverse("resource_library:add_folder", args=[self.root.pk])),
+            ("edit", reverse("resource_library:edit_folder", args=[self.page.pk])),
+        ):
+            bar = self.action_bar(url)
+            button = bar[: bar.index("</button>")]
+            button = re.sub(r'value="[^"]*"', 'value="..."', button)
+            buttons[view] = re.sub(r"<em[^>]*>[^<]*</em>", "<em>...</em>", button)
+        self.assertEqual(buttons["create"], buttons["edit"])
+
+    def test_publishing_an_existing_draft(self):
+        self.page.is_published = False
+        self.page.save()
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[self.page.pk]),
+            {"name": "Year 1", "action": "publish"},
+        )
+        self.assertTrue(ResourceFolder.objects.get(pk=self.page.pk).is_published)
+        self.assertIn(
+            "published",
+            " ".join(str(m.message) for m in get_messages(response.wsgi_request)),
+        )
+
+    def test_unpublishing(self):
+        self.client.post(
+            reverse("resource_library:edit_folder", args=[self.page.pk]),
+            {"name": "Year 1", "action": "unpublish"},
+        )
+        self.assertFalse(ResourceFolder.objects.get(pk=self.page.pk).is_published)
+
+    def test_saving_leaves_publication_alone(self):
+        """Editing a live folder must not quietly take it offline."""
+        self.client.post(
+            reverse("resource_library:edit_folder", args=[self.page.pk]),
+            {"name": "Year 1 renamed", "action": "save"},
+        )
+        folder = ResourceFolder.objects.get(pk=self.page.pk)
+        self.assertEqual(folder.name, "Year 1 renamed")
+        self.assertTrue(folder.is_published)
+
+    def test_the_form_offers_the_opposite_action(self):
+        edit = reverse("resource_library:edit_folder", args=[self.page.pk])
+        self.assertContains(self.client.get(edit), 'value="unpublish"')
+
+        self.page.is_published = False
+        self.page.save()
+        self.assertContains(self.client.get(edit), 'value="publish"')
+
+    # --- the explorer -----------------------------------------------------
+    def test_the_listing_reports_status(self):
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk]),
+            {"layout": "list"},
+        ).content.decode()
+        self.assertIn("Live", html)
+
+        self.page.is_published = False
+        self.page.save()
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk]),
+            {"layout": "list"},
+        ).content.decode()
+        self.assertIn("Draft", html)
+
+    def test_descendants_of_a_draft_are_shown_as_hidden(self):
+        """So an editor can see why something isn't showing."""
+        self.section.is_published = False
+        self.section.save()
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk]),
+            {"layout": "list"},
+        ).content.decode()
+        self.assertIn("Hidden", html)
+
+    def test_no_view_on_site_link_for_a_draft(self):
+        self.page.is_published = False
+        self.page.save()
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk])
+        ).content.decode()
+        self.assertNotIn(self.page.public_url, html)
+
+    def test_the_move_dialog_marks_drafts(self):
+        self.section.is_published = False
+        self.section.save()
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertIn("(draft)", html)

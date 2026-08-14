@@ -354,6 +354,14 @@ class ResourceFolder(index.Indexed, MP_Node):
         blank=True,
         help_text="Free-form keywords, e.g. literacy, inclusive education.",
     )
+    is_published = models.BooleanField(
+        default=True,
+        db_index=True,
+        help_text=(
+            "Whether this folder is visible on the public site. Unpublishing "
+            "hides it and everything inside it."
+        ),
+    )
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
     resource_index_page = models.ForeignKey(
@@ -464,7 +472,30 @@ class ResourceFolder(index.Indexed, MP_Node):
 
     @property
     def has_public_page(self):
+        """Whether it has something to show, ignoring whether it's published."""
         return self.page_kind != PAGE_KIND_NONE
+
+    @property
+    def unpublished_ancestor(self):
+        """
+        The nearest ancestor holding this folder back, if any. Publication
+        cascades: hiding a section has to hide what's inside it, or its
+        children stay reachable at URLs that still contain its slug.
+        """
+        for ancestor in self.ancestor_folders:
+            if not ancestor.is_published:
+                return ancestor
+        return None
+
+    @property
+    def is_live(self):
+        """Visible to the public: published, with an published parentage, and
+        with something to show."""
+        return (
+            self.is_published
+            and self.unpublished_ancestor is None
+            and self.has_public_page
+        )
 
     @property
     def public_url(self):
@@ -480,8 +511,14 @@ class ResourceFolder(index.Indexed, MP_Node):
 
     @property
     def children(self):
-        """Return immediate child folders."""
-        return self.get_children().order_by("order", "name")
+        """
+        Immediate child folders, for the public directory listing — so
+        unpublished ones are left out. The admin walks get_children()
+        directly, where everything is visible.
+        """
+        return self.get_children().filter(is_published=True).order_by(
+            "order", "name"
+        )
 
     @property
     def child_count(self):
