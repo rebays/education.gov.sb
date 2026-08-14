@@ -267,12 +267,16 @@ class ResourceLibraryTests(TestCase):
         self.assertContains(response, "Budget summary")
         self.assertContains(response, "Annual Report 2025")
 
-        # Searching inside an unrelated subtree finds nothing
+        # Searching inside an unrelated subtree finds nothing. Scoped to the
+        # results area: the move dialog lists every folder in the library, so
+        # the name appears elsewhere on the page regardless.
         other = root.add_child(instance=ResourceFolder(name="Other"))
         response = self.client.get(
             reverse("resource_library:folder", args=[other.pk]), {"q": "annual"}
         )
-        self.assertNotContains(response, "Annual Report 2025")
+        html = response.content.decode()
+        results = html[html.index("Results for") : html.index('id="rl-move-dialog"')]
+        self.assertNotIn("Annual Report 2025", results)
 
     def test_edit_file(self):
         root = ResourceFolder.get_library_root()
@@ -2187,3 +2191,275 @@ class ExplorerSortTests(TestCase):
             r'<div\s+data-controller="w-dropdown"\s+class="([^"]+)"', block, re.S
         ).group(1)
         self.assertIn("w-inline-block", wrapper)
+
+
+class MoveTests(TestCase):
+    """
+    Misplacing something used to be unrecoverable: no move, and a folder
+    can't be deleted until it's empty.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.primary = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        self.secondary = self.root.add_child(
+            instance=ResourceFolder(name="Secondary")
+        )
+        self.year1 = self.primary.add_child(instance=ResourceFolder(name="Year 1"))
+        self.file = add_file(self.year1, "unit.pdf")
+
+    def move_folder(self, folder, destination):
+        return self.client.post(
+            reverse("resource_library:move_folder", args=[folder.pk]),
+            {"destination": destination.pk},
+        )
+
+    def move_file(self, resource, destination):
+        return self.client.post(
+            reverse("resource_library:move_resource", args=[resource.pk]),
+            {"destination": destination.pk},
+        )
+
+    def messages_from(self, response):
+        return " ".join(str(m.message) for m in get_messages(response.wsgi_request))
+
+    def test_folder_moves_with_its_contents(self):
+        response = self.move_folder(self.year1, self.secondary)
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[self.secondary.pk])
+        )
+        self.year1.refresh_from_db()
+        self.assertEqual(self.year1.get_parent().pk, self.secondary.pk)
+        self.assertEqual(self.year1.resources.count(), 1)
+
+    def test_moving_updates_the_public_url(self):
+        self.assertEqual(self.year1.url_path, "/resources/primary/year-1/")
+        self.move_folder(self.year1, self.secondary)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).url_path,
+            "/resources/secondary/year-1/",
+        )
+
+    def test_a_folder_cannot_move_inside_itself(self):
+        """That would detach the whole branch from the tree."""
+        response = self.move_folder(self.primary, self.year1)
+        self.assertIn("can't be moved inside itself", self.messages_from(response))
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.primary.pk).get_parent().pk,
+            self.root.pk,
+        )
+
+    def test_a_folder_cannot_move_into_itself(self):
+        self.move_folder(self.primary, self.primary)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.primary.pk).get_parent().pk,
+            self.root.pk,
+        )
+
+    def test_a_folder_can_move_to_the_top_level(self):
+        self.move_folder(self.year1, self.root)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk, self.root.pk
+        )
+
+    def test_files_move_between_folders(self):
+        response = self.move_file(self.file, self.secondary)
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[self.secondary.pk])
+        )
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.folder, self.secondary)
+
+    def test_files_cannot_move_to_the_library_root(self):
+        """Same rule as upload: files there have no public page."""
+        response = self.move_file(self.file, self.root)
+        self.assertIn("belong to a folder", self.messages_from(response))
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.folder, self.year1)
+
+    def test_moving_somewhere_it_already_is_says_so(self):
+        response = self.move_file(self.file, self.year1)
+        self.assertIn("already there", self.messages_from(response))
+
+    def test_a_missing_destination_is_refused(self):
+        response = self.client.post(
+            reverse("resource_library:move_folder", args=[self.year1.pk]),
+            {"destination": ""},
+        )
+        self.assertIn("Choose a folder", self.messages_from(response))
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_a_destination_outside_the_library_is_refused(self):
+        outside = ResourceFolder.add_root(name="Another tree")
+        self.move_folder(self.year1, outside)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_the_root_cannot_be_moved(self):
+        response = self.client.post(
+            reverse("resource_library:move_folder", args=[self.root.pk]),
+            {"destination": self.primary.pk},
+        )
+        self.assertEqual(response.status_code, 302)  # denied -> admin redirect
+
+    def test_moving_requires_permission(self):
+        viewer = get_user_model().objects.create_user(
+            username="viewer", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource"),
+            Permission.objects.get(
+                codename="access_admin", content_type__app_label="wagtailadmin"
+            ),
+        )
+        self.client.force_login(viewer)
+        self.move_folder(self.year1, self.secondary)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_get_does_not_move_anything(self):
+        """The dialog posts; a link or a prefetch must not relocate things."""
+        self.client.get(reverse("resource_library:move_folder", args=[self.year1.pk]))
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_the_dialog_offers_every_folder(self):
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertIn('id="rl-move-dialog"', html)
+        self.assertEqual(html.count("data-accepts-files"), 4)
+        # The root can't take files, everything else can
+        self.assertEqual(html.count('data-accepts-files="false"'), 1)
+
+    def test_a_viewer_gets_no_move_dialog(self):
+        viewer = get_user_model().objects.create_user(
+            username="viewer2", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource"),
+            Permission.objects.get(
+                codename="access_admin", content_type__app_label="wagtailadmin"
+            ),
+        )
+        self.client.force_login(viewer)
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertNotIn('id="rl-move-dialog"', html)
+
+
+class RowActionMenuTests(TestCase):
+    """
+    Actions collapsed into a per-row menu: with view-on-site, edit, move and
+    delete, a row of icons had stopped being scannable.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.folder = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        add_file(self.folder, "doc.pdf", label="Doc")
+
+    def page(self, layout, folder=None):
+        return self.client.get(
+            reverse("resource_library:folder", args=[(folder or self.root).pk]),
+            {"layout": layout},
+        ).content.decode()
+
+    def test_actions_live_in_a_menu(self):
+        for layout in ("grid", "list"):
+            with self.subTest(layout=layout):
+                html = self.page(layout)
+                self.assertIn("dots-horizontal", html)
+                self.assertIn('aria-label="Actions for Primary"', html)
+
+    def test_folder_menu_offers_every_action(self):
+        for layout in ("grid", "list"):
+            with self.subTest(layout=layout):
+                html = self.page(layout)
+                for label in ("View on site", "Edit details", "Move", "Delete"):
+                    self.assertIn(label, html)
+                self.assertIn(
+                    reverse("resource_library:edit_folder", args=[self.folder.pk]),
+                    html,
+                )
+                self.assertIn(
+                    reverse("resource_library:delete_folder", args=[self.folder.pk]),
+                    html,
+                )
+
+    def test_file_menu_offers_every_action(self):
+        resource = self.folder.resources.get()
+        for layout in ("grid", "list"):
+            with self.subTest(layout=layout):
+                html = self.page(layout, self.folder)
+                for label in ("Download", "Edit details", "Move", "Delete"):
+                    self.assertIn(label, html)
+                self.assertIn(
+                    reverse("resource_library:edit_resource", args=[resource.pk]),
+                    html,
+                )
+
+    def test_unpublished_folder_offers_no_view_on_site(self):
+        self.root.add_child(instance=ResourceFolder(name="Nothing here"))
+        html = self.page("list")
+        menu = html[html.index('aria-label="Actions for Nothing here"'):]
+        menu = menu[: menu.index("</td>")]
+        self.assertNotIn("View on site", menu)
+
+    def test_a_viewer_gets_no_editing_actions(self):
+        viewer = get_user_model().objects.create_user(
+            username="viewer", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource"),
+            Permission.objects.get(
+                codename="access_admin", content_type__app_label="wagtailadmin"
+            ),
+        )
+        self.client.force_login(viewer)
+        html = self.page("list")
+        # Scoped to the listing: "Delete" appears elsewhere in Wagtail's own
+        # admin chrome regardless of what this user can do here.
+        listing = html[html.index('class="listing"') : html.index("</table>")]
+        self.assertNotIn("Edit details", listing)
+        self.assertNotIn("Delete", listing)
+        # Wagtail's own keyboard-shortcuts trigger uses this attribute too
+        self.assertNotIn('data-a11y-dialog-show="rl-move-dialog"', html)
+
+    def test_move_opens_from_inside_the_menu(self):
+        """
+        The trigger sits in the dropdown's content, which Tippy relocates —
+        it has to keep its dialog attributes to still open the modal.
+        """
+        html = self.page("list")
+        self.assertIn('data-a11y-dialog-show="rl-move-dialog"', html)
+        self.assertIn(
+            f'data-move-url="{reverse("resource_library:move_folder", args=[self.folder.pk])}"',
+            html,
+        )
+
+    def test_grid_menus_are_wider_than_the_default(self):
+        """
+        The menu is a popup positioned outside the card, so it can't be
+        targeted by an ancestor selector — the rule is scoped by rendering
+        it only in the grid layout.
+        """
+        grid = self.page("grid")
+        self.assertIn("min-width: 180px", grid)
+
+        listed = self.page("list")
+        self.assertNotIn("min-width: 180px", listed)

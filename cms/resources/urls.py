@@ -10,11 +10,17 @@ urlpatterns = [
     path("folder/<int:parent_id>/new/", views.add_folder, name="add_folder"),
     path("folder/<int:folder_id>/edit/", views.edit_folder, name="edit_folder"),
     path("folder/<int:folder_id>/delete/", views.delete_folder, name="delete_folder"),
+    path("folder/<int:folder_id>/move/", views.move_folder, name="move_folder"),
     path("folder/<int:folder_id>/upload/", views.upload, name="upload"),
     path(
         "resource/<int:resource_id>/edit/",
         views.edit_resource,
         name="edit_resource",
+    ),
+    path(
+        "resource/<int:resource_id>/move/",
+        views.move_resource,
+        name="move_resource",
     ),
     path(
         "resource/<int:resource_id>/delete/",

@@ -209,6 +209,7 @@ def explorer(request, folder_id=None):
             "sort_options": SORT_OPTIONS,
             "current_sort": ordering,
             "sort_toggle_label": f"Sorted by {ordering['field'].lower()}",
+            "move_destinations": move_destinations(root),
             "sort_headers": {
                 "name": sort_header("name", "Name", sort),
                 "date": sort_header("date", "Date", sort),
@@ -280,6 +281,96 @@ def edit_folder(request, folder_id):
             "breadcrumbs": get_breadcrumbs(root, folder),
         },
     )
+
+
+def move_destinations(root):
+    """
+    Every folder in the library, labelled by depth so the select reads as a
+    tree. The root is included — folders can move to the top level — but it
+    can't hold files, the same rule the upload view enforces.
+    """
+    return [
+        {
+            "pk": folder.pk,
+            "label": ("— " * (folder.depth - 1)) + folder.name,
+            "path": folder.path,
+            "accepts_files": folder.pk != root.pk,
+        }
+        for folder in ResourceFolder.objects.order_by("path")
+    ]
+
+
+def _resolve_destination(request, root):
+    """Read and validate the posted destination, or None."""
+    try:
+        destination = ResourceFolder.objects.get(pk=request.POST.get("destination"))
+    except (ResourceFolder.DoesNotExist, ValueError, TypeError):
+        return None
+    if destination.pk != root.pk and not destination.is_descendant_of(root):
+        return None
+    return destination
+
+
+def move_folder(request, folder_id):
+    check_library_access(request)
+    if not request.user.has_perm("resources.change_resourcefolder"):
+        raise PermissionDenied
+    root, folder = get_folder(folder_id)
+    if folder.pk == root.pk:
+        raise PermissionDenied
+
+    parent = folder.get_parent()
+    if request.method != "POST":
+        return redirect("resource_library:folder", parent.pk)
+
+    destination = _resolve_destination(request, root)
+    if destination is None:
+        messages.error(request, "Choose a folder to move into.")
+    elif destination.pk == parent.pk:
+        messages.info(request, f"'{folder.name}' is already there.")
+    elif destination.pk == folder.pk or destination.path.startswith(folder.path):
+        # Moving a folder inside itself would detach that whole branch
+        messages.error(
+            request, f"'{folder.name}' can't be moved inside itself."
+        )
+    else:
+        folder.move(destination, pos="last-child")
+        messages.success(request, f"'{folder.name}' moved to '{destination.name}'.")
+        return redirect("resource_library:folder", destination.pk)
+
+    return redirect("resource_library:folder", parent.pk)
+
+
+def move_resource(request, resource_id):
+    check_library_access(request)
+    if not request.user.has_perm("resources.change_resource"):
+        raise PermissionDenied
+    resource = get_object_or_404(Resource, id=resource_id)
+    root, folder = get_folder(resource.folder_id)
+
+    if request.method != "POST":
+        return redirect("resource_library:folder", folder.pk)
+
+    destination = _resolve_destination(request, root)
+    if destination is None:
+        messages.error(request, "Choose a folder to move into.")
+    elif destination.pk == root.pk:
+        # Files at the root have no public page to belong to
+        messages.error(
+            request, "Files belong to a folder, not the top level of the library."
+        )
+    elif destination.pk == folder.pk:
+        messages.info(request, f"'{resource.display_label}' is already there.")
+    else:
+        resource.folder = destination
+        resource.save(update_fields=["folder"])
+        messages.success(
+            request,
+            f"'{resource.display_label}' moved to '{destination.name}'.",
+        )
+        return redirect("resource_library:folder", destination.pk)
+
+    return redirect("resource_library:folder", folder.pk)
 
 
 def delete_folder(request, folder_id):
