@@ -1,3 +1,4 @@
+from collections import Counter
 from pathlib import Path
 
 from django.contrib.auth import get_user_model
@@ -5,6 +6,7 @@ from django.contrib.staticfiles import finders
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
+from wagtail.admin.menu import admin_menu
 from wagtail.models import Page, Site
 from wagtail.test.utils import WagtailPageTestCase
 
@@ -63,6 +65,20 @@ class AdminChromeTests(TestCase):
             username="admin", email="admin@example.com", password="password"
         )
         self.client.force_login(self.user)
+
+    def test_no_two_sidebar_items_share_an_icon(self):
+        """
+        Icons are how these are told apart at a glance, and each app picks its
+        own in isolation — Publications and the Resource Library both landed on
+        doc-full without either knowing about the other. Nothing else catches
+        that, since a duplicate is perfectly valid to Wagtail.
+        """
+        request = self.client.get(reverse("wagtailadmin_home")).wsgi_request
+        icons = Counter(
+            item.icon_name for item in admin_menu.menu_items_for_request(request)
+        )
+        duplicated = {icon: count for icon, count in icons.items() if count > 1}
+        self.assertEqual(duplicated, {})
 
     def test_stylesheet_is_served_and_linked(self):
         self.assertTrue(
