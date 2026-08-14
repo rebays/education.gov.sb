@@ -16,6 +16,59 @@ DOCUMENTS_PER_PAGE = 50
 LAYOUT_SESSION_KEY = "resource_library_layout"
 DEFAULT_LAYOUT = "grid"
 
+SORT_SESSION_KEY = "resource_library_sort"
+DEFAULT_SORT = "name"
+
+# How the explorer lists a folder's contents. A view preference only — it is
+# remembered per session and has no bearing on the public site, which orders
+# subfolders itself (see ResourceFolder.children).
+#
+# Folders are listed before files, as in any file manager, so the two never
+# interleave; each group is ordered by the same column.
+SORT_OPTIONS = {
+    "name": {
+        "field": "Name",
+        "menu_label": "Name (A–Z)",
+        "icon": "arrow-up",
+        "folders": "name",
+        "files": "label",
+    },
+    "-name": {
+        "field": "Name",
+        "menu_label": "Name (Z–A)",
+        "icon": "arrow-down",
+        "folders": "-name",
+        "files": "-label",
+    },
+    "date": {
+        "field": "Date",
+        "menu_label": "Date (oldest first)",
+        "icon": "arrow-up",
+        "folders": "created_at",
+        "files": "created_at",
+    },
+    "-date": {
+        "field": "Date",
+        "menu_label": "Date (newest first)",
+        "icon": "arrow-down",
+        "folders": "-created_at",
+        "files": "-created_at",
+    },
+}
+
+
+def sort_header(key, label, current):
+    """
+    Describes a sortable column: where clicking it goes, and which arrow to
+    show. Built here so the template doesn't have to reason about it.
+    """
+    ascending, descending = key, f"-{key}"
+    if current == ascending:
+        return {"label": label, "next": descending, "direction": "asc"}
+    if current == descending:
+        return {"label": label, "next": ascending, "direction": "desc"}
+    return {"label": label, "next": ascending, "direction": None}
+
 # Any of these model permissions grants access to browse the library; each
 # mutating view additionally checks its own specific permission.
 LIBRARY_PERMISSIONS = [
@@ -106,6 +159,15 @@ def explorer(request, folder_id=None):
     else:
         layout = request.session.get(LAYOUT_SESSION_KEY, DEFAULT_LAYOUT)
 
+    sort = request.GET.get("sort")
+    if sort in SORT_OPTIONS:
+        request.session[SORT_SESSION_KEY] = sort
+    else:
+        sort = request.session.get(SORT_SESSION_KEY, DEFAULT_SORT)
+    if sort not in SORT_OPTIONS:
+        sort = DEFAULT_SORT
+    ordering = SORT_OPTIONS[sort]
+
     search_query = request.GET.get("q", "").strip()
     backend = get_search_backend()
     if search_query:
@@ -122,8 +184,10 @@ def explorer(request, folder_id=None):
             Resource.objects.filter(folder__in=subtree).select_related("folder"),
         )
     else:
-        subfolders = list(folder.get_children().order_by("name"))
-        documents = Resource.objects.filter(folder=folder).order_by("label")
+        subfolders = list(folder.get_children().order_by(ordering["folders"]))
+        documents = Resource.objects.filter(folder=folder).order_by(
+            ordering["files"]
+        )
 
     annotate_folder_counts(subfolders)
 
@@ -141,6 +205,14 @@ def explorer(request, folder_id=None):
             "page_obj": page_obj,
             "search_query": search_query,
             "layout": layout,
+            "sort": sort,
+            "sort_options": SORT_OPTIONS,
+            "current_sort": ordering,
+            "sort_toggle_label": f"Sorted by {ordering['field'].lower()}",
+            "sort_headers": {
+                "name": sort_header("name", "Name", sort),
+                "date": sort_header("date", "Date", sort),
+            },
             "can_upload": request.user.has_perm("resources.add_resource"),
             "can_add_folder": request.user.has_perm("resources.add_resourcefolder"),
             "can_change_folder": request.user.has_perm(

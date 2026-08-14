@@ -88,6 +88,46 @@
         /* Rows carry different numbers of actions — an unpublished folder has
            no "view on site" — so align the group to the right edge. Delete is
            last, and therefore always in the same place. */
+        .rl-sort-row {
+            margin-bottom: 25px;
+        }
+        /* A quiet pill rather than a button: it reports the current order and
+           opens the menu, it isn't a primary action. */
+        .rl-sort-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border: 1px solid var(--w-color-border-furniture);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--w-color-text-meta);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .rl-sort-pill:hover {
+            border-color: var(--w-color-secondary);
+            color: var(--w-color-secondary);
+        }
+        .rl-sort-pill svg.icon {
+            width: 12px;
+            height: 12px;
+        }
+        .rl-sort-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: inherit;
+            text-decoration: none;
+        }
+        .rl-sort-link:hover {
+            color: var(--w-color-secondary);
+        }
+        .rl-sort-link svg.rl-sort-arrow {
+            width: 12px;
+            height: 12px;
+        }
         .rl-row-actions {
             display: flex;
             gap: 8px;
@@ -204,7 +244,7 @@
         </div>
 
         {# Toolbar: actions on the folder's contents #}
-        <div style="margin-bottom: 50px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <div style="margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             {% if can_upload and not is_root %}
                 <a href="{% url 'resource_library:upload' folder.pk %}" class="button bicolor button--icon">{% icon name="upload" wrapped=1 %}Upload</a>
             {% endif %}
@@ -218,12 +258,12 @@
 
             <div style="margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div role="group" aria-label="View mode" style="display: flex; gap: 2px;">
-                    <a href="?layout=grid{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                    <a href="?layout=grid{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                        class="button rl-icon-btn {% if layout != 'grid' %}button-secondary{% endif %}"
                        title="Thumbnail view" {% if layout == 'grid' %}aria-current="true"{% endif %}>
                         {% icon name="grid" %}
                     </a>
-                    <a href="?layout=list{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                    <a href="?layout=list{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                        class="button rl-icon-btn {% if layout != 'list' %}button-secondary{% endif %}"
                        title="List view" {% if layout == 'list' %}aria-current="true"{% endif %}>
                         {% icon name="list-ul" %}
@@ -231,7 +271,7 @@
                 </div>
 
                 <form method="get" action="" role="search" style="display: flex; gap: 5px;">
-                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search this folder and below…" style="width: 340px;">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search this folder and subfolders…" style="width: 340px;">
                     {% if search_query %}
                         <a href="{% url 'resource_library:folder' folder.pk %}"
                            class="button button-secondary rl-icon-btn"
@@ -246,6 +286,27 @@
                 </form>
             </div>
         </div>
+
+        {% comment %}
+            Sorting is a view preference for this listing only — the public
+            site orders subfolders itself. The list view sorts by its column
+            headers, so this is only for the grid, which has none. Hidden
+            while searching, where results come back by relevance.
+        {% endcomment %}
+        {% if not search_query and layout == 'grid' %}
+            <div class="rl-sort-row">
+                {# w-inline-block matters: the dropdown positions itself against the #}
+                {# toggle's *parent*, so a full-width wrapper centres the menu #}
+                {# in the page instead of hanging under the pill. #}
+                {% dropdown classname="w-inline-block" toggle_label=sort_toggle_label toggle_icon=current_sort.icon toggle_aria_label="Change sort order" toggle_classname="rl-sort-pill" %}
+                    {% for value, option in sort_options.items %}
+                        <a href="?sort={{ value }}&layout=grid" {% if sort == value %}aria-current="true"{% endif %}>
+                            {{ option.menu_label }}
+                        </a>
+                    {% endfor %}
+                {% enddropdown %}
+            </div>
+        {% endif %}
 
         {% if search_query %}
             <p>Results for <strong>“{{ search_query }}”</strong> in {{ folder.name }} and subfolders:</p>
@@ -331,10 +392,31 @@
                 <table class="listing">
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>
+                                {% if search_query %}
+                                    Name
+                                {% else %}
+                                    <a href="?sort={{ sort_headers.name.next }}&layout=list" class="rl-sort-link">
+                                        Name
+                                        {% if sort_headers.name.direction == 'asc' %}{% icon name="arrow-up" classname="rl-sort-arrow" %}
+                                        {% elif sort_headers.name.direction == 'desc' %}{% icon name="arrow-down" classname="rl-sort-arrow" %}{% endif %}
+                                    </a>
+                                {% endif %}
+                            </th>
                             <th>Type</th>
                             {% if search_query %}<th>Folder</th>{% endif %}
                             <th>Size</th>
+                            <th>
+                                {% if search_query %}
+                                    Date
+                                {% else %}
+                                    <a href="?sort={{ sort_headers.date.next }}&layout=list" class="rl-sort-link">
+                                        Date
+                                        {% if sort_headers.date.direction == 'asc' %}{% icon name="arrow-up" classname="rl-sort-arrow" %}
+                                        {% elif sort_headers.date.direction == 'desc' %}{% icon name="arrow-down" classname="rl-sort-arrow" %}{% endif %}
+                                    </a>
+                                {% endif %}
+                            </th>
                             <th></th>
                         </tr>
                     </thead>
@@ -357,6 +439,7 @@
                                 </td>
                                 {% if search_query %}<td></td>{% endif %}
                                 <td></td>
+                                <td>{{ sub.created_at|date:"j M Y" }}</td>
                                 <td class="rl-row-actions">
                                     {% if sub.page_kind != 'none' %}
                                         <a href="{{ sub.public_url }}" class="button button-secondary rl-icon-btn" target="_blank" rel="noreferrer" title="View on site" aria-label="View on site">
@@ -391,6 +474,7 @@
                                 <td>{{ doc.file_extension|upper }}</td>
                                 {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
+                                <td>{{ doc.created_at|date:"j M Y" }}</td>
                                 <td class="rl-row-actions">
                                     <a href="{{ doc.url }}" class="button button-secondary rl-icon-btn" title="Download this file" aria-label="Download">
                                         {% icon name="download" %}

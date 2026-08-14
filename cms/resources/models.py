@@ -354,6 +354,7 @@ class ResourceFolder(index.Indexed, MP_Node):
         blank=True,
         help_text="Free-form keywords, e.g. literacy, inclusive education.",
     )
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
     resource_index_page = models.ForeignKey(
         ResourceIndexPage,

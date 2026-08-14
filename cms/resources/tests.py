@@ -1623,7 +1623,6 @@ class UploadLabelTests(TestCase):
         self.assertIn("title on the resource page", html)
         self.assertIn("above the", html)
 
-
 class TemplateCommentTests(TestCase):
     """
     Django's `{# #}` comments are single-line only — a multi-line one isn't a
@@ -1962,3 +1961,229 @@ class FolderFormLayoutTests(TestCase):
         self.assertEqual(
             ResourceFolder.objects.get(name="New Folder").slug, "new-folder"
         )
+
+
+class ExplorerSortTests(TestCase):
+    """
+    A view preference for the explorer only. The public site orders
+    subfolders itself, so nothing here changes what a visitor sees.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        for name in ("Zebra", "Apple", "Mango"):
+            self.root.add_child(instance=ResourceFolder(name=name))
+
+    def listed(self, **params):
+        html = self.client.get(
+            reverse("resource_library:index"), params
+        ).content.decode()
+        return sorted(("Zebra", "Apple", "Mango"), key=html.index)
+
+    def test_defaults_to_alphabetical(self):
+        self.assertEqual(self.listed(), ["Apple", "Mango", "Zebra"])
+
+    def test_reverse_alphabetical(self):
+        self.assertEqual(self.listed(sort="-name"), ["Zebra", "Mango", "Apple"])
+
+    def test_newest_first(self):
+        # Created in the order Zebra, Apple, Mango
+        self.assertEqual(self.listed(sort="-date"), ["Mango", "Apple", "Zebra"])
+
+    def test_oldest_first(self):
+        self.assertEqual(self.listed(sort="date"), ["Zebra", "Apple", "Mango"])
+
+    def test_choice_is_remembered(self):
+        self.listed(sort="-name")
+        self.assertEqual(self.listed(), ["Zebra", "Mango", "Apple"])
+
+    def test_unknown_sort_falls_back_to_the_default(self):
+        self.assertEqual(
+            self.listed(sort="; drop table"), ["Apple", "Mango", "Zebra"]
+        )
+
+    def test_files_are_sorted_too(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Files"))
+        for label in ("beta", "alpha"):
+            add_file(folder, f"{label}.pdf", label=label)
+
+        html = self.client.get(
+            reverse("resource_library:folder", args=[folder.pk]), {"sort": "-name"}
+        ).content.decode()
+        self.assertLess(html.index("beta"), html.index("alpha"))
+
+    def test_layout_switch_keeps_the_sort(self):
+        self.listed(sort="-name")
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertEqual(
+            sorted(("Zebra", "Apple", "Mango"), key=html.index),
+            ["Zebra", "Mango", "Apple"],
+        )
+
+    def test_control_is_hidden_while_searching(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"q": "a"}
+        ).content.decode()
+        self.assertNotIn('aria-label="Change sort order"', html)
+
+    def test_sorting_never_touches_stored_order(self):
+        """The public site's ordering must be unaffected by a view choice."""
+        self.listed(sort="-name")
+        self.assertEqual(
+            set(self.root.get_children().values_list("order", flat=True)), {0}
+        )
+
+    def test_list_headers_are_sort_links(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertIn("?sort=-name&layout=list", html)  # Name is asc, so flip
+        self.assertIn("?sort=date&layout=list", html)
+        self.assertIn("Date", html)
+
+    def test_clicking_a_header_toggles_its_direction(self):
+        def header_link(sort):
+            html = self.client.get(
+                reverse("resource_library:index"), {"layout": "list", "sort": sort}
+            ).content.decode()
+            return re.findall(r'\?sort=(-?\w+)&layout=list', html)
+
+        self.assertIn("-name", header_link("name"))
+        self.assertIn("name", header_link("-name"))
+        self.assertIn("-date", header_link("date"))
+        self.assertIn("date", header_link("-date"))
+
+    def test_active_column_shows_a_direction_arrow(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list", "sort": "name"}
+        ).content.decode()
+        self.assertIn("icon-arrow-up", html)
+
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list", "sort": "-name"}
+        ).content.decode()
+        self.assertIn("icon-arrow-down", html)
+
+    def test_rows_show_a_date(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Dated"))
+        resource = add_file(folder, "doc.pdf")
+        html = self.client.get(
+            reverse("resource_library:folder", args=[folder.pk]), {"layout": "list"}
+        ).content.decode()
+        expected = f"{resource.created_at.day} {resource.created_at:%b %Y}"
+        self.assertIn(expected, html)
+
+    def test_grid_sorts_from_a_dropdown(self):
+        """
+        The grid has no column headers to click, so it gets one control
+        naming the current field; the list view has headers instead.
+        """
+        grid = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        self.assertIn('aria-label="Change sort order"', grid)
+        self.assertIn('data-controller="w-dropdown"', grid)
+
+        listed = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertNotIn('aria-label="Change sort order"', listed)
+
+    def test_pill_sits_between_the_toolbar_and_the_grid(self):
+        """
+        It reports the current order rather than being a toolbar action, so
+        it sits with the content it describes.
+        """
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        # Match the element, not the CSS rule of the same name
+        self.assertLess(
+            html.index('aria-label="View mode"'),
+            html.index('<div class="rl-sort-row">'),
+        )
+        self.assertLess(
+            html.index('<div class="rl-sort-row">'), html.index('class="rl-grid"')
+        )
+
+    def test_pill_reads_as_a_sentence(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid", "sort": "-date"}
+        ).content.decode()
+        self.assertIn("Sorted by date", html)
+
+    def test_dropdown_names_the_current_sort(self):
+        def toggle(sort):
+            html = self.client.get(
+                reverse("resource_library:index"), {"layout": "grid", "sort": sort}
+            ).content.decode()
+            block = html[html.index('data-controller="w-dropdown"'):]
+            return block[: block.index("</button>")]
+
+        self.assertIn("Sorted by name", toggle("name"))
+        self.assertIn("icon-arrow-up", toggle("name"))
+        self.assertIn("icon-arrow-down", toggle("-name"))
+        self.assertIn("Sorted by date", toggle("-date"))
+        self.assertIn("icon-arrow-down", toggle("-date"))
+
+    def test_dropdown_offers_every_option(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        for label in (
+            "Name (A–Z)", "Name (Z–A)",
+            "Date (oldest first)", "Date (newest first)",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, html)
+
+    def test_headers_are_plain_text_while_searching(self):
+        """Results come back by relevance, so the columns aren't sortable."""
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list", "q": "a"}
+        ).content.decode()
+        # The class also appears in the page's <style>, so look for the link
+        self.assertNotIn('<a href="?sort=', html)
+
+    def test_folders_show_their_creation_date(self):
+        """
+        The column used to show a dash for folders, which made sorting by it
+        look arbitrary. Folders now carry a creation date of their own.
+        """
+        folder = ResourceFolder.objects.get(name="Apple")
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        expected = f"{folder.created_at.day} {folder.created_at:%b %Y}"
+        self.assertIn(expected, html)
+        table = html[html.find('class="listing"'):]
+        self.assertNotIn("<td>—</td>", table)
+
+    def test_folders_sort_by_the_date_shown(self):
+        """Sorting must follow the column, not some other timestamp."""
+        apple = ResourceFolder.objects.get(name="Apple")
+        # Touching a folder changes updated_at but not created_at
+        apple.description = "edited later"
+        apple.save()
+        self.assertEqual(self.listed(sort="-date")[0], "Mango")
+
+    def test_dropdown_wrapper_hugs_the_pill(self):
+        """
+        Wagtail's dropdown positions itself against the toggle's *parent*
+        (DropdownController.reference), so a full-width wrapper puts the menu
+        in the middle of the page rather than under the pill.
+        """
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        block = html[html.index('<div class="rl-sort-row">'):][:400]
+        wrapper = re.search(
+            r'<div\s+data-controller="w-dropdown"\s+class="([^"]+)"', block, re.S
+        ).group(1)
+        self.assertIn("w-inline-block", wrapper)
