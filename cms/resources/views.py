@@ -16,6 +16,59 @@ DOCUMENTS_PER_PAGE = 50
 LAYOUT_SESSION_KEY = "resource_library_layout"
 DEFAULT_LAYOUT = "grid"
 
+SORT_SESSION_KEY = "resource_library_sort"
+DEFAULT_SORT = "name"
+
+# How the explorer lists a folder's contents. A view preference only — it is
+# remembered per session and has no bearing on the public site, which orders
+# subfolders itself (see ResourceFolder.children).
+#
+# Folders are listed before files, as in any file manager, so the two never
+# interleave; each group is ordered by the same column.
+SORT_OPTIONS = {
+    "name": {
+        "field": "Name",
+        "menu_label": "Name (A–Z)",
+        "icon": "arrow-up",
+        "folders": "name",
+        "files": "label",
+    },
+    "-name": {
+        "field": "Name",
+        "menu_label": "Name (Z–A)",
+        "icon": "arrow-down",
+        "folders": "-name",
+        "files": "-label",
+    },
+    "date": {
+        "field": "Date",
+        "menu_label": "Date (oldest first)",
+        "icon": "arrow-up",
+        "folders": "created_at",
+        "files": "created_at",
+    },
+    "-date": {
+        "field": "Date",
+        "menu_label": "Date (newest first)",
+        "icon": "arrow-down",
+        "folders": "-created_at",
+        "files": "-created_at",
+    },
+}
+
+
+def sort_header(key, label, current):
+    """
+    Describes a sortable column: where clicking it goes, and which arrow to
+    show. Built here so the template doesn't have to reason about it.
+    """
+    ascending, descending = key, f"-{key}"
+    if current == ascending:
+        return {"label": label, "next": descending, "direction": "asc"}
+    if current == descending:
+        return {"label": label, "next": ascending, "direction": "desc"}
+    return {"label": label, "next": ascending, "direction": None}
+
 # Any of these model permissions grants access to browse the library; each
 # mutating view additionally checks its own specific permission.
 LIBRARY_PERMISSIONS = [
@@ -106,6 +159,15 @@ def explorer(request, folder_id=None):
     else:
         layout = request.session.get(LAYOUT_SESSION_KEY, DEFAULT_LAYOUT)
 
+    sort = request.GET.get("sort")
+    if sort in SORT_OPTIONS:
+        request.session[SORT_SESSION_KEY] = sort
+    else:
+        sort = request.session.get(SORT_SESSION_KEY, DEFAULT_SORT)
+    if sort not in SORT_OPTIONS:
+        sort = DEFAULT_SORT
+    ordering = SORT_OPTIONS[sort]
+
     search_query = request.GET.get("q", "").strip()
     backend = get_search_backend()
     if search_query:
@@ -122,8 +184,10 @@ def explorer(request, folder_id=None):
             Resource.objects.filter(folder__in=subtree).select_related("folder"),
         )
     else:
-        subfolders = list(folder.get_children().order_by("name"))
-        documents = Resource.objects.filter(folder=folder).order_by("label")
+        subfolders = list(folder.get_children().order_by(ordering["folders"]))
+        documents = Resource.objects.filter(folder=folder).order_by(
+            ordering["files"]
+        )
 
     annotate_folder_counts(subfolders)
 
@@ -140,7 +204,19 @@ def explorer(request, folder_id=None):
             "subfolders": subfolders,
             "page_obj": page_obj,
             "search_query": search_query,
+            "ancestry_hidden": (
+                not folder.is_published or folder.unpublished_ancestor is not None
+            ),
             "layout": layout,
+            "sort": sort,
+            "sort_options": SORT_OPTIONS,
+            "current_sort": ordering,
+            "sort_toggle_label": f"Sorted by {ordering['field'].lower()}",
+            "move_destinations": move_destinations(root),
+            "sort_headers": {
+                "name": sort_header("name", "Name", sort),
+                "date": sort_header("date", "Date", sort),
+            },
             "can_upload": request.user.has_perm("resources.add_resource"),
             "can_add_folder": request.user.has_perm("resources.add_resourcefolder"),
             "can_change_folder": request.user.has_perm(
@@ -157,6 +233,23 @@ def explorer(request, folder_id=None):
     )
 
 
+def _apply_publish_action(folder, action, *, creating):
+    """
+    Publication is driven by which submit button was used, the way a page's
+    action menu works — there's no checkbox to forget.
+
+    A folder a person creates starts as a draft; "Save" on an existing folder
+    leaves its state alone, so editing a live folder can't take it offline by
+    accident.
+    """
+    if action == "publish":
+        folder.is_published = True
+    elif action == "unpublish":
+        folder.is_published = False
+    elif creating:
+        folder.is_published = False
+
+
 def add_folder(request, parent_id):
     check_library_access(request)
     if not request.user.has_perm("resources.add_resourcefolder"):
@@ -165,8 +258,16 @@ def add_folder(request, parent_id):
 
     form = FolderForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
-        folder = parent.add_child(instance=form.save(commit=False))
-        messages.success(request, f"Folder '{folder.name}' created.")
+        instance = form.save(commit=False)
+        _apply_publish_action(
+            instance, request.POST.get("action"), creating=True
+        )
+        folder = parent.add_child(instance=instance)
+        messages.success(
+            request,
+            f"Folder '{folder.name}' created"
+            + (" and published." if folder.is_published else " as a draft."),
+        )
         return redirect("resource_library:folder", folder.pk)
 
     return render(
@@ -176,6 +277,7 @@ def add_folder(request, parent_id):
             "form": form,
             "page_title": "New folder",
             "folder": parent,
+            "creating": True,
             "breadcrumbs": get_breadcrumbs(root, parent),
         },
     )
@@ -191,8 +293,18 @@ def edit_folder(request, folder_id):
 
     form = FolderForm(request.POST or None, instance=folder)
     if request.method == "POST" and form.is_valid():
-        form.save()
-        messages.success(request, f"Folder '{folder.name}' updated.")
+        was_published = folder.is_published
+        instance = form.save(commit=False)
+        action = request.POST.get("action")
+        _apply_publish_action(instance, action, creating=False)
+        instance.save()
+        form.save_m2m()
+        if instance.is_published and not was_published:
+            messages.success(request, f"'{folder.name}' published.")
+        elif was_published and not instance.is_published:
+            messages.success(request, f"'{folder.name}' unpublished.")
+        else:
+            messages.success(request, f"Folder '{folder.name}' updated.")
         return redirect("resource_library:folder", folder.pk)
 
     return render(
@@ -202,12 +314,108 @@ def edit_folder(request, folder_id):
             "form": form,
             "page_title": "Edit folder",
             "folder": folder,
+            "creating": False,
+            "unpublished_ancestor": folder.unpublished_ancestor,
             "page_kind": folder.page_kind,
             "direct_file_count": folder.file_count,
             "direct_child_count": folder.child_count,
             "breadcrumbs": get_breadcrumbs(root, folder),
         },
     )
+
+
+def move_destinations(root):
+    """
+    Every folder in the library, labelled by depth so the select reads as a
+    tree. The root is included — folders can move to the top level — but it
+    can't hold files, the same rule the upload view enforces.
+    """
+    return [
+        {
+            "pk": folder.pk,
+            "label": (
+                ("— " * (folder.depth - 1))
+                + folder.name
+                + ("" if folder.is_published else "  (draft)")
+            ),
+            "path": folder.path,
+            "accepts_files": folder.pk != root.pk,
+        }
+        for folder in ResourceFolder.objects.order_by("path")
+    ]
+
+
+def _resolve_destination(request, root):
+    """Read and validate the posted destination, or None."""
+    try:
+        destination = ResourceFolder.objects.get(pk=request.POST.get("destination"))
+    except (ResourceFolder.DoesNotExist, ValueError, TypeError):
+        return None
+    if destination.pk != root.pk and not destination.is_descendant_of(root):
+        return None
+    return destination
+
+
+def move_folder(request, folder_id):
+    check_library_access(request)
+    if not request.user.has_perm("resources.change_resourcefolder"):
+        raise PermissionDenied
+    root, folder = get_folder(folder_id)
+    if folder.pk == root.pk:
+        raise PermissionDenied
+
+    parent = folder.get_parent()
+    if request.method != "POST":
+        return redirect("resource_library:folder", parent.pk)
+
+    destination = _resolve_destination(request, root)
+    if destination is None:
+        messages.error(request, "Choose a folder to move into.")
+    elif destination.pk == parent.pk:
+        messages.info(request, f"'{folder.name}' is already there.")
+    elif destination.pk == folder.pk or destination.path.startswith(folder.path):
+        # Moving a folder inside itself would detach that whole branch
+        messages.error(
+            request, f"'{folder.name}' can't be moved inside itself."
+        )
+    else:
+        folder.move(destination, pos="last-child")
+        messages.success(request, f"'{folder.name}' moved to '{destination.name}'.")
+        return redirect("resource_library:folder", destination.pk)
+
+    return redirect("resource_library:folder", parent.pk)
+
+
+def move_resource(request, resource_id):
+    check_library_access(request)
+    if not request.user.has_perm("resources.change_resource"):
+        raise PermissionDenied
+    resource = get_object_or_404(Resource, id=resource_id)
+    root, folder = get_folder(resource.folder_id)
+
+    if request.method != "POST":
+        return redirect("resource_library:folder", folder.pk)
+
+    destination = _resolve_destination(request, root)
+    if destination is None:
+        messages.error(request, "Choose a folder to move into.")
+    elif destination.pk == root.pk:
+        # Files at the root have no public page to belong to
+        messages.error(
+            request, "Files belong to a folder, not the top level of the library."
+        )
+    elif destination.pk == folder.pk:
+        messages.info(request, f"'{resource.display_label}' is already there.")
+    else:
+        resource.folder = destination
+        resource.save(update_fields=["folder"])
+        messages.success(
+            request,
+            f"'{resource.display_label}' moved to '{destination.name}'.",
+        )
+        return redirect("resource_library:folder", destination.pk)
+
+    return redirect("resource_library:folder", folder.pk)
 
 
 def delete_folder(request, folder_id):

@@ -85,6 +85,55 @@
             align-items: center;
             justify-content: center;
         }
+        /* Rows carry different numbers of actions — an unpublished folder has
+           no "view on site" — so align the group to the right edge. Delete is
+           last, and therefore always in the same place. */
+        .rl-sort-row {
+            margin-bottom: 25px;
+        }
+        /* A quiet pill rather than a button: it reports the current order and
+           opens the menu, it isn't a primary action. */
+        .rl-sort-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border: 1px solid var(--w-color-border-furniture);
+            border-radius: 999px;
+            background: transparent;
+            color: var(--w-color-text-meta);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .rl-sort-pill:hover {
+            border-color: var(--w-color-secondary);
+            color: var(--w-color-secondary);
+        }
+        .rl-sort-pill svg.icon {
+            width: 12px;
+            height: 12px;
+        }
+        .rl-sort-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            color: inherit;
+            text-decoration: none;
+        }
+        .rl-sort-link:hover {
+            color: var(--w-color-secondary);
+        }
+        .rl-sort-link svg.rl-sort-arrow {
+            width: 12px;
+            height: 12px;
+        }
+        .rl-row-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-end;
+        }
         .rl-icon-btn svg.icon {
             width: 16px;
             height: 16px;
@@ -144,35 +193,35 @@
             opacity: 0;
             transition: opacity 200ms ease;
         }
-        .rl-card:hover .rl-card__actions {
+        .rl-card:hover .rl-card__actions,
+        .rl-card__actions:focus-within,
+        /* Keep the menu's own toggle visible while it's open, or the card
+           fades out from under it as soon as the pointer leaves. */
+        .rl-card__actions:has([aria-expanded="true"]) {
             opacity: 1;
         }
-        .rl-card__action-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+        .rl-card__actions .w-dropdown__toggle {
             width: 28px;
             height: 28px;
             padding: 0;
+            border: none;
             border-radius: 3px;
             background: var(--w-color-secondary);
             color: var(--w-color-text-button);
-            border: none;
-            cursor: pointer;
-            text-decoration: none;
-            transition: opacity 150ms ease;
         }
-        .rl-card__action-btn:hover {
-            opacity: 0.9;
-        }
-        .rl-card__action-btn svg.icon {
+        .rl-card__actions .w-dropdown__toggle svg.icon {
             width: 14px;
             height: 14px;
         }
-        .rl-card__action-btn.delete {
-            background: var(--w-color-critical-200);
-            color: var(--w-color-critical);
-        }
+        {% if layout == 'grid' %}
+            /* The menu is a Tippy popup positioned outside the card, so it
+               can't be reached by an ancestor selector. The explorer renders
+               one layout at a time, so scoping the rule to the grid here is
+               equivalent to scoping it to grid cards. */
+            .w-dropdown__content {
+                min-width: 180px;
+            }
+        {% endif %}
     </style>
 {% endblock %}
 
@@ -195,9 +244,9 @@
         </div>
 
         {# Toolbar: actions on the folder's contents #}
-        <div style="margin-bottom: 50px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+        <div style="margin-bottom: 25px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             {% if can_upload and not is_root %}
-                <a href="{% url 'resource_library:upload' folder.pk %}" class="button bicolor button--icon">{% icon name="plus" wrapped=1 %}New file</a>
+                <a href="{% url 'resource_library:upload' folder.pk %}" class="button bicolor button--icon">{% icon name="upload" wrapped=1 %}Upload</a>
             {% endif %}
             {% if can_add_folder %}
                 <a href="{% url 'resource_library:add_folder' folder.pk %}"
@@ -209,12 +258,12 @@
 
             <div style="margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div role="group" aria-label="View mode" style="display: flex; gap: 2px;">
-                    <a href="?layout=grid{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                    <a href="?layout=grid{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                        class="button rl-icon-btn {% if layout != 'grid' %}button-secondary{% endif %}"
                        title="Thumbnail view" {% if layout == 'grid' %}aria-current="true"{% endif %}>
                         {% icon name="grid" %}
                     </a>
-                    <a href="?layout=list{% if search_query %}&q={{ search_query|urlencode }}{% endif %}"
+                    <a href="?layout=list{% if search_query %}&q={{ search_query|urlencode }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}"
                        class="button rl-icon-btn {% if layout != 'list' %}button-secondary{% endif %}"
                        title="List view" {% if layout == 'list' %}aria-current="true"{% endif %}>
                         {% icon name="list-ul" %}
@@ -222,7 +271,7 @@
                 </div>
 
                 <form method="get" action="" role="search" style="display: flex; gap: 5px;">
-                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search this folder and below…" style="width: 340px;">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Search this folder and subfolders…" style="width: 340px;">
                     {% if search_query %}
                         <a href="{% url 'resource_library:folder' folder.pk %}"
                            class="button button-secondary rl-icon-btn"
@@ -237,6 +286,27 @@
                 </form>
             </div>
         </div>
+
+        {% comment %}
+            Sorting is a view preference for this listing only — the public
+            site orders subfolders itself. The list view sorts by its column
+            headers, so this is only for the grid, which has none. Hidden
+            while searching, where results come back by relevance.
+        {% endcomment %}
+        {% if not search_query and layout == 'grid' %}
+            <div class="rl-sort-row">
+                {# w-inline-block matters: the dropdown positions itself against the #}
+                {# toggle's *parent*, so a full-width wrapper centres the menu #}
+                {# in the page instead of hanging under the pill. #}
+                {% dropdown classname="w-inline-block" toggle_label=sort_toggle_label toggle_icon=current_sort.icon toggle_aria_label="Change sort order" toggle_classname="rl-sort-pill" %}
+                    {% for value, option in sort_options.items %}
+                        <a href="?sort={{ value }}&layout=grid" {% if sort == value %}aria-current="true"{% endif %}>
+                            {{ option.menu_label }}
+                        </a>
+                    {% endfor %}
+                {% enddropdown %}
+            </div>
+        {% endif %}
 
         {% if search_query %}
             <p>Results for <strong>“{{ search_query }}”</strong> in {{ folder.name }} and subfolders:</p>
@@ -257,30 +327,46 @@
                                     {% if sub.direct_child_count %}{{ sub.direct_child_count }} folder{{ sub.direct_child_count|pluralize }}{% endif %}
                                     {% if not sub.direct_file_count and not sub.direct_child_count %}Empty{% endif %}
                                 </span>
-                                {# What the public site makes of it #}
-                                <span class="rl-card__kind rl-kind--{{ sub.page_kind }}">
-                                    {% if sub.page_kind == 'resource' %}Resource page
-                                    {% elif sub.page_kind == 'directory' %}Directory
-                                    {% else %}Not published{% endif %}
+                                {% comment %}
+                                    Whether the public can see it, which is now
+                                    a decision rather than a side effect of
+                                    holding files.
+                                {% endcomment %}
+                                <span class="rl-card__kind rl-kind--{% if ancestry_hidden or not sub.is_published %}none{% else %}{{ sub.page_kind }}{% endif %}">
+                                    {% if ancestry_hidden %}Hidden
+                                    {% elif not sub.is_published %}Draft
+                                    {% elif sub.page_kind == 'none' %}Nothing to publish
+                                    {% else %}Live{% endif %}
                                 </span>
                             </a>
                             {% if sub.page_kind != 'none' or can_change_folder or can_delete_folder %}
                                 <div class="rl-card__actions">
-                                    {% if sub.page_kind != 'none' %}
-                                        <a href="{{ sub.public_url }}" class="rl-card__action-btn" target="_blank" rel="noreferrer" title="View on site" aria-label="View on site">
-                                            {% icon name="link-external" %}
-                                        </a>
-                                    {% endif %}
-                                    {% if can_change_folder %}
-                                        <a href="{% url 'resource_library:edit_folder' sub.pk %}" class="rl-card__action-btn" title="Edit folder details" aria-label="Edit folder">
-                                            {% icon name="edit" %}
-                                        </a>
-                                    {% endif %}
-                                    {% if can_delete_folder %}
-                                        <a href="{% url 'resource_library:delete_folder' sub.pk %}" class="rl-card__action-btn delete" title="Delete folder" aria-label="Delete folder">
-                                            {% icon name="bin" %}
-                                        </a>
-                                    {% endif %}
+                                    {% fragment as actions_label %}Actions for {{ sub.name }}{% endfragment %}
+                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label hide_on_click=True %}
+                                        {% if sub.page_kind != 'none' and sub.is_published and not ancestry_hidden %}
+                                            <a href="{{ sub.public_url }}" target="_blank" rel="noreferrer">
+                                                {% icon name="link-external" %}View on site
+                                            </a>
+                                        {% endif %}
+                                        {% if can_change_folder %}
+                                            <a href="{% url 'resource_library:edit_folder' sub.pk %}">
+                                                {% icon name="edit" %}Edit details
+                                            </a>
+                                            <button type="button"
+                                                    data-a11y-dialog-show="rl-move-dialog"
+                                                    data-move-url="{% url 'resource_library:move_folder' sub.pk %}"
+                                                    data-move-name="{{ sub.name }}"
+                                                    data-move-kind="folder"
+                                                    data-move-path="{{ sub.path }}">
+                                                {% icon name="arrow-right" %}Move
+                                            </button>
+                                        {% endif %}
+                                        {% if can_delete_folder %}
+                                            <a href="{% url 'resource_library:delete_folder' sub.pk %}">
+                                                {% icon name="bin" %}Delete
+                                            </a>
+                                        {% endif %}
+                                    {% enddropdown %}
                                 </div>
                             {% endif %}
                         </div>
@@ -303,16 +389,29 @@
                             </a>
                             {% if can_edit_documents or can_delete_documents %}
                                 <div class="rl-card__actions">
-                                    {% if can_edit_documents %}
-                                        <a href="{% url 'resource_library:edit_resource' doc.pk %}" class="rl-card__action-btn" title="Edit this file" aria-label="Edit">
-                                            {% icon name="edit" %}
+                                    {% fragment as actions_label %}Actions for {{ doc.display_label }}{% endfragment %}
+                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label hide_on_click=True %}
+                                        <a href="{{ doc.url }}">
+                                            {% icon name="download" %}Download
                                         </a>
-                                    {% endif %}
-                                    {% if can_delete_documents %}
-                                        <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="rl-card__action-btn delete" title="Delete this file" aria-label="Delete">
-                                            {% icon name="bin" %}
-                                        </a>
-                                    {% endif %}
+                                        {% if can_edit_documents %}
+                                            <a href="{% url 'resource_library:edit_resource' doc.pk %}">
+                                                {% icon name="edit" %}Edit details
+                                            </a>
+                                            <button type="button"
+                                                    data-a11y-dialog-show="rl-move-dialog"
+                                                    data-move-url="{% url 'resource_library:move_resource' doc.pk %}"
+                                                    data-move-name="{{ doc.display_label }}"
+                                                    data-move-kind="file">
+                                                {% icon name="arrow-right" %}Move
+                                            </button>
+                                        {% endif %}
+                                        {% if can_delete_documents %}
+                                            <a href="{% url 'resource_library:delete_resource' doc.pk %}">
+                                                {% icon name="bin" %}Delete
+                                            </a>
+                                        {% endif %}
+                                    {% enddropdown %}
                                 </div>
                             {% endif %}
                         </div>
@@ -322,10 +421,32 @@
                 <table class="listing">
                     <thead>
                         <tr>
-                            <th>Name</th>
+                            <th>
+                                {% if search_query %}
+                                    Name
+                                {% else %}
+                                    <a href="?sort={{ sort_headers.name.next }}&layout=list" class="rl-sort-link">
+                                        Name
+                                        {% if sort_headers.name.direction == 'asc' %}{% icon name="arrow-up" classname="rl-sort-arrow" %}
+                                        {% elif sort_headers.name.direction == 'desc' %}{% icon name="arrow-down" classname="rl-sort-arrow" %}{% endif %}
+                                    </a>
+                                {% endif %}
+                            </th>
+                            <th>Status</th>
                             <th>Type</th>
                             {% if search_query %}<th>Folder</th>{% endif %}
                             <th>Size</th>
+                            <th>
+                                {% if search_query %}
+                                    Date
+                                {% else %}
+                                    <a href="?sort={{ sort_headers.date.next }}&layout=list" class="rl-sort-link">
+                                        Date
+                                        {% if sort_headers.date.direction == 'asc' %}{% icon name="arrow-up" classname="rl-sort-arrow" %}
+                                        {% elif sort_headers.date.direction == 'desc' %}{% icon name="arrow-down" classname="rl-sort-arrow" %}{% endif %}
+                                    </a>
+                                {% endif %}
+                            </th>
                             <th></th>
                         </tr>
                     </thead>
@@ -338,32 +459,48 @@
                                         <a href="{% url 'resource_library:folder' sub.pk %}">{{ sub.name }}</a>
                                     </div>
                                 </td>
+                                <td>{% if ancestry_hidden %}Hidden
+                                    {% elif not sub.is_published %}Draft
+                                    {% elif sub.page_kind == 'none' %}Nothing to publish
+                                    {% else %}Live{% endif %}</td>
                                 <td>
                                     {% if sub.page_kind == 'resource' %}Resource page
                                     {% elif sub.page_kind == 'directory' %}Directory
-                                    {% else %}Not published{% endif %}
+                                    {% else %}Empty{% endif %}
                                     {% if sub.resource_type %} · {{ sub.get_resource_type_display }}{% endif %}
                                     · {{ sub.direct_file_count }} file{{ sub.direct_file_count|pluralize }}
                                     · {{ sub.direct_child_count }} folder{{ sub.direct_child_count|pluralize }}
                                 </td>
                                 {% if search_query %}<td></td>{% endif %}
                                 <td></td>
-                                <td style="display: flex; gap: 8px; align-items: center;">
-                                    {% if sub.page_kind != 'none' %}
-                                        <a href="{{ sub.public_url }}" class="button button-secondary rl-icon-btn" target="_blank" rel="noreferrer" title="View on site" aria-label="View on site">
-                                            {% icon name="link-external" %}
-                                        </a>
-                                    {% endif %}
-                                    {% if can_change_folder %}
-                                        <a href="{% url 'resource_library:edit_folder' sub.pk %}" class="button button-secondary rl-icon-btn" title="Edit folder details" aria-label="Edit folder">
-                                            {% icon name="edit" %}
-                                        </a>
-                                    {% endif %}
-                                    {% if can_delete_folder %}
-                                        <a href="{% url 'resource_library:delete_folder' sub.pk %}" class="button button-secondary rl-icon-btn no" title="Delete folder" aria-label="Delete folder">
-                                            {% icon name="bin" %}
-                                        </a>
-                                    {% endif %}
+                                <td>{{ sub.created_at|date:"j M Y" }}</td>
+                                <td class="rl-row-actions">
+                                    {% fragment as actions_label %}Actions for {{ sub.name }}{% endfragment %}
+                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label toggle_classname="button button-secondary rl-icon-btn" hide_on_click=True %}
+                                        {% if sub.page_kind != 'none' and sub.is_published and not ancestry_hidden %}
+                                            <a href="{{ sub.public_url }}" target="_blank" rel="noreferrer">
+                                                {% icon name="link-external" %}View on site
+                                            </a>
+                                        {% endif %}
+                                        {% if can_change_folder %}
+                                            <a href="{% url 'resource_library:edit_folder' sub.pk %}">
+                                                {% icon name="edit" %}Edit details
+                                            </a>
+                                            <button type="button"
+                                                    data-a11y-dialog-show="rl-move-dialog"
+                                                    data-move-url="{% url 'resource_library:move_folder' sub.pk %}"
+                                                    data-move-name="{{ sub.name }}"
+                                                    data-move-kind="folder"
+                                                    data-move-path="{{ sub.path }}">
+                                                {% icon name="arrow-right" %}Move
+                                            </button>
+                                        {% endif %}
+                                        {% if can_delete_folder %}
+                                            <a href="{% url 'resource_library:delete_folder' sub.pk %}">
+                                                {% icon name="bin" %}Delete
+                                            </a>
+                                        {% endif %}
+                                    {% enddropdown %}
                                 </td>
                             </tr>
                         {% endfor %}
@@ -379,23 +516,35 @@
                                         {% endif %}
                                     </div>
                                 </td>
+                                <td></td>
                                 <td>{{ doc.file_extension|upper }}</td>
                                 {% if search_query %}<td>{{ doc.folder.name }}</td>{% endif %}
                                 <td>{% if doc.file_size %}{{ doc.file_size|filesizeformat }}{% else %}—{% endif %}</td>
-                                <td style="display: flex; gap: 8px; align-items: center;">
-                                    <a href="{{ doc.url }}" class="button button-secondary rl-icon-btn" title="Download this file" aria-label="Download">
-                                        {% icon name="download" %}
-                                    </a>
-                                    {% if can_edit_documents %}
-                                        <a href="{% url 'resource_library:edit_resource' doc.pk %}" class="button button-secondary rl-icon-btn" title="Edit this file" aria-label="Edit">
-                                            {% icon name="edit" %}
+                                <td>{{ doc.created_at|date:"j M Y" }}</td>
+                                <td class="rl-row-actions">
+                                    {% fragment as actions_label %}Actions for {{ doc.display_label }}{% endfragment %}
+                                    {% dropdown toggle_icon="dots-horizontal" toggle_aria_label=actions_label toggle_classname="button button-secondary rl-icon-btn" hide_on_click=True %}
+                                        <a href="{{ doc.url }}">
+                                            {% icon name="download" %}Download
                                         </a>
-                                    {% endif %}
-                                    {% if can_delete_documents %}
-                                        <a href="{% url 'resource_library:delete_resource' doc.pk %}" class="button button-secondary rl-icon-btn no" title="Delete this file" aria-label="Delete">
-                                            {% icon name="bin" %}
-                                        </a>
-                                    {% endif %}
+                                        {% if can_edit_documents %}
+                                            <a href="{% url 'resource_library:edit_resource' doc.pk %}">
+                                                {% icon name="edit" %}Edit details
+                                            </a>
+                                            <button type="button"
+                                                    data-a11y-dialog-show="rl-move-dialog"
+                                                    data-move-url="{% url 'resource_library:move_resource' doc.pk %}"
+                                                    data-move-name="{{ doc.display_label }}"
+                                                    data-move-kind="file">
+                                                {% icon name="arrow-right" %}Move
+                                            </button>
+                                        {% endif %}
+                                        {% if can_delete_documents %}
+                                            <a href="{% url 'resource_library:delete_resource' doc.pk %}">
+                                                {% icon name="bin" %}Delete
+                                            </a>
+                                        {% endif %}
+                                    {% enddropdown %}
                                 </td>
                             </tr>
                         {% endfor %}
@@ -432,4 +581,78 @@
             {% endif %}
         {% endif %}
     </div>
+    {% if can_change_folder or can_edit_documents %}
+        {% comment %}
+            One dialog for the whole page rather than one per row: the button
+            that opened it supplies the target and where it may go.
+        {% endcomment %}
+        {% dialog id="rl-move-dialog" title="Move" icon_name="arrow-right" %}
+            <form method="post" id="rl-move-form">
+                {% csrf_token %}
+                <p id="rl-move-what" class="w-help-text" style="margin-bottom: 15px;"></p>
+                <div class="w-field__wrapper">
+                    <label class="w-field__label" for="rl-move-destination">Destination</label>
+                    <div class="w-field w-field--choice_field w-field--select">
+                        <div class="w-field__input">
+                            <select name="destination" id="rl-move-destination">
+                                {% for option in move_destinations %}
+                                    <option value="{{ option.pk }}"
+                                            data-path="{{ option.path }}"
+                                            data-accepts-files="{{ option.accepts_files|yesno:'true,false' }}">{{ option.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <p id="rl-move-warning" class="w-help-text" hidden>
+                    Moving a folder changes its public web address, and the
+                    address of everything inside it. Existing links will stop
+                    working.
+                </p>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="submit" class="button">Move</button>
+                    <button type="button" class="button button-secondary" data-action="w-dialog#hide">Cancel</button>
+                </div>
+            </form>
+        {% enddialog %}
+    {% endif %}
+
+    {% if can_change_folder or can_edit_documents %}
+    <script>
+        (function () {
+            const form = document.getElementById('rl-move-form');
+            const select = document.getElementById('rl-move-destination');
+            const what = document.getElementById('rl-move-what');
+            const warning = document.getElementById('rl-move-warning');
+            if (!form || !select) return;
+
+            document.querySelectorAll('[data-a11y-dialog-show="rl-move-dialog"]').forEach((trigger) => {
+                trigger.addEventListener('click', () => {
+                    const kind = trigger.dataset.moveKind;
+                    const path = trigger.dataset.movePath;
+
+                    form.action = trigger.dataset.moveUrl;
+                    what.textContent = 'Moving ' + kind + ' “' + trigger.dataset.moveName + '”.';
+                    warning.hidden = kind !== 'folder';
+
+                    // A folder can't move inside itself, and files need a
+                    // folder — the view enforces both, this just avoids
+                    // offering them.
+                    let firstAllowed = null;
+                    Array.from(select.options).forEach((option) => {
+                        const isDescendant =
+                            kind === 'folder' && path && option.dataset.path.startsWith(path);
+                        const takesFiles = option.dataset.acceptsFiles === 'true';
+                        const allowed = !isDescendant && (kind !== 'file' || takesFiles);
+                        option.hidden = !allowed;
+                        option.disabled = !allowed;
+                        if (allowed && firstAllowed === null) firstAllowed = option;
+                    });
+                    if (firstAllowed) firstAllowed.selected = true;
+                });
+            });
+        })();
+    </script>
+    {% endif %}
+
 {% endblock %}

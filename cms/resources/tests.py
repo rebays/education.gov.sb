@@ -267,12 +267,16 @@ class ResourceLibraryTests(TestCase):
         self.assertContains(response, "Budget summary")
         self.assertContains(response, "Annual Report 2025")
 
-        # Searching inside an unrelated subtree finds nothing
+        # Searching inside an unrelated subtree finds nothing. Scoped to the
+        # results area: the move dialog lists every folder in the library, so
+        # the name appears elsewhere on the page regardless.
         other = root.add_child(instance=ResourceFolder(name="Other"))
         response = self.client.get(
             reverse("resource_library:folder", args=[other.pk]), {"q": "annual"}
         )
-        self.assertNotContains(response, "Annual Report 2025")
+        html = response.content.decode()
+        results = html[html.index("Results for") : html.index('id="rl-move-dialog"')]
+        self.assertNotIn("Annual Report 2025", results)
 
     def test_edit_file(self):
         root = ResourceFolder.get_library_root()
@@ -454,7 +458,7 @@ class ResourceLibraryPermissionTests(TestCase):
 
         response = self.client.get(reverse("resource_library:index"))
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "New file")
+        self.assertNotContains(response, "Upload")
         self.assertNotContains(response, "New folder")
 
         root = ResourceFolder.get_library_root()
@@ -1016,7 +1020,6 @@ class ResourceLeadAndCoverTests(TestCase):
         self.assertIn('accept=".pdf,.mp4,.webm,.m4v"', html)
         self.assertIn("Accepted formats: PDF, MP4, WEBM, M4V.", html)
 
-
 class VocabularyDeletionSafetyTests(TestCase):
     """
     Deleting a curriculum vocabulary entry used to be silently destructive:
@@ -1435,7 +1438,8 @@ class FolderPageKindTests(TestCase):
         folder = self.root.add_child(instance=ResourceFolder(name="Nothing here"))
         html = self.client.get(reverse("resource_library:index")).content.decode()
         self.assertNotIn(folder.public_url, html)
-        self.assertIn("Not published", html)
+        # "Not published" would now be ambiguous — a draft is unpublished too
+        self.assertIn("Nothing to publish", html)
 
     def test_public_url_points_at_the_frontend_host(self):
         folder = self.root.add_child(instance=ResourceFolder(name="Hosted"))
@@ -1469,6 +1473,33 @@ class FolderPageKindTests(TestCase):
             reverse("resource_library:edit_folder", args=[directory.pk])
         )
         self.assertContains(response, "don't apply to directories")
+
+    def test_list_view_actions_are_right_aligned(self):
+        """
+        Rows carry different numbers of actions — an unpublished folder has
+        no "view on site" link — so the group is right-aligned and delete,
+        being last, always lands in the same place.
+        """
+        published = self.root.add_child(instance=ResourceFolder(name="Published"))
+        add_file(published, "doc.pdf")
+        self.root.add_child(instance=ResourceFolder(name="Unpublished"))
+
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertIn("justify-content: flex-end", html)
+        # One action cell per row, both using the shared class
+        self.assertEqual(html.count('<td class="rl-row-actions">'), 2)
+
+    def test_delete_is_the_last_action_in_a_row(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Ordered"))
+        add_file(folder, "doc.pdf")
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        cell = re.search(r'<td class="rl-row-actions">(.*?)</td>', html, re.S).group(1)
+        actions = re.findall(r"/(edit|delete)/", cell)
+        self.assertEqual(actions[-1], "delete")
 
 
 class UploadFormLayoutTests(TestCase):
@@ -1596,7 +1627,6 @@ class UploadLabelTests(TestCase):
         ).content.decode()
         self.assertIn("title on the resource page", html)
         self.assertIn("above the", html)
-
 
 class TemplateCommentTests(TestCase):
     """
@@ -1866,3 +1896,821 @@ class FolderFormLayoutTests(TestCase):
         self.assertIsNone(
             ResourceFolder.objects.get(name="Undated").published_date
         )
+
+    def test_slug_syncs_from_the_name_only_while_creating(self):
+        """
+        Same wiring as a page title, so a new folder shows the address it
+        will get. Not on edit, where the slug is fixed.
+        """
+        add = self.client.get(
+            reverse("resource_library:add_folder", args=[self.root.pk])
+        ).content.decode()
+        self.assertIn('data-w-sync-target-value="#id_slug"', add)
+
+        folder = self.root.add_child(instance=ResourceFolder(name="Existing"))
+        edit = self.client.get(
+            reverse("resource_library:edit_folder", args=[folder.pk])
+        ).content.decode()
+        self.assertNotIn("data-w-sync-target-value", edit)
+
+    def test_renaming_still_leaves_the_slug_alone_server_side(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Keep Slug"))
+        self.client.post(
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            {"name": "Totally Different", "slug": folder.slug},
+        )
+        folder.refresh_from_db()
+        self.assertEqual(folder.name, "Totally Different")
+        self.assertEqual(folder.slug, "keep-slug")
+
+    def test_blank_slug_is_still_generated_from_the_name(self):
+        response = self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Generated From Name", "slug": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(
+            ResourceFolder.objects.get(name="Generated From Name").slug,
+            "generated-from-name",
+        )
+
+    def test_slug_input_is_read_only(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Fixed"))
+        html = self.client.get(
+            reverse("resource_library:edit_folder", args=[folder.pk])
+        ).content.decode()
+        field = re.search(r'<input[^>]*name="slug"[^>]*>', html).group(0)
+        self.assertIn("readonly", field)
+
+    def test_posted_slug_is_ignored(self):
+        """
+        Read-only is cosmetic — the browser will happily submit a value that
+        JavaScript or a crafted post has changed, so the form discards it.
+        """
+        folder = self.root.add_child(instance=ResourceFolder(name="Fixed"))
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[folder.pk]),
+            {"name": "Fixed", "slug": "hijacked"},
+        )
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[folder.pk])
+        )
+        folder.refresh_from_db()
+        self.assertEqual(folder.slug, "fixed")
+
+    def test_posted_slug_is_ignored_on_create_too(self):
+        self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "New Folder", "slug": "not-this-one"},
+        )
+        self.assertEqual(
+            ResourceFolder.objects.get(name="New Folder").slug, "new-folder"
+        )
+
+
+class ExplorerSortTests(TestCase):
+    """
+    A view preference for the explorer only. The public site orders
+    subfolders itself, so nothing here changes what a visitor sees.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        for name in ("Zebra", "Apple", "Mango"):
+            self.root.add_child(instance=ResourceFolder(name=name))
+
+    def listed(self, **params):
+        html = self.client.get(
+            reverse("resource_library:index"), params
+        ).content.decode()
+        return sorted(("Zebra", "Apple", "Mango"), key=html.index)
+
+    def test_defaults_to_alphabetical(self):
+        self.assertEqual(self.listed(), ["Apple", "Mango", "Zebra"])
+
+    def test_reverse_alphabetical(self):
+        self.assertEqual(self.listed(sort="-name"), ["Zebra", "Mango", "Apple"])
+
+    def test_newest_first(self):
+        # Created in the order Zebra, Apple, Mango
+        self.assertEqual(self.listed(sort="-date"), ["Mango", "Apple", "Zebra"])
+
+    def test_oldest_first(self):
+        self.assertEqual(self.listed(sort="date"), ["Zebra", "Apple", "Mango"])
+
+    def test_choice_is_remembered(self):
+        self.listed(sort="-name")
+        self.assertEqual(self.listed(), ["Zebra", "Mango", "Apple"])
+
+    def test_unknown_sort_falls_back_to_the_default(self):
+        self.assertEqual(
+            self.listed(sort="; drop table"), ["Apple", "Mango", "Zebra"]
+        )
+
+    def test_files_are_sorted_too(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Files"))
+        for label in ("beta", "alpha"):
+            add_file(folder, f"{label}.pdf", label=label)
+
+        html = self.client.get(
+            reverse("resource_library:folder", args=[folder.pk]), {"sort": "-name"}
+        ).content.decode()
+        self.assertLess(html.index("beta"), html.index("alpha"))
+
+    def test_layout_switch_keeps_the_sort(self):
+        self.listed(sort="-name")
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertEqual(
+            sorted(("Zebra", "Apple", "Mango"), key=html.index),
+            ["Zebra", "Mango", "Apple"],
+        )
+
+    def test_control_is_hidden_while_searching(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"q": "a"}
+        ).content.decode()
+        self.assertNotIn('aria-label="Change sort order"', html)
+
+    def test_sorting_never_touches_stored_order(self):
+        """The public site's ordering must be unaffected by a view choice."""
+        self.listed(sort="-name")
+        self.assertEqual(
+            set(self.root.get_children().values_list("order", flat=True)), {0}
+        )
+
+    def test_list_headers_are_sort_links(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertIn("?sort=-name&layout=list", html)  # Name is asc, so flip
+        self.assertIn("?sort=date&layout=list", html)
+        self.assertIn("Date", html)
+
+    def test_clicking_a_header_toggles_its_direction(self):
+        def header_link(sort):
+            html = self.client.get(
+                reverse("resource_library:index"), {"layout": "list", "sort": sort}
+            ).content.decode()
+            return re.findall(r'\?sort=(-?\w+)&layout=list', html)
+
+        self.assertIn("-name", header_link("name"))
+        self.assertIn("name", header_link("-name"))
+        self.assertIn("-date", header_link("date"))
+        self.assertIn("date", header_link("-date"))
+
+    def test_active_column_shows_a_direction_arrow(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list", "sort": "name"}
+        ).content.decode()
+        self.assertIn("icon-arrow-up", html)
+
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list", "sort": "-name"}
+        ).content.decode()
+        self.assertIn("icon-arrow-down", html)
+
+    def test_rows_show_a_date(self):
+        folder = self.root.add_child(instance=ResourceFolder(name="Dated"))
+        resource = add_file(folder, "doc.pdf")
+        html = self.client.get(
+            reverse("resource_library:folder", args=[folder.pk]), {"layout": "list"}
+        ).content.decode()
+        expected = f"{resource.created_at.day} {resource.created_at:%b %Y}"
+        self.assertIn(expected, html)
+
+    def test_grid_sorts_from_a_dropdown(self):
+        """
+        The grid has no column headers to click, so it gets one control
+        naming the current field; the list view has headers instead.
+        """
+        grid = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        self.assertIn('aria-label="Change sort order"', grid)
+        self.assertIn('data-controller="w-dropdown"', grid)
+
+        listed = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        self.assertNotIn('aria-label="Change sort order"', listed)
+
+    def test_pill_sits_between_the_toolbar_and_the_grid(self):
+        """
+        It reports the current order rather than being a toolbar action, so
+        it sits with the content it describes.
+        """
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        # Match the element, not the CSS rule of the same name
+        self.assertLess(
+            html.index('aria-label="View mode"'),
+            html.index('<div class="rl-sort-row">'),
+        )
+        self.assertLess(
+            html.index('<div class="rl-sort-row">'), html.index('class="rl-grid"')
+        )
+
+    def test_pill_reads_as_a_sentence(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid", "sort": "-date"}
+        ).content.decode()
+        self.assertIn("Sorted by date", html)
+
+    def test_dropdown_names_the_current_sort(self):
+        def toggle(sort):
+            html = self.client.get(
+                reverse("resource_library:index"), {"layout": "grid", "sort": sort}
+            ).content.decode()
+            block = html[html.index('data-controller="w-dropdown"'):]
+            return block[: block.index("</button>")]
+
+        self.assertIn("Sorted by name", toggle("name"))
+        self.assertIn("icon-arrow-up", toggle("name"))
+        self.assertIn("icon-arrow-down", toggle("-name"))
+        self.assertIn("Sorted by date", toggle("-date"))
+        self.assertIn("icon-arrow-down", toggle("-date"))
+
+    def test_dropdown_offers_every_option(self):
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        for label in (
+            "Name (A–Z)", "Name (Z–A)",
+            "Date (oldest first)", "Date (newest first)",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, html)
+
+    def test_headers_are_plain_text_while_searching(self):
+        """Results come back by relevance, so the columns aren't sortable."""
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list", "q": "a"}
+        ).content.decode()
+        # The class also appears in the page's <style>, so look for the link
+        self.assertNotIn('<a href="?sort=', html)
+
+    def test_folders_show_their_creation_date(self):
+        """
+        The column used to show a dash for folders, which made sorting by it
+        look arbitrary. Folders now carry a creation date of their own.
+        """
+        folder = ResourceFolder.objects.get(name="Apple")
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "list"}
+        ).content.decode()
+        expected = f"{folder.created_at.day} {folder.created_at:%b %Y}"
+        self.assertIn(expected, html)
+        table = html[html.find('class="listing"'):]
+        self.assertNotIn("<td>—</td>", table)
+
+    def test_folders_sort_by_the_date_shown(self):
+        """Sorting must follow the column, not some other timestamp."""
+        apple = ResourceFolder.objects.get(name="Apple")
+        # Touching a folder changes updated_at but not created_at
+        apple.description = "edited later"
+        apple.save()
+        self.assertEqual(self.listed(sort="-date")[0], "Mango")
+
+    def test_dropdown_wrapper_hugs_the_pill(self):
+        """
+        Wagtail's dropdown positions itself against the toggle's *parent*
+        (DropdownController.reference), so a full-width wrapper puts the menu
+        in the middle of the page rather than under the pill.
+        """
+        html = self.client.get(
+            reverse("resource_library:index"), {"layout": "grid"}
+        ).content.decode()
+        block = html[html.index('<div class="rl-sort-row">'):][:400]
+        wrapper = re.search(
+            r'<div\s+data-controller="w-dropdown"\s+class="([^"]+)"', block, re.S
+        ).group(1)
+        self.assertIn("w-inline-block", wrapper)
+
+
+class MoveTests(TestCase):
+    """
+    Misplacing something used to be unrecoverable: no move, and a folder
+    can't be deleted until it's empty.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.primary = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        self.secondary = self.root.add_child(
+            instance=ResourceFolder(name="Secondary")
+        )
+        self.year1 = self.primary.add_child(instance=ResourceFolder(name="Year 1"))
+        self.file = add_file(self.year1, "unit.pdf")
+
+    def move_folder(self, folder, destination):
+        return self.client.post(
+            reverse("resource_library:move_folder", args=[folder.pk]),
+            {"destination": destination.pk},
+        )
+
+    def move_file(self, resource, destination):
+        return self.client.post(
+            reverse("resource_library:move_resource", args=[resource.pk]),
+            {"destination": destination.pk},
+        )
+
+    def messages_from(self, response):
+        return " ".join(str(m.message) for m in get_messages(response.wsgi_request))
+
+    def test_folder_moves_with_its_contents(self):
+        response = self.move_folder(self.year1, self.secondary)
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[self.secondary.pk])
+        )
+        self.year1.refresh_from_db()
+        self.assertEqual(self.year1.get_parent().pk, self.secondary.pk)
+        self.assertEqual(self.year1.resources.count(), 1)
+
+    def test_moving_updates_the_public_url(self):
+        self.assertEqual(self.year1.url_path, "/resources/primary/year-1/")
+        self.move_folder(self.year1, self.secondary)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).url_path,
+            "/resources/secondary/year-1/",
+        )
+
+    def test_a_folder_cannot_move_inside_itself(self):
+        """That would detach the whole branch from the tree."""
+        response = self.move_folder(self.primary, self.year1)
+        self.assertIn("can't be moved inside itself", self.messages_from(response))
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.primary.pk).get_parent().pk,
+            self.root.pk,
+        )
+
+    def test_a_folder_cannot_move_into_itself(self):
+        self.move_folder(self.primary, self.primary)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.primary.pk).get_parent().pk,
+            self.root.pk,
+        )
+
+    def test_a_folder_can_move_to_the_top_level(self):
+        self.move_folder(self.year1, self.root)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk, self.root.pk
+        )
+
+    def test_files_move_between_folders(self):
+        response = self.move_file(self.file, self.secondary)
+        self.assertRedirects(
+            response, reverse("resource_library:folder", args=[self.secondary.pk])
+        )
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.folder, self.secondary)
+
+    def test_files_cannot_move_to_the_library_root(self):
+        """Same rule as upload: files there have no public page."""
+        response = self.move_file(self.file, self.root)
+        self.assertIn("belong to a folder", self.messages_from(response))
+        self.file.refresh_from_db()
+        self.assertEqual(self.file.folder, self.year1)
+
+    def test_moving_somewhere_it_already_is_says_so(self):
+        response = self.move_file(self.file, self.year1)
+        self.assertIn("already there", self.messages_from(response))
+
+    def test_a_missing_destination_is_refused(self):
+        response = self.client.post(
+            reverse("resource_library:move_folder", args=[self.year1.pk]),
+            {"destination": ""},
+        )
+        self.assertIn("Choose a folder", self.messages_from(response))
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_a_destination_outside_the_library_is_refused(self):
+        outside = ResourceFolder.add_root(name="Another tree")
+        self.move_folder(self.year1, outside)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_the_root_cannot_be_moved(self):
+        response = self.client.post(
+            reverse("resource_library:move_folder", args=[self.root.pk]),
+            {"destination": self.primary.pk},
+        )
+        self.assertEqual(response.status_code, 302)  # denied -> admin redirect
+
+    def test_moving_requires_permission(self):
+        viewer = get_user_model().objects.create_user(
+            username="viewer", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource"),
+            Permission.objects.get(
+                codename="access_admin", content_type__app_label="wagtailadmin"
+            ),
+        )
+        self.client.force_login(viewer)
+        self.move_folder(self.year1, self.secondary)
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_get_does_not_move_anything(self):
+        """The dialog posts; a link or a prefetch must not relocate things."""
+        self.client.get(reverse("resource_library:move_folder", args=[self.year1.pk]))
+        self.assertEqual(
+            ResourceFolder.objects.get(pk=self.year1.pk).get_parent().pk,
+            self.primary.pk,
+        )
+
+    def test_the_dialog_offers_every_folder(self):
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertIn('id="rl-move-dialog"', html)
+        self.assertEqual(html.count("data-accepts-files"), 4)
+        # The root can't take files, everything else can
+        self.assertEqual(html.count('data-accepts-files="false"'), 1)
+
+    def test_a_viewer_gets_no_move_dialog(self):
+        viewer = get_user_model().objects.create_user(
+            username="viewer2", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource"),
+            Permission.objects.get(
+                codename="access_admin", content_type__app_label="wagtailadmin"
+            ),
+        )
+        self.client.force_login(viewer)
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertNotIn('id="rl-move-dialog"', html)
+
+
+class RowActionMenuTests(TestCase):
+    """
+    Actions collapsed into a per-row menu: with view-on-site, edit, move and
+    delete, a row of icons had stopped being scannable.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.folder = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        add_file(self.folder, "doc.pdf", label="Doc")
+
+    def page(self, layout, folder=None):
+        return self.client.get(
+            reverse("resource_library:folder", args=[(folder or self.root).pk]),
+            {"layout": layout},
+        ).content.decode()
+
+    def test_actions_live_in_a_menu(self):
+        for layout in ("grid", "list"):
+            with self.subTest(layout=layout):
+                html = self.page(layout)
+                self.assertIn("dots-horizontal", html)
+                self.assertIn('aria-label="Actions for Primary"', html)
+
+    def test_folder_menu_offers_every_action(self):
+        for layout in ("grid", "list"):
+            with self.subTest(layout=layout):
+                html = self.page(layout)
+                for label in ("View on site", "Edit details", "Move", "Delete"):
+                    self.assertIn(label, html)
+                self.assertIn(
+                    reverse("resource_library:edit_folder", args=[self.folder.pk]),
+                    html,
+                )
+                self.assertIn(
+                    reverse("resource_library:delete_folder", args=[self.folder.pk]),
+                    html,
+                )
+
+    def test_file_menu_offers_every_action(self):
+        resource = self.folder.resources.get()
+        for layout in ("grid", "list"):
+            with self.subTest(layout=layout):
+                html = self.page(layout, self.folder)
+                for label in ("Download", "Edit details", "Move", "Delete"):
+                    self.assertIn(label, html)
+                self.assertIn(
+                    reverse("resource_library:edit_resource", args=[resource.pk]),
+                    html,
+                )
+
+    def test_unpublished_folder_offers_no_view_on_site(self):
+        self.root.add_child(instance=ResourceFolder(name="Nothing here"))
+        html = self.page("list")
+        menu = html[html.index('aria-label="Actions for Nothing here"'):]
+        menu = menu[: menu.index("</td>")]
+        self.assertNotIn("View on site", menu)
+
+    def test_a_viewer_gets_no_editing_actions(self):
+        viewer = get_user_model().objects.create_user(
+            username="viewer", password="password", is_staff=True
+        )
+        viewer.user_permissions.add(
+            Permission.objects.get(codename="view_resource"),
+            Permission.objects.get(
+                codename="access_admin", content_type__app_label="wagtailadmin"
+            ),
+        )
+        self.client.force_login(viewer)
+        html = self.page("list")
+        # Scoped to the listing: "Delete" appears elsewhere in Wagtail's own
+        # admin chrome regardless of what this user can do here.
+        listing = html[html.index('class="listing"') : html.index("</table>")]
+        self.assertNotIn("Edit details", listing)
+        self.assertNotIn("Delete", listing)
+        # Wagtail's own keyboard-shortcuts trigger uses this attribute too
+        self.assertNotIn('data-a11y-dialog-show="rl-move-dialog"', html)
+
+    def test_move_opens_from_inside_the_menu(self):
+        """
+        The trigger sits in the dropdown's content, which Tippy relocates —
+        it has to keep its dialog attributes to still open the modal.
+        """
+        html = self.page("list")
+        self.assertIn('data-a11y-dialog-show="rl-move-dialog"', html)
+        self.assertIn(
+            f'data-move-url="{reverse("resource_library:move_folder", args=[self.folder.pk])}"',
+            html,
+        )
+
+    def test_list_toggle_looks_like_the_buttons_it_replaced(self):
+        """
+        Wagtail scopes its toggle backgrounds to .w-dropdown-button, which a
+        bare dropdown isn't — so without these classes the button renders
+        transparent until hovered.
+        """
+        html = self.page("list")
+        toggle = re.search(r"<button[^>]*w-dropdown__toggle[^>]*>", html).group(0)
+        for css_class in ("button", "button-secondary", "rl-icon-btn"):
+            with self.subTest(css_class=css_class):
+                self.assertIn(css_class, toggle)
+
+    def test_grid_menus_are_wider_than_the_default(self):
+        """
+        The menu is a popup positioned outside the card, so it can't be
+        targeted by an ancestor selector — the rule is scoped by rendering
+        it only in the grid layout.
+        """
+        grid = self.page("grid")
+        self.assertIn("min-width: 180px", grid)
+
+        listed = self.page("list")
+        self.assertNotIn("min-width: 180px", listed)
+
+
+class PublishingTests(TestCase):
+    """
+    Publication used to be a side effect of holding files: the first upload
+    put a folder on the public site, with no way to stage anything.
+    """
+
+    def setUp(self):
+        self.user = get_user_model().objects.create_superuser(
+            username="admin", email="admin@example.com", password="password"
+        )
+        self.client.force_login(self.user)
+        self.root = ResourceFolder.get_library_root()
+        self.section = self.root.add_child(instance=ResourceFolder(name="Primary"))
+        self.page = self.section.add_child(instance=ResourceFolder(name="Year 1"))
+        add_file(self.page, "unit.pdf")
+
+    def graphql(self, query, **variables):
+        from grapple.schema import schema
+
+        result = schema.execute(query, variables=variables or None)
+        self.assertIsNone(result.errors)
+        return result.data
+
+    def live_slugs(self):
+        return [
+            p["slug"] for p in self.graphql("{ resourcePages { slug } }")["resourcePages"]
+        ]
+
+    # --- the flag itself -------------------------------------------------
+    def test_existing_folders_stay_published(self):
+        """The migration must not take live content offline."""
+        self.assertTrue(self.page.is_published)
+        self.assertTrue(self.page.is_live)
+
+    def test_a_draft_is_not_live(self):
+        self.page.is_published = False
+        self.page.save()
+        self.assertFalse(ResourceFolder.objects.get(pk=self.page.pk).is_live)
+
+    def test_publication_cascades(self):
+        """
+        Hiding a section has to hide what's inside it, or its children stay
+        reachable at URLs that still contain its slug.
+        """
+        self.section.is_published = False
+        self.section.save()
+        page = ResourceFolder.objects.get(pk=self.page.pk)
+        self.assertTrue(page.is_published)
+        self.assertFalse(page.is_live)
+        self.assertEqual(page.unpublished_ancestor, self.section)
+
+    def test_a_published_folder_with_nothing_in_it_is_not_live(self):
+        empty = self.root.add_child(instance=ResourceFolder(name="Empty"))
+        self.assertTrue(empty.is_published)
+        self.assertFalse(empty.is_live)
+
+    # --- what the public sees --------------------------------------------
+    def test_drafts_are_absent_from_the_listing(self):
+        self.assertEqual(self.live_slugs(), ["year-1"])
+        self.page.is_published = False
+        self.page.save()
+        self.assertEqual(self.live_slugs(), [])
+
+    def test_an_unpublished_ancestor_hides_its_descendants(self):
+        self.section.is_published = False
+        self.section.save()
+        self.assertEqual(self.live_slugs(), [])
+
+    def test_a_draft_folder_does_not_resolve_by_path(self):
+        query = '{ resourceFolder(path: "primary/year-1") { slug } }'
+        self.assertIsNotNone(self.graphql(query)["resourceFolder"])
+        self.page.is_published = False
+        self.page.save()
+        self.assertIsNone(self.graphql(query)["resourceFolder"])
+
+    def test_directory_listings_leave_drafts_out(self):
+        self.page.is_published = False
+        self.page.save()
+        self.assertEqual(list(self.section.children), [])
+
+    # --- the action buttons ----------------------------------------------
+    def test_a_new_folder_is_saved_as_a_draft(self):
+        self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Fresh", "action": "draft"},
+        )
+        self.assertFalse(ResourceFolder.objects.get(name="Fresh").is_published)
+
+    def test_a_new_folder_can_be_published_straight_away(self):
+        self.client.post(
+            reverse("resource_library:add_folder", args=[self.root.pk]),
+            {"name": "Immediate", "action": "publish"},
+        )
+        self.assertTrue(ResourceFolder.objects.get(name="Immediate").is_published)
+
+    def action_bar(self, url):
+        """The split save button's markup, cut off before the Cancel link."""
+        html = self.client.get(url).content.decode()
+        # Anchor on the element, not the bare class name — that also appears in
+        # the page's own stylesheet, which would swallow the whole document.
+        bar = html[html.index('<div class="w-dropdown-button"'):]
+        return bar[: bar.index("Cancel")]
+
+    def test_every_action_button_is_styled_like_a_button(self):
+        """
+        Wagtail's dropdown-button CSS gives menu items their borders and radii
+        but never a background — that comes from `.button`, which its own
+        menu_item.html always applies. Without it the Publish/Unpublish items
+        render transparent until hovered.
+        """
+        draft = self.root.add_child(
+            instance=ResourceFolder(name="Draft", is_published=False)
+        )
+        urls = {
+            "create": reverse("resource_library:add_folder", args=[self.root.pk]),
+            "edit draft": reverse("resource_library:edit_folder", args=[draft.pk]),
+            "edit live": reverse("resource_library:edit_folder", args=[self.page.pk]),
+        }
+        for view, url in urls.items():
+            bar = self.action_bar(url)
+            buttons = re.findall(r"<button\b[^>]*>", bar)
+            self.assertTrue(buttons)
+            for button in buttons:
+                with self.subTest(view=view, button=button[:60]):
+                    self.assertIn('class="', button)
+                    classes = re.search(r'class="([^"]*)"', button).group(1).split()
+                    self.assertIn("button", classes)
+
+    def test_the_save_button_matches_the_one_on_pages(self):
+        """
+        Mirrors wagtailadmin/pages/action_menu/save_draft.html — the icon and
+        <em> label are what give the button its size, so a plain <button> with
+        a text node comes out visibly smaller than the one editors know.
+        """
+        bar = self.action_bar(reverse("resource_library:add_folder", args=[self.root.pk]))
+        save = re.search(r"<button\b[^>]*>", bar).group(0)
+        for expected in ("action-save", "button-longrunning"):
+            with self.subTest(expected=expected):
+                self.assertIn(expected, save)
+        self.assertIn("<em data-w-progress-target=\"label\">Save draft</em>", bar)
+
+    def test_the_new_folder_button_matches_the_existing_folder_one(self):
+        """
+        The two forms sit one click apart, so any difference in the save button
+        reads as a different control. Only the posted action and the label may
+        vary — an extra icon on one of them also widens it past the min-width
+        floor, which is what made them look mismatched.
+        """
+        buttons = {}
+        for view, url in (
+            ("create", reverse("resource_library:add_folder", args=[self.root.pk])),
+            ("edit", reverse("resource_library:edit_folder", args=[self.page.pk])),
+        ):
+            bar = self.action_bar(url)
+            button = bar[: bar.index("</button>")]
+            button = re.sub(r'value="[^"]*"', 'value="..."', button)
+            buttons[view] = re.sub(r"<em[^>]*>[^<]*</em>", "<em>...</em>", button)
+        self.assertEqual(buttons["create"], buttons["edit"])
+
+    def test_publishing_an_existing_draft(self):
+        self.page.is_published = False
+        self.page.save()
+        response = self.client.post(
+            reverse("resource_library:edit_folder", args=[self.page.pk]),
+            {"name": "Year 1", "action": "publish"},
+        )
+        self.assertTrue(ResourceFolder.objects.get(pk=self.page.pk).is_published)
+        self.assertIn(
+            "published",
+            " ".join(str(m.message) for m in get_messages(response.wsgi_request)),
+        )
+
+    def test_unpublishing(self):
+        self.client.post(
+            reverse("resource_library:edit_folder", args=[self.page.pk]),
+            {"name": "Year 1", "action": "unpublish"},
+        )
+        self.assertFalse(ResourceFolder.objects.get(pk=self.page.pk).is_published)
+
+    def test_saving_leaves_publication_alone(self):
+        """Editing a live folder must not quietly take it offline."""
+        self.client.post(
+            reverse("resource_library:edit_folder", args=[self.page.pk]),
+            {"name": "Year 1 renamed", "action": "save"},
+        )
+        folder = ResourceFolder.objects.get(pk=self.page.pk)
+        self.assertEqual(folder.name, "Year 1 renamed")
+        self.assertTrue(folder.is_published)
+
+    def test_the_form_offers_the_opposite_action(self):
+        edit = reverse("resource_library:edit_folder", args=[self.page.pk])
+        self.assertContains(self.client.get(edit), 'value="unpublish"')
+
+        self.page.is_published = False
+        self.page.save()
+        self.assertContains(self.client.get(edit), 'value="publish"')
+
+    # --- the explorer -----------------------------------------------------
+    def test_the_listing_reports_status(self):
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk]),
+            {"layout": "list"},
+        ).content.decode()
+        self.assertIn("Live", html)
+
+        self.page.is_published = False
+        self.page.save()
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk]),
+            {"layout": "list"},
+        ).content.decode()
+        self.assertIn("Draft", html)
+
+    def test_descendants_of_a_draft_are_shown_as_hidden(self):
+        """So an editor can see why something isn't showing."""
+        self.section.is_published = False
+        self.section.save()
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk]),
+            {"layout": "list"},
+        ).content.decode()
+        self.assertIn("Hidden", html)
+
+    def test_no_view_on_site_link_for_a_draft(self):
+        self.page.is_published = False
+        self.page.save()
+        html = self.client.get(
+            reverse("resource_library:folder", args=[self.section.pk])
+        ).content.decode()
+        self.assertNotIn(self.page.public_url, html)
+
+    def test_the_move_dialog_marks_drafts(self):
+        self.section.is_published = False
+        self.section.save()
+        html = self.client.get(reverse("resource_library:index")).content.decode()
+        self.assertIn("(draft)", html)
