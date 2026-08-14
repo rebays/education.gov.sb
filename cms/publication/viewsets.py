@@ -6,7 +6,11 @@ from .models import Publication
 
 class PublicationViewSet(SnippetViewSet):
     model = Publication
-    icon = "doc-full"
+    # Not doc-full: the resource library claims that one throughout its own UI
+    # to mean "a resource file", and two top-level menu items with the same
+    # icon are indistinguishable at a glance. A clipboard also suits what this
+    # actually holds — policies, reports and guidelines.
+    icon = "clipboard-list"
     menu_label = "Publications"
     menu_name = "publications"
     menu_order = 200
