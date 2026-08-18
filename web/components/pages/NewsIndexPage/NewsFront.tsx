@@ -16,6 +16,7 @@ import {
   StoryImage,
 } from "@/components/shared/news-cards";
 import type { NewsCategory, NewsPost } from "@/app/lib/content";
+import { toNewsPost } from "./adapters";
 import {
   NEWS_PAGES_QUERY,
   type NewsCategoryEnum,
@@ -49,38 +50,6 @@ const filterToEnum: Record<Exclude<FilterValue, "All">, NewsCategoryEnum> = {
   "Press release": "PRESS_RELEASE",
   Event: "EVENT",
 };
-
-const categoryFromCms: Record<
-  NewsPagesQueryResult["newsPages"]["edges"][number]["node"]["category"],
-  NewsCategory
-> = {
-  announcement: "Announcement",
-  press_release: "Press release",
-  event: "Event",
-};
-
-function formatDisplayDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function toNewsPost(
-  node: NewsPagesQueryResult["newsPages"]["edges"][number]["node"],
-): NewsPost {
-  return {
-    slug: node.slug,
-    title: node.title,
-    category: categoryFromCms[node.category],
-    date: formatDisplayDate(node.date),
-    excerpt: node.excerpt,
-    image: node.image?.url,
-    body: [],
-    href: node.url ?? `/news-live/${node.slug}`,
-  };
-}
 
 type Band = { cards: NewsPost[]; briefs: NewsPost[] };
 

@@ -1,31 +1,37 @@
-import Image from "next/image";
 import Link from "next/link";
-import TraditionalWatermark from "./traditional-watermark";
 import { Badge } from "@/components/ui/badge";
-import { news, type NewsCategory } from "@/app/lib/content";
+import { categoryVariant, StoryImage } from "./news-cards";
+import { cmsFetch } from "@/lib/cms";
+import { toNewsPost } from "@/components/pages/NewsIndexPage/adapters";
+import {
+  NEWS_PAGES_QUERY,
+  type NewsPagesQueryResult,
+} from "@/components/pages/NewsIndexPage/queries";
+import type { NewsPost } from "@/app/lib/content";
 
-const categoryVariant: Record<
-  NewsCategory,
-  "primary" | "success" | "warning"
-> = {
-  Announcement: "primary",
-  "Press release": "success",
-  Event: "warning",
-};
+/** Lead story + five briefs. */
+const BANNER_SIZE = 6;
 
 /**
  * Landing-page news section — the newsroom's front-page grammar,
  * miniaturized: the featured story on the left (≈2/3), a text-only
- * "In brief" column on the right behind a hairline rule. The full
- * newsroom lives at /news.
+ * "In brief" column on the right behind a hairline rule. Stories come
+ * newest-first from the CMS; the full newsroom lives at /news.
  */
-export default function NewsBanner() {
-  const sorted = [...news].sort(
-    (a, b) => Date.parse(b.date) - Date.parse(a.date),
-  );
-  const [featured, ...rest] = sorted;
+export default async function NewsBanner() {
+  let posts: NewsPost[];
+  try {
+    const data = await cmsFetch<NewsPagesQueryResult>(NEWS_PAGES_QUERY, {
+      first: BANNER_SIZE,
+    });
+    posts = data.newsPages.edges.map((edge) => toNewsPost(edge.node));
+  } catch {
+    // The landing page shouldn't fall over with the CMS: skip the section.
+    return null;
+  }
+
+  const [featured, ...briefs] = posts;
   if (!featured) return null;
-  const briefs = rest.slice(0, 5);
 
   return (
     <div className="mx-auto w-full max-w-8xl px-6 py-24">
@@ -36,36 +42,14 @@ export default function NewsBanner() {
       <div className="mt-10 grid gap-10 lg:grid-cols-3">
         {/* featured story — ≈2/3, styled like the curriculum-section cards */}
         <Link
-          href={`/news/${featured.slug}`}
+          href={featured.href ?? `/news/${featured.slug}`}
           className="group relative aspect-[16/9] overflow-hidden rounded-2xl border border-border shadow-sm transition-all hover:-translate-y-1.5 hover:border-accent hover:shadow-xl lg:col-span-2"
         >
-          {featured.image ? (
-            <>
-              <Image
-                src={featured.image}
-                alt=""
-                fill
-                sizes="(min-width: 1024px) 60vw, 100vw"
-                className="object-cover"
-              />
-              <div className="absolute inset-0 scrim-banner" />
-            </>
-          ) : (
-            <div className="relative isolate flex h-full w-full items-center justify-center overflow-hidden bg-deep">
-              <TraditionalWatermark
-                id="wm-news-featured"
-                corners={["top-right", "bottom-left"]}
-                className="z-0 text-white opacity-[0.06]"
-              />
-              <Image
-                src="/coat-of-arms.png"
-                alt=""
-                width={56}
-                height={56}
-                className="h-14 w-auto opacity-80"
-              />
-            </div>
-          )}
+          <StoryImage
+            story={featured}
+            sizes="(min-width: 1024px) 60vw, 100vw"
+          />
+          {featured.image && <div className="absolute inset-0 scrim-banner" />}
           <div className="absolute inset-x-0 bottom-0 p-6 sm:p-8">
             <div className="flex flex-wrap items-center gap-3">
               <Badge
@@ -110,7 +94,7 @@ export default function NewsBanner() {
                 <p className="font-mono text-xs text-muted">{b.date}</p>
                 <h4 className="mt-1.5 font-serif text-lg leading-snug">
                   <Link
-                    href={`/news/${b.slug}`}
+                    href={b.href ?? `/news/${b.slug}`}
                     className="text-foreground hover:text-primary"
                   >
                     {b.title}
