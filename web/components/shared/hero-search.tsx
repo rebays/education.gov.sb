@@ -1,19 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  categories,
-  getCategory,
-  resourceHref,
-  searchContent,
-  type SearchResult,
-} from "@/app/lib/content";
+import { categories } from "@/app/lib/content";
+import type { CmsSearchResult } from "@/lib/search";
 import { useShortcutEntry } from "./shortcuts-provider";
 import { useKeyShortcut } from "@/app/hooks/use-key-shortcut";
 import { useSearchShortcut } from "@/app/hooks/use-search-shortcut";
-import { Icon, type IconName } from "@/components/ui/icon";
+import { Icon } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -23,32 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const MAX_SUGGESTIONS = 6;
-
-function resultHref(result: SearchResult): string {
-  if (result.kind === "resource") return resourceHref(result.item);
-  if (result.kind === "publication") return `/publications/${result.item.slug}`;
-  return `/news/${result.item.slug}`;
-}
-
-function resultIcon(result: SearchResult): IconName {
-  const kind = result.kind === "resource" ? result.item.kind : result.kind === "publication" ? result.item.type : "";
-  if (kind === "Video") return "video";
-  if (kind === "Report") return "report";
-  if (result.kind === "news") return "calendar";
-  return "document";
-}
-
-function resultMeta(result: SearchResult): { chip: string; detail: string; title: string } {
-  if (result.kind === "resource") {
-    const cat = getCategory(result.item.category);
-    return { chip: cat?.shortTitle ?? "Resource", detail: result.item.kind, title: result.item.title };
-  }
-  if (result.kind === "publication") {
-    return { chip: "Publication", detail: result.item.type, title: result.item.title };
-  }
-  return { chip: "News", detail: result.item.category, title: result.item.title };
-}
+const SUGGEST_DEBOUNCE_MS = 250;
 
 /**
  * The flagship search bar from the landing hero, shared with the search
@@ -58,20 +28,25 @@ function resultMeta(result: SearchResult): { chip: string; detail: string; title
  * `className`.
  *
  * As the user types, matching resources/publications/news appear in an
- * instant-results panel beneath the bar (via `searchContent`) so they can
- * jump straight to an item without waiting for the full results page.
+ * instant-results panel beneath the bar (fetched from the CMS via
+ * /api/search) so they can jump straight to an item without waiting for
+ * the full results page.
  */
 export default function HeroSearch({
   defaultQuery = "",
   defaultLevel = "",
   className = "",
   id = "hero-level",
+  scope = "all",
 }: {
   defaultQuery?: string;
   defaultLevel?: string;
   className?: string;
   /** Id for the curriculum-level select — override when rendering more than one instance per page. */
   id?: string;
+  /** "resources" restricts suggestions and the submitted search to the
+   * resource library (the homepage hero); "all" searches site-wide. */
+  scope?: "all" | "resources";
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
@@ -85,11 +60,43 @@ export default function HeroSearch({
   const [suggestOpen, setSuggestOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  const results = useMemo(
-    () => (query.trim() ? searchContent(query).slice(0, MAX_SUGGESTIONS) : []),
-    [query]
-  );
-  const showPanel = suggestOpen && results.length > 0;
+  // Instant results come from the CMS via /api/search — debounced so a
+  // keystroke burst costs one request, aborted when the query moves on.
+  // Results are stored with the query they answer, so "still waiting" and
+  // "searched, found nothing" are distinguishable without extra state
+  // writes: a cleared query hides the panel by derivation.
+  const [fetched, setFetched] = useState<{
+    query: string;
+    results: CmsSearchResult[];
+  }>({ query: "", results: [] });
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return;
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/search?q=${encodeURIComponent(q)}${scope === "resources" ? "&scope=resources" : ""}`,
+          { signal: controller.signal },
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { results: CmsSearchResult[] };
+        setFetched({ query: q, results: data.results });
+      } catch {
+        /* aborted or offline — keep whatever is showing */
+      }
+    }, SUGGEST_DEBOUNCE_MS);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, scope]);
+  const trimmed = query.trim();
+  /* stale results stay visible while a newer query is in flight */
+  const results = trimmed ? fetched.results : [];
+  const noMatches =
+    trimmed !== "" && fetched.query === trimmed && results.length === 0;
+  const showPanel = suggestOpen && (results.length > 0 || noMatches);
 
   useSearchShortcut(inputRef, "s", !levelOpen);
   useShortcutEntry("M", "Open level filter");
@@ -135,9 +142,9 @@ export default function HeroSearch({
   }, [showPanel]);
 
   const goToResult = useCallback(
-    (result: SearchResult) => {
+    (result: CmsSearchResult) => {
       setSuggestOpen(false);
-      router.push(resultHref(result));
+      router.push(result.href);
     },
     [router]
   );
@@ -149,6 +156,9 @@ export default function HeroSearch({
       role="search"
       className={`group relative flex h-14 w-full items-center rounded-full border border-white/20 bg-white/95 pl-6 pr-1.5 focus-within:ring-2 focus-within:ring-accent ${className}`}
     >
+      {scope === "resources" && (
+        <input type="hidden" name="scope" value="resources" />
+      )}
       <div className="relative flex min-w-0 flex-1 items-center">
         <input
           ref={inputRef}
@@ -173,6 +183,11 @@ export default function HeroSearch({
           }}
           onKeyDown={(e) => {
             if (!showPanel) return;
+            if (e.key === "Escape") {
+              setSuggestOpen(false);
+              return;
+            }
+            if (results.length === 0) return;
             if (e.key === "ArrowDown") {
               e.preventDefault();
               setActiveIndex((i) => (i + 1) % results.length);
@@ -184,8 +199,6 @@ export default function HeroSearch({
                 e.preventDefault();
                 goToResult(results[activeIndex]);
               }
-            } else if (e.key === "Escape") {
-              setSuggestOpen(false);
             }
           }}
           className="h-full w-full min-w-0 bg-transparent pr-8 text-base text-foreground placeholder:text-muted focus:outline-none"
@@ -263,9 +276,15 @@ export default function HeroSearch({
           aria-label="Instant search results"
           className="animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 absolute inset-x-0 top-[calc(100%+0.75rem)] z-50 origin-top overflow-hidden rounded-2xl border border-border/60 bg-white text-left shadow-2xl duration-150"
         >
+          {noMatches && (
+            <p role="status" className="px-5 py-4 text-sm text-muted">
+              {scope === "resources"
+                ? <>No resources match <span className="font-medium text-foreground">“{trimmed}”</span> yet — try a broader term, or search the whole site below.</>
+                : <>Nothing matches <span className="font-medium text-foreground">“{trimmed}”</span> yet — try a shorter or more general term.</>}
+            </p>
+          )}
           <ul className="max-h-88 divide-y divide-border/60 overflow-y-auto">
             {results.map((result, index) => {
-              const meta = resultMeta(result);
               const active = index === activeIndex;
               return (
                 <li key={`${result.kind}-${index}`} role="presentation">
@@ -273,7 +292,7 @@ export default function HeroSearch({
                     id={`${listboxId}-option-${index}`}
                     role="option"
                     aria-selected={active}
-                    href={resultHref(result)}
+                    href={result.href}
                     onMouseEnter={() => setActiveIndex(index)}
                     onClick={() => setSuggestOpen(false)}
                     className={cn(
@@ -287,14 +306,14 @@ export default function HeroSearch({
                         active ? "bg-primary/15 text-primary" : "bg-surface-2 text-muted"
                       )}
                     >
-                      <Icon name={resultIcon(result)} className="size-4" />
+                      <Icon name={result.icon} className="size-4" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-foreground">
-                        {meta.title}
+                        {result.title}
                       </span>
                       <span className="block truncate text-xs text-muted">
-                        {meta.chip} · {meta.detail}
+                        {result.chip} · {result.detail}
                       </span>
                     </span>
                   </Link>
@@ -307,12 +326,23 @@ export default function HeroSearch({
             type="button"
             onClick={() => {
               setSuggestOpen(false);
-              formRef.current?.requestSubmit();
+              // A resources-scoped search that found nothing widens to the
+              // whole site — resubmitting the same empty scope would only
+              // repeat the "no results" answer.
+              if (noMatches && scope === "resources") {
+                router.push(`/search?q=${encodeURIComponent(trimmed)}`);
+              } else {
+                formRef.current?.requestSubmit();
+              }
             }}
             className="flex w-full items-center justify-between gap-2 border-t border-border/60 bg-surface-2/60 px-5 py-3 text-left text-sm font-medium text-primary transition-colors hover:bg-surface-2"
           >
             <span>
-              See all results for <span className="font-semibold">“{query.trim()}”</span>
+              {noMatches && scope === "resources" ? (
+                <>Search the whole site for <span className="font-semibold">“{trimmed}”</span></>
+              ) : (
+                <>See all results for <span className="font-semibold">“{trimmed}”</span></>
+              )}
             </span>
             <Icon name="arrow" className="size-4 shrink-0" />
           </button>
