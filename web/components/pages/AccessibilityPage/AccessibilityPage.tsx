@@ -4,6 +4,7 @@ import SiteHeader from "@/components/shared/site-header";
 import { AtAGlance } from "@/components/ui/at-a-glance";
 import { FactSheet } from "@/components/ui/fact-sheet";
 import type { AccessibilityPage as AccessibilityPageProps } from "./types";
+import { accessibilityFallback } from "./fallback";
 
 function formatDisplayDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", {
@@ -13,7 +14,7 @@ function formatDisplayDate(iso: string): string {
   });
 }
 
-type AccessibilityPageContent = Pick<
+export type AccessibilityPageContent = Pick<
   AccessibilityPageProps,
   | "title"
   | "lead"
@@ -25,8 +26,10 @@ type AccessibilityPageContent = Pick<
   | "contactEmail"
 >;
 
-export default function AccessibilityPage(_: { page: AccessibilityPageContent }) {
-  const page = _.page;
+export default function AccessibilityPage(_: {
+  page?: AccessibilityPageContent;
+}) {
+  const page = _.page ?? accessibilityFallback;
   const points = page.atAGlance.map((p) => p.value);
 
   return (

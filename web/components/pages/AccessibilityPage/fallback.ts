@@ -1,26 +1,12 @@
-import type { Metadata } from "next";
-import { cmsFetch } from "@/lib/cms";
-import AccessibilityPage from "@/components/pages/AccessibilityPage/AccessibilityPage";
-import {
-  ACCESSIBILITY_URL_PATH,
-  GET_ACCESSIBILITY_PAGE,
-  type GetAccessibilityPageResult,
-} from "@/components/pages/AccessibilityPage/queries";
+import type { AccessibilityPageContent } from "./AccessibilityPage";
 
-// This route has no dynamic segment, so Next.js would otherwise try to
-// statically prerender it at build time — requiring a live CMS connection
-// during build. It's CMS-backed content that changes without a redeploy, so
-// render it per-request instead.
-export const dynamic = "force-dynamic";
-
-export const metadata: Metadata = {
-  title: "Accessibility",
-  description:
-    "The Ministry of Education and Human Resources Development's commitment to making education.gov.sb usable by everyone.",
-};
-
-// Shown until an editor creates the Accessibility page in Wagtail admin.
-const fallback = {
+/**
+ * The accessibility statement as authored for launch — shown until an
+ * editor creates the Accessibility page in Wagtail admin, and kept here as
+ * the source text to copy into the CMS when that page is set up
+ * (lead + at-a-glance points + body sections + fact-sheet fields).
+ */
+export const accessibilityFallback: AccessibilityPageContent = {
   title: "Accessibility",
   lead: "Our commitment to making education.gov.sb usable by everyone, on any device and with any assistive technology.",
   atAGlance: [
@@ -69,11 +55,3 @@ const fallback = {
   lastReviewed: "2026-06-01",
   contactEmail: "accessibility@education.gov.sb",
 };
-
-export default async function Accessibility() {
-  const data = await cmsFetch<GetAccessibilityPageResult>(GET_ACCESSIBILITY_PAGE, {
-    urlPath: ACCESSIBILITY_URL_PATH,
-  });
-
-  return <AccessibilityPage page={data.page ?? fallback} />;
-}
