@@ -1,11 +1,19 @@
 import PageHeader from "@/components/shared/page-header";
 import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
-import PublicationsRegister from "@/app/publications/register";
+import PublicationsRegister from "./register";
 import type { PublicationIndexPage as PublicationIndexPageProps } from "./types";
 
-export default function PublicationIndexPage(_: {
-  page: PublicationIndexPageProps;
+// Shown when the CMS has no live PublicationIndexPage yet (the register
+// itself fetches publications separately, so it still renders).
+const fallbackTitle = "The Ministry's official record.";
+const fallbackLead =
+  "National policies, sector performance reports, and guidelines — every entry carries a registry reference, a summary page, and the full document to download.";
+
+export default function PublicationIndexPage({
+  page,
+}: {
+  page?: PublicationIndexPageProps;
 }) {
   return (
     <div className="flex flex-1 flex-col">
@@ -13,8 +21,8 @@ export default function PublicationIndexPage(_: {
 
       <PageHeader
         id="wm-publications"
-        title={_.page.title}
-        lead={_.page.lead}
+        title={page?.title ?? fallbackTitle}
+        lead={page?.lead || fallbackLead}
         crumbs={[{ label: "Publications" }]}
       />
 

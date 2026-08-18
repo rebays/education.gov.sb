@@ -1,6 +1,4 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import PageHeader from "@/components/shared/page-header";
 import PublicationCover from "@/components/shared/publication-cover";
 import SiteFooter from "@/components/shared/site-footer";
@@ -16,16 +14,17 @@ import {
   publicationRefFor,
   publicationTypeDisplay,
   toPublicationSummary,
-} from "@/components/pages/Publication/adapters";
+} from "./adapters";
 import {
   PUBLICATIONS_QUERY,
   PUBLICATION_QUERY,
+  type PublicationDetail,
   type PublicationListItem,
   type PublicationQueryResult,
   type PublicationsQueryResult,
-} from "@/components/pages/Publication/queries";
+} from "./queries";
 
-async function loadPublication(slug: string) {
+export async function loadPublication(slug: string) {
   const [detail, list] = await Promise.all([
     cmsFetch<PublicationQueryResult>(PUBLICATION_QUERY, { slug }),
     cmsFetch<PublicationsQueryResult>(PUBLICATIONS_QUERY, {}),
@@ -33,27 +32,13 @@ async function loadPublication(slug: string) {
   return { pub: detail.publication, allItems: list.publications };
 }
 
-export async function generateMetadata({
-  params,
+export default function PublicationPage({
+  pub,
+  allItems,
 }: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
-  const data = await cmsFetch<PublicationQueryResult>(PUBLICATION_QUERY, { slug });
-  const pub = data.publication;
-  if (!pub) return {};
-  return { title: pub.title, description: pub.summary };
-}
-
-export default async function PublicationPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
+  pub: PublicationDetail;
+  allItems: PublicationListItem[];
 }) {
-  const { slug } = await params;
-  const { pub, allItems } = await loadPublication(slug);
-  if (!pub) notFound();
-
   const summary = toPublicationSummary(pub);
   const ref = publicationRefFor(pub, allItems);
   const newer = pub.newerEntry
@@ -68,11 +53,12 @@ export default async function PublicationPage({
       <PageHeader
         id={`wm-pub-${pub.slug}`}
         title={pub.title}
-        crumbs={[{ label: "Publications", href: "/publications" }, { label: ref }]}
+        crumbs={[
+          { label: "Publications", href: "/publications" },
+          { label: pub.title },
+        ]}
       >
         <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/70">
-          <span className="font-mono">{ref}</span>
-          <span aria-hidden>·</span>
           <span>{summary.date}</span>
           <span aria-hidden>·</span>
           <span>{summary.office}</span>

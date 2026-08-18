@@ -1,10 +1,53 @@
+import type { Metadata } from "next";
 import { cmsFetch } from "@/lib/cms";
 import { GET_PAGE, GET_PAGE_BY_TOKEN } from "@/lib/queries";
 import { getResourceFolder } from "@/lib/hooks/use-resource-folder";
 import { draftMode } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { renderCmsPage, type CmsPage } from "@/components/pages/registry";
+import PublicationIndexPage from "@/components/pages/PublicationIndexPage/PublicationIndexPage";
+import PublicationPage, {
+  loadPublication,
+} from "@/components/pages/Publication/PublicationPage";
+import {
+  PUBLICATION_QUERY,
+  type PublicationQueryResult,
+} from "@/components/pages/Publication/queries";
 import ResourcePage from "@/components/pages/ResourcePage/ResourcePage";
+
+// Publications are CMS snippets, not Wagtail pages, so GET_PAGE can't
+// resolve them: /publications/<slug> is matched here by URL shape instead.
+const PUBLICATIONS_SLUG = "publications";
+
+const publicationSlugFrom = (slug: string[]) =>
+  slug.length === 2 && slug[0] === PUBLICATIONS_SLUG ? slug[1] : null;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string[] }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  if (slug.length === 1 && slug[0] === PUBLICATIONS_SLUG) {
+    return {
+      title: "Policies & publications",
+      description:
+        "Official policies, sector reports, and guidelines published by the Ministry of Education and Human Resources Development.",
+    };
+  }
+
+  const pubSlug = publicationSlugFrom(slug);
+  if (pubSlug) {
+    const data = await cmsFetch<PublicationQueryResult>(PUBLICATION_QUERY, {
+      slug: pubSlug,
+    });
+    const pub = data.publication;
+    if (pub) return { title: pub.title, description: pub.summary };
+  }
+
+  return {};
+}
 
 async function catchAllPage({
   params,
@@ -28,6 +71,22 @@ async function catchAllPage({
 
   if (data.page) {
     return renderCmsPage(data.page);
+  }
+
+  // Publication detail: backed by the publication snippet query, so it has
+  // no page to find above — resolved here by its /publications/<slug> shape.
+  const pubSlug = publicationSlugFrom(slug);
+  if (pubSlug) {
+    const { pub, allItems } = await loadPublication(pubSlug);
+    if (pub) {
+      return <PublicationPage pub={pub} allItems={allItems} />;
+    }
+  }
+
+  // Publications index keeps working before a PublicationIndexPage exists in
+  // the CMS: the register fetches its entries independently of the page.
+  if (slug.length === 1 && slug[0] === PUBLICATIONS_SLUG) {
+    return <PublicationIndexPage />;
   }
 
   // Try resource folder for paths with 2+ segments
