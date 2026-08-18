@@ -23,9 +23,9 @@ export async function cmsFetch<T>(
   if (json.errors) {
     // GraphQL allows partial success: field-level errors (e.g. a missing
     // file on disk breaking one publication's fileSize) come back alongside
-    // otherwise-usable data. Log for visibility but only fail the request
-    // when there's no data left to render.
-    console.error('CMS GraphQL errors:', JSON.stringify(json.errors));
+    // otherwise-usable data. Warn (not error) so it doesn't trip Next's dev
+    // error overlay, but only fail the request when there's no data left.
+    console.warn('CMS GraphQL errors:', JSON.stringify(json.errors));
     if (json.data == null) {
       throw new Error('CMS query failed');
     }

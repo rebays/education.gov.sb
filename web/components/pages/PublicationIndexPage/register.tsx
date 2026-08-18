@@ -22,7 +22,7 @@ import {
   type PublicationListItem,
   type PublicationsQueryResult,
 } from "@/components/pages/Publication/queries";
-import type { PublicationType } from "../lib/content";
+import type { PublicationType } from "@/app/lib/content";
 
 /**
  * The publications index body — a "Latest release" hero derived from the
