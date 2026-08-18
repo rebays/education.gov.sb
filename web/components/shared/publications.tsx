@@ -1,15 +1,34 @@
 import Link from "next/link";
 import PublicationCover from "./publication-cover";
-import { publications, publicationRef } from "@/app/lib/content";
+import { cmsFetch } from "@/lib/cms";
+import {
+  publicationRefFor,
+  toPublicationSummary,
+} from "@/components/pages/Publication/adapters";
+import {
+  PUBLICATIONS_QUERY,
+  type PublicationListItem,
+  type PublicationsQueryResult,
+} from "@/components/pages/Publication/queries";
 
 /**
  * Landing-page publications section — an editorial split: heading, blurb,
  * and a quiet register list on the left; the latest covers fanned like
- * documents on a desk on the right. The full record lives on the
- * publications index.
+ * documents on a desk on the right. Entries come from the CMS publication
+ * register (newest first); the full record lives on the publications index.
  */
-export default function Publications() {
-  const recent = publications.slice(0, 4);
+export default async function Publications() {
+  let items: PublicationListItem[];
+  try {
+    const data = await cmsFetch<PublicationsQueryResult>(PUBLICATIONS_QUERY, {});
+    items = data.publications;
+  } catch {
+    // The landing page shouldn't fall over with the CMS: skip the section.
+    return null;
+  }
+  if (items.length === 0) return null;
+
+  const recent = items.slice(0, 4);
   /* fan order: two older covers behind, the latest upright in front */
   const fan = [recent[2], recent[1], recent[0]].filter(Boolean);
   const fanStyle = [
@@ -44,7 +63,7 @@ export default function Publications() {
                 className="group flex items-baseline gap-5 py-4"
               >
                 <span className="w-32 shrink-0 font-mono text-xs text-muted">
-                  {publicationRef(p)}
+                  {publicationRefFor(p, items)}
                 </span>
                 <span className="min-w-0 font-serif text-lg leading-snug text-foreground transition-colors group-hover:text-primary">
                   {p.title}
@@ -80,8 +99,8 @@ export default function Publications() {
             className={`relative w-44 shrink-0 transition-all duration-300 hover:z-20 hover:-translate-y-4 hover:rotate-0 sm:w-56 lg:w-64 ${fanStyle[i]}`}
           >
             <PublicationCover
-              publication={p}
-              reference={publicationRef(p)}
+              publication={toPublicationSummary(p)}
+              reference={publicationRefFor(p, items)}
               className="w-full"
             />
           </Link>

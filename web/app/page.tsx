@@ -68,7 +68,7 @@ export default async function Home() {
               Building a brighter future through learning.
             </p>
 
-            <HeroSearch className="mx-auto mt-10 max-w-4xl" />
+            <HeroSearch scope="resources" className="mx-auto mt-10 max-w-4xl" />
 
             {/* glass subject pills — suggested searches */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">

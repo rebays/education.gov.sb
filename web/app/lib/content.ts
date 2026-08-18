@@ -993,39 +993,4 @@ export function getNewsPost(slug: string): NewsPost | undefined {
   return news.find((n) => n.slug === slug);
 }
 
-/* ------------------------------------------------------------------ */
-/*  Search                                                             */
-/* ------------------------------------------------------------------ */
-
-export type SearchResult =
-  | { kind: "resource"; item: Resource }
-  | { kind: "publication"; item: Publication }
-  | { kind: "news"; item: NewsPost };
-
-export function searchContent(query: string): SearchResult[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-  const terms = q.split(/\s+/);
-  const matches = (...fields: string[]) => {
-    const haystack = fields.join(" ").toLowerCase();
-    return terms.every((t) => haystack.includes(t));
-  };
-
-  const results: SearchResult[] = [];
-  for (const item of resources) {
-    if (matches(item.title, item.summary, item.kind)) {
-      results.push({ kind: "resource", item });
-    }
-  }
-  for (const item of publications) {
-    if (matches(item.title, item.summary, item.type, ...item.body)) {
-      results.push({ kind: "publication", item });
-    }
-  }
-  for (const item of news) {
-    if (matches(item.title, item.excerpt, item.category, ...item.body)) {
-      results.push({ kind: "news", item });
-    }
-  }
-  return results;
-}
+/* Site search is CMS-backed — see lib/search.ts. */
