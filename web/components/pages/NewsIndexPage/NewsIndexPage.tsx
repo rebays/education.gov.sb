@@ -4,13 +4,20 @@ import SiteHeader from "@/components/shared/site-header";
 import type { NewsIndexPage as NewsIndexPageProps } from "./types";
 import NewsFront from "./NewsFront";
 
-export default function NewsIndexPage(_: { page: NewsIndexPageProps }) {
+// Shown until an editor creates the news index page in the CMS — the
+// stories themselves come from the newsPages query either way.
+const fallbackTitle = "News from the Ministry.";
+const fallbackLead =
+  "Announcements, press releases, and events from across the education sector.";
+
+export default function NewsIndexPage(_: { page?: NewsIndexPageProps }) {
   const dateline = new Date().toLocaleDateString("en-GB", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+  const title = _.page?.title ?? fallbackTitle;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -18,9 +25,9 @@ export default function NewsIndexPage(_: { page: NewsIndexPageProps }) {
 
       <PageHeader
         id="wm-news"
-        title={_.page.title}
-        lead={_.page.lead}
-        crumbs={[{ label: _.page.title }]}
+        title={title}
+        lead={_.page?.lead || fallbackLead}
+        crumbs={[{ label: title }]}
       >
         <p className="mt-5 flex flex-wrap items-center gap-x-3 text-sm text-white/70">
           <span className="font-mono">{dateline}</span>
