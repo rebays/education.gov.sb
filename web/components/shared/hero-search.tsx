@@ -159,7 +159,10 @@ export default function HeroSearch({
       {scope === "resources" && (
         <input type="hidden" name="scope" value="resources" />
       )}
-      <div className="relative flex min-w-0 flex-1 items-center">
+      <div
+        data-tour="search-tour-query"
+        className="relative flex min-w-0 flex-1 items-center"
+      >
         <input
           ref={inputRef}
           type="search"
@@ -206,7 +209,10 @@ export default function HeroSearch({
       </div>
 
       {/* curriculum-level scope */}
-      <div className="hidden h-8 items-center border-l border-border pl-2 sm:flex">
+      <div
+        data-tour="search-tour-level"
+        className="hidden h-8 items-center border-l border-border pl-2 sm:flex"
+      >
         <label htmlFor={id} className="sr-only">
           Curriculum level
         </label>
@@ -250,6 +256,7 @@ export default function HeroSearch({
 
       <button
         type="submit"
+        data-tour="search-tour-submit"
         className="ml-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground transition-transform hover:scale-[1.02] sm:w-auto sm:gap-2 sm:px-5"
       >
         <svg

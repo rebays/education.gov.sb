@@ -5,6 +5,7 @@ import { getResourceFolder } from "@/lib/hooks/use-resource-folder";
 import { draftMode } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { renderCmsPage, type CmsPage } from "@/components/pages/registry";
+import NewsIndexPage from "@/components/pages/NewsIndexPage/NewsIndexPage";
 import AccessibilityPage from "@/components/pages/AccessibilityPage/AccessibilityPage";
 import PublicationIndexPage from "@/components/pages/PublicationIndexPage/PublicationIndexPage";
 import PublicationPage, {
@@ -19,6 +20,7 @@ import ResourcePage from "@/components/pages/ResourcePage/ResourcePage";
 // Publications are CMS snippets, not Wagtail pages, so GET_PAGE can't
 // resolve them: /publications/<slug> is matched here by URL shape instead.
 const PUBLICATIONS_SLUG = "publications";
+const NEWS_SLUG = "news";
 const ACCESSIBILITY_SLUG = "accessibility";
 
 const publicationSlugFrom = (slug: string[]) =>
@@ -36,6 +38,14 @@ export async function generateMetadata({
       title: "Policies & publications",
       description:
         "Official policies, sector reports, and guidelines published by the Ministry of Education and Human Resources Development.",
+    };
+  }
+
+  if (slug.length === 1 && slug[0] === NEWS_SLUG) {
+    return {
+      title: "News",
+      description:
+        "Announcements, press releases, and events from the Ministry of Education and Human Resources Development.",
     };
   }
 
@@ -97,6 +107,12 @@ async function catchAllPage({
   // the CMS: the register fetches its entries independently of the page.
   if (slug.length === 1 && slug[0] === PUBLICATIONS_SLUG) {
     return <PublicationIndexPage />;
+  }
+
+  // Same for the newsroom: the front page's stories come from the newsPages
+  // query, so /news renders before a NewsIndexPage exists at this slug.
+  if (slug.length === 1 && slug[0] === NEWS_SLUG) {
+    return <NewsIndexPage />;
   }
 
   // Accessibility statement falls back to the launch text kept in
