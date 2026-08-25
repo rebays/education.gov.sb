@@ -6,6 +6,7 @@ import { draftMode } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { renderCmsPage, type CmsPage } from "@/components/pages/registry";
 import NewsIndexPage from "@/components/pages/NewsIndexPage/NewsIndexPage";
+import AccessibilityPage from "@/components/pages/AccessibilityPage/AccessibilityPage";
 import PublicationIndexPage from "@/components/pages/PublicationIndexPage/PublicationIndexPage";
 import PublicationPage, {
   loadPublication,
@@ -20,6 +21,7 @@ import ResourcePage from "@/components/pages/ResourcePage/ResourcePage";
 // resolve them: /publications/<slug> is matched here by URL shape instead.
 const PUBLICATIONS_SLUG = "publications";
 const NEWS_SLUG = "news";
+const ACCESSIBILITY_SLUG = "accessibility";
 
 const publicationSlugFrom = (slug: string[]) =>
   slug.length === 2 && slug[0] === PUBLICATIONS_SLUG ? slug[1] : null;
@@ -44,6 +46,11 @@ export async function generateMetadata({
       title: "News",
       description:
         "Announcements, press releases, and events from the Ministry of Education and Human Resources Development.",
+  if (slug.length === 1 && slug[0] === ACCESSIBILITY_SLUG) {
+    return {
+      title: "Accessibility",
+      description:
+        "The Ministry of Education and Human Resources Development's commitment to making education.gov.sb usable by everyone.",
     };
   }
 
@@ -103,6 +110,11 @@ async function catchAllPage({
   // query, so /news renders before a NewsIndexPage exists at this slug.
   if (slug.length === 1 && slug[0] === NEWS_SLUG) {
     return <NewsIndexPage />;
+  // Accessibility statement falls back to the launch text kept in
+  // components/pages/AccessibilityPage/fallback.ts until an editor creates
+  // the page in the CMS.
+  if (slug.length === 1 && slug[0] === ACCESSIBILITY_SLUG) {
+    return <AccessibilityPage />;
   }
 
   // Try resource folder for paths with 2+ segments
