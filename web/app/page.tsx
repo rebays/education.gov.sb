@@ -4,6 +4,7 @@ import CategoryTile from "@/components/shared/category-tile";
 import HeroSearch from "@/components/shared/hero-search";
 import NewsBanner from "@/components/shared/news-banner";
 import Publications from "@/components/shared/publications";
+import SearchTour from "@/components/shared/search-tour";
 import SiteFooter from "@/components/shared/site-footer";
 import SiteHeader from "@/components/shared/site-header";
 import TraditionalWatermark from "@/components/shared/traditional-watermark";
@@ -81,6 +82,8 @@ export default async function Home() {
                 </GlassPill>
               ))}
             </div>
+
+            <SearchTour />
           </div>
         </div>
 
