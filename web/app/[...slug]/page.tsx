@@ -5,6 +5,7 @@ import { getResourceFolder } from "@/lib/hooks/use-resource-folder";
 import { draftMode } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { renderCmsPage, type CmsPage } from "@/components/pages/registry";
+import AccessibilityPage from "@/components/pages/AccessibilityPage/AccessibilityPage";
 import PublicationIndexPage from "@/components/pages/PublicationIndexPage/PublicationIndexPage";
 import PublicationPage, {
   loadPublication,
@@ -18,6 +19,7 @@ import ResourcePage from "@/components/pages/ResourcePage/ResourcePage";
 // Publications are CMS snippets, not Wagtail pages, so GET_PAGE can't
 // resolve them: /publications/<slug> is matched here by URL shape instead.
 const PUBLICATIONS_SLUG = "publications";
+const ACCESSIBILITY_SLUG = "accessibility";
 
 const publicationSlugFrom = (slug: string[]) =>
   slug.length === 2 && slug[0] === PUBLICATIONS_SLUG ? slug[1] : null;
@@ -34,6 +36,14 @@ export async function generateMetadata({
       title: "Policies & publications",
       description:
         "Official policies, sector reports, and guidelines published by the Ministry of Education and Human Resources Development.",
+    };
+  }
+
+  if (slug.length === 1 && slug[0] === ACCESSIBILITY_SLUG) {
+    return {
+      title: "Accessibility",
+      description:
+        "The Ministry of Education and Human Resources Development's commitment to making education.gov.sb usable by everyone.",
     };
   }
 
@@ -87,6 +97,13 @@ async function catchAllPage({
   // the CMS: the register fetches its entries independently of the page.
   if (slug.length === 1 && slug[0] === PUBLICATIONS_SLUG) {
     return <PublicationIndexPage />;
+  }
+
+  // Accessibility statement falls back to the launch text kept in
+  // components/pages/AccessibilityPage/fallback.ts until an editor creates
+  // the page in the CMS.
+  if (slug.length === 1 && slug[0] === ACCESSIBILITY_SLUG) {
+    return <AccessibilityPage />;
   }
 
   // Try resource folder for paths with 2+ segments
