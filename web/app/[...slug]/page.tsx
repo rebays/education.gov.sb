@@ -46,6 +46,9 @@ export async function generateMetadata({
       title: "News",
       description:
         "Announcements, press releases, and events from the Ministry of Education and Human Resources Development.",
+    };
+  }
+
   if (slug.length === 1 && slug[0] === ACCESSIBILITY_SLUG) {
     return {
       title: "Accessibility",
@@ -110,6 +113,8 @@ async function catchAllPage({
   // query, so /news renders before a NewsIndexPage exists at this slug.
   if (slug.length === 1 && slug[0] === NEWS_SLUG) {
     return <NewsIndexPage />;
+  }
+
   // Accessibility statement falls back to the launch text kept in
   // components/pages/AccessibilityPage/fallback.ts until an editor creates
   // the page in the CMS.
