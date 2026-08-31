@@ -171,6 +171,31 @@ STORAGES = {
     },
 }
 
+# Media storage: switch to S3 when AWS_STORAGE_BUCKET_NAME is set. Credentials
+# come from the standard boto3 chain (env vars, instance profile, task role),
+# so nothing sensitive lives in this file. Endpoint/custom-domain overrides let
+# the same block target S3-compatible services (R2, MinIO, Spaces) or a CDN.
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+if AWS_STORAGE_BUCKET_NAME:
+    s3_options = {
+        "bucket_name": AWS_STORAGE_BUCKET_NAME,
+        "file_overwrite": False,
+        "default_acl": None,
+        "querystring_auth": os.environ.get(
+            "AWS_S3_QUERYSTRING_AUTH", "false"
+        ).lower() == "true",
+    }
+    if region := os.environ.get("AWS_S3_REGION_NAME"):
+        s3_options["region_name"] = region
+    if endpoint := os.environ.get("AWS_S3_ENDPOINT_URL"):
+        s3_options["endpoint_url"] = endpoint
+    if custom_domain := os.environ.get("AWS_S3_CUSTOM_DOMAIN"):
+        s3_options["custom_domain"] = custom_domain
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": s3_options,
+    }
+
 # Django sets a maximum of 1000 fields per form by default, but particularly complex page models
 # can exceed this limit within Wagtail's page editor.
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10_000
