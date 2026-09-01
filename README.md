@@ -1,4 +1,4 @@
-# iresource
+# Education Resource Hub
 
 A resource library platform composed of two apps:
 
